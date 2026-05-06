@@ -1,0 +1,18 @@
+{
+  "name": "new-biolink",
+  "version": "0.1.0",
+  "description": "Created with Synkra AIOX",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Add your dev script' && exit 1",
+    "build": "echo 'Add your build script' && exit 1",
+    "test": "echo 'Add your test script' && exit 1",
+    "lint": "echo 'Add your lint script' && exit 1",
+    "typecheck": "echo 'Add your typecheck script' && exit 1"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "author": "helionj",
+  "license": "UNLICENSED"
+}
