@@ -1,8 +1,10 @@
 
 
-# Environment & Secrets (AIOX)
+# Environment & Secrets
 .env
 .env.local
+.env.test
+.env.test.local
 .env.*.local
 *.key
 *.pem
@@ -34,10 +36,18 @@ Thumbs.db
 # Build & Cache (extended)
 .next/
 out/
+.vercel/
 .pnpm-store/
 coverage/
 .nyc_output/
 .cache/
+
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# Backups
+*.aiox-bak
 
 # Editor
 .vscode/

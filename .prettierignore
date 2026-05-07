@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+build
+coverage
+pnpm-lock.yaml
+.aiox
+.aiox-core
+.claude
+.codex
+.cursor
+.gemini
+.antigravity
+docs/qa

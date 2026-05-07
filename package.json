@@ -1,18 +1,44 @@
 {
-  "name": "new-biolink",
+  "name": "biolink",
   "version": "0.1.0",
-  "description": "Created with Synkra AIOX",
   "private": true,
+  "description": "BioLink — link-in-bio platform built on Next.js 16, Supabase, and Tailwind 4.",
+  "license": "MIT",
   "scripts": {
-    "dev": "echo 'Add your dev script' && exit 1",
-    "build": "echo 'Add your build script' && exit 1",
-    "test": "echo 'Add your test script' && exit 1",
-    "lint": "echo 'Add your lint script' && exit 1",
-    "typecheck": "echo 'Add your typecheck script' && exit 1"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
+  "dependencies": {
+    "next": "16.2.5",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.5",
+    "eslint-config-prettier": "^9",
+    "eslint-plugin-import": "^2",
+    "prettier": "^3",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  },
+  "packageManager": "pnpm@11.0.8",
   "engines": {
     "node": ">=20.0.0"
   },
-  "author": "helionj",
-  "license": "UNLICENSED"
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp",
+      "unrs-resolver"
+    ]
+  }
 }
