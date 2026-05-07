@@ -24,6 +24,7 @@ A abordagem unificada combina o que tradicionalmente seriam documentos separados
 |------|---------|-------------|--------|
 | 2026-05-07 | 0.1 | Draft inicial completo (modo YOLO) a partir de `docs/brief.md` v1 e `docs/prd.md` v0.3 | @architect (Aria) |
 | 2026-05-07 | 0.2 | Incorpora findings do `*execute-checklist architect-checklist` (Risk 1-3): adiciona §Resilience, Degraded Mode & Recovery; documenta backup strategy do Supabase free tier; helper `revalidateUserSurface`; ESLint `no-restricted-imports` concreto; Dependabot na pipeline; encryption-at-rest explícito | @architect (Aria) |
+| 2026-05-07 | 0.3 | **Tech Stack §CSS Framework:** Tailwind 3.x → **Tailwind 4.x** (default Next 16; CSS-first config via `@theme` em `app/globals.css` em vez de `tailwind.config.ts`). Atualizado quality gate findings da Story 1.1: Project Structure (§High Level + §Source Tree) também removem referência a `tailwind.config.ts` e adicionam `postcss.config.mjs`. Razão: `create-next-app@latest` para Next 16 instala Tailwind 4 default; CSS-first alinha melhor com PRD §Premissas Técnicas ("design tokens via CSS variables"). | @architect (Aria) |
 
 ---
 
@@ -73,7 +74,7 @@ biolink/
 ├── docs/                 # PRD, architecture, stories, guides
 ├── .github/workflows/    # CI/CD (ci.yml, deploy.yml, lighthouse.yml)
 ├── middleware.ts         # Next.js middleware (route protection)
-└── (config files)        # tsconfig, next.config, tailwind.config, etc.
+└── (config files)        # tsconfig, next.config, postcss.config (Tailwind 4: sem tailwind.config), etc.
 ```
 
 ### High Level Architecture Diagram
@@ -164,7 +165,7 @@ graph TB
 | **Drag-and-Drop** | @dnd-kit/core + @dnd-kit/sortable | latest | Reorder de links (FR7) | Touch-friendly, a11y nativa, ativamente mantido. |
 | **Forms** | react-hook-form + @hookform/resolvers/zod | latest | Forms tipados + validação | PRD §Premissas Técnicas. |
 | **Validation** | Zod | latest | Schemas compartilhados (form + Server Actions + env) | PRD §Premissas Técnicas. |
-| **CSS Framework** | Tailwind CSS | 3.x | Utility-first + design tokens via CSS vars | PRD §Premissas Técnicas. |
+| **CSS Framework** | Tailwind CSS | 4.x | Utility-first + design tokens via CSS vars (CSS-first config via `@theme` em `app/globals.css` — sem `tailwind.config.ts`) | PRD §Premissas Técnicas; default do Next.js 16 (validado em Story 1.1). |
 | **Charts (Analytics)** | recharts | latest | Gráficos de série temporal (Story 4.4) | PRD §Story 4.4 menciona "recharts ou similar lightweight"; recharts é o escolhido. |
 | **Backend Language** | TypeScript | 5.x | Mesmo runtime do frontend | Server Actions e Route Handlers em TS. |
 | **Backend Framework** | Next.js Server Actions + Route Handlers | 16.x | API layer | PRD §Arquitetura de Serviço. |
@@ -1621,7 +1622,8 @@ biolink/
 │   └── seed-demo.ts              # `npm run seed:demo` (Story PRD §Test convenience)
 ├── middleware.ts
 ├── next.config.ts
-├── tailwind.config.ts
+├── postcss.config.mjs            # Tailwind 4 plugin (@tailwindcss/postcss)
+│                                 # NB: Tailwind 4 usa CSS-first config em app/globals.css (@theme), sem tailwind.config.ts
 ├── tsconfig.json                 # strict + noUncheckedIndexedAccess
 ├── eslint.config.mjs
 ├── .prettierrc
