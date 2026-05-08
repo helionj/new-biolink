@@ -1,0 +1,54 @@
+schema: 1
+story: '1.1'
+gate: PASS
+status_reason: 'Bootstrap story sem código funcional ou testes (Vitest entra em 1.2). Architect quality gate APPROVED com typecheck/lint/build verdes. Todos os 7 ACs satisfeitos via validação manual.'
+reviewer: 'Manual gate (CodeRabbit self-healing loop indisponível em macOS sem WSL/CodeRabbit CLI; @architect já validou quality gate tools)'
+updated: '2026-05-07T00:00:00Z'
+top_issues: []
+waiver:
+  active: false
+
+quality_checks:
+  code_review:
+    status: PASS
+    notes: 'Apenas arquivos de scaffold do create-next-app + configs (eslint, prettier, tsconfig, postcss). Sem lógica de negócio para revisar nesta story.'
+  unit_tests:
+    status: N/A
+    notes: 'Vitest não instalado nesta story — entra em Story 1.2 conforme Dev Notes §Testing. Diretórios tests/{unit,integration,components} criados com .gitkeep.'
+  acceptance_criteria:
+    status: PASS
+    notes: 'AC1-7 todos satisfeitos. AC1 parcial: repo Git OK + LICENSE + README + .gitignore; criação do remote GitHub e push delegados a @devops (Tasks 1.4 e 8.3 fora do escopo de @dev).'
+  regressions:
+    status: N/A
+    notes: 'Greenfield — sem estado prévio para regredir.'
+  performance:
+    status: PASS
+    notes: 'pnpm dev (Turbopack) sobe localhost:3000 em ~21s, HTTP 200 confirmado. Build de produção: 49s + TypeScript 33s, 4 páginas estáticas. Aceitável para fase de bootstrap.'
+  security:
+    status: PASS
+    notes: '.env.local, .env.test, .env.*.local em .gitignore (verificado). Sem código de auth/SQL/input-handling nesta story. Backups *.aiox-bak também ignorados. gitleaks entra em CI na Story 1.3.'
+  documentation:
+    status: PASS
+    notes: 'README.md sobrescrito com seção Getting Started (pnpm install + pnpm dev) e link para architecture.md §Tech Stack. .env.example documenta as keys placeholder.'
+
+deviations_reviewed:
+  - description: 'Tailwind 4.x em vez de 3.x'
+    resolution: 'APPROVED por @architect; architecture.md §Tech Stack atualizado de 3.x → 4.x para preservar single source of truth (commit 6d93f74).'
+    severity: 'low'
+  - description: 'Script lint usa eslint direto (Next 16 deprecou next lint)'
+    resolution: 'APPROVED — alinhamento com Next 16.'
+    severity: 'low'
+  - description: 'sharp + unrs-resolver build scripts autorizados via pnpm.onlyBuiltDependencies'
+    resolution: 'APPROVED — necessário para next/image e eslint-plugin-import resolver Rust.'
+    severity: 'low'
+  - description: 'Diretório src/ removido (vazio do AIOX env-bootstrap)'
+    resolution: 'APPROVED — story usa app/ na raiz sem src/.'
+    severity: 'low'
+  - description: 'package.json.aiox-bak e README.md.aiox-bak preservados localmente'
+    resolution: 'APPROVED — gitignored via *.aiox-bak.'
+    severity: 'low'
+
+handoff:
+  next_agent: '@devops'
+  next_command: '*push'
+  condition: 'Aplicar Tasks 1.4 (criar/configurar remote GitHub) e 8.3 (push inicial). Origin já configurado em https://github.com/helionj/new-biolink.git — verificar se repo público existe; se não, criar via gh repo create.'
