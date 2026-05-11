@@ -33,6 +33,10 @@ Thumbs.db
 .aiox/project-status.yaml
 .aiox/handoffs/
 
+# Supabase CLI local state
+.supabase/
+supabase/.temp/
+
 # Build & Cache (extended)
 .next/
 out/

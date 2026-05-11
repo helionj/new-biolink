@@ -8,10 +8,13 @@ Pré-requisitos: **Node.js ≥ 20** e **pnpm 9+** (ativável via `corepack enabl
 
 ```bash
 pnpm install
+cp .env.example .env.local      # popule com chaves do Supabase de dev
 pnpm dev
 ```
 
 A aplicação fica disponível em [http://localhost:3000](http://localhost:3000).
+
+Setup completo (criar projeto Supabase de dev, gerar tipos, gerar `HASH_SALT`): veja [`docs/dev-setup.md`](docs/dev-setup.md).
 
 ### Scripts úteis
 
@@ -24,6 +27,7 @@ A aplicação fica disponível em [http://localhost:3000](http://localhost:3000)
 | `pnpm typecheck`    | TypeScript (`tsc --noEmit`)             |
 | `pnpm format`       | Prettier write                          |
 | `pnpm format:check` | Prettier check                          |
+| `pnpm db:types`     | Gera `lib/supabase/types.ts` do projeto |
 
 ## Stack
 

@@ -59,7 +59,7 @@ Para stories com código funcional / testes a partir de 1.2+: avaliar antes de c
 
 **Discovered:** 2026-05-08 (Story 1.1 pre-push)
 **Severity:** Medium
-**Status:** Open — workaround `--shamefully-hoist` aplicado
+**Status:** **Resolved** (2026-05-11, Story 1.2) — diagnóstico original incorreto; fix real abaixo.
 **Affects:** Qualquer `pnpm <script>` (lint, typecheck, build, dev) e provavelmente CI futuro
 
 ### Sintoma
@@ -92,3 +92,20 @@ allowBuilds:
 
 - Documentado em Story 1.1 Change Log v0.7.
 - Endereçar em **Story 1.2 ou antes** — CI da Story 1.3 (GitHub Actions) vai falhar nas mesmas condições se não for resolvido.
+
+### Resolução (2026-05-11, Story 1.2)
+
+O diagnóstico original ("arquivo malformado, sem `packages:`") estava **incorreto**. Investigação durante Story 1.2 revelou:
+
+1. `allowBuilds:` em `pnpm-workspace.yaml` **é uma chave válida** introduzida em pnpm 10+ — é o mecanismo oficial de aprovação de build scripts (`postinstall`, `install`, etc.) e substitui `pnpm.onlyBuiltDependencies` em `package.json`. Não requer `packages:` em repos single-package.
+2. A causa raiz real do "comando não encontrado" em Story 1.1 era: scripts de build (`sharp install`, `unrs-resolver postinstall`) estavam **bloqueados aguardando aprovação** pelo pnpm 11; sem rodar, alguns binários hoisted ficavam ausentes em `node_modules/.bin/`.
+3. O fix correto: `pnpm approve-builds --all` (uma vez por projeto) — escreve `pnpm-workspace.yaml` populado com todos os pacotes que têm build scripts. A partir daí, `pnpm install` roda os builds e cria os symlinks corretamente.
+4. `--shamefully-hoist` "funcionou" em 1.1 mas por motivo errado (hoist global, não execução de postinstall).
+
+**Estado final aplicado em Story 1.2:**
+
+- ✅ `pnpm-workspace.yaml` **mantido** com `allowBuilds: { sharp, supabase, unrs-resolver }` (regenerado por `pnpm approve-builds --all`).
+- ✅ `pnpm.onlyBuiltDependencies` **removido** de `package.json` (era redundância — `pnpm-workspace.yaml` é a single source of truth em pnpm 11).
+- ✅ CI/dev podem rodar `pnpm install` direto, sem `--shamefully-hoist`.
+
+**Lição:** quando um diagnóstico parece exigir "deletar arquivo de configuração que está sintaticamente correto", verificar a documentação da ferramenta antes de inferir malformação.

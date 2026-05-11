@@ -1,0 +1,4 @@
+-- 0001_init.sql
+-- Placeholder migration — schema real (profiles, pages, links, click_events, page_views)
+-- será implementado em Story 1.4 (@data-engineer).
+-- Reserva esta posição na sequência de migrations.
