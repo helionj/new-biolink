@@ -105,7 +105,26 @@ jobs:
           BRANCH_NAME="pr-${{ github.event.pull_request.number }}"
           supabase --experimental branches create "$BRANCH_NAME" --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} || \
             supabase --experimental branches get "$BRANCH_NAME" --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
-          BRANCH_URL=$(supabase --experimental branches get "$BRANCH_NAME" --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} -o json | jq -r '.db_url')
+
+          # Poll until branch is provisioned and db_url is populated (max ~5 min)
+          BRANCH_URL=""
+          for i in $(seq 1 30); do
+            BRANCH_JSON=$(supabase --experimental branches get "$BRANCH_NAME" --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} -o json)
+            BRANCH_URL=$(echo "$BRANCH_JSON" | jq -r '.db_url // empty')
+            BRANCH_STATUS=$(echo "$BRANCH_JSON" | jq -r '.status // .branch_status // "unknown"')
+            echo "Attempt $i: status=$BRANCH_STATUS, db_url=${BRANCH_URL:+<set>}${BRANCH_URL:-<empty>}"
+            if [ -n "$BRANCH_URL" ] && [ "$BRANCH_URL" != "null" ]; then
+              echo "Branch ready after $i attempts"
+              break
+            fi
+            sleep 10
+          done
+
+          if [ -z "$BRANCH_URL" ] || [ "$BRANCH_URL" = "null" ]; then
+            echo "::error::Branch did not provision a db_url within 5min. Last JSON:"
+            echo "$BRANCH_JSON"
+            exit 1
+          fi
           echo "SUPABASE_DB_URL=$BRANCH_URL" >> $GITHUB_ENV
       - name: Apply migrations
         env:
