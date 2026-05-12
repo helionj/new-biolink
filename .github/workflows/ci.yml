@@ -103,9 +103,9 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           BRANCH_NAME="pr-${{ github.event.pull_request.number }}"
-          supabase branches create "$BRANCH_NAME" --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} || \
-            supabase branches get "$BRANCH_NAME" --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
-          BRANCH_URL=$(supabase branches get "$BRANCH_NAME" --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} -o json | jq -r '.db_url')
+          supabase --experimental branches create "$BRANCH_NAME" --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} || \
+            supabase --experimental branches get "$BRANCH_NAME" --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+          BRANCH_URL=$(supabase --experimental branches get "$BRANCH_NAME" --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} -o json | jq -r '.db_url')
           echo "SUPABASE_DB_URL=$BRANCH_URL" >> $GITHUB_ENV
       - name: Apply migrations
         env:
@@ -121,7 +121,7 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
-          supabase branches delete "pr-${{ github.event.pull_request.number }}" \
+          supabase --experimental branches delete "pr-${{ github.event.pull_request.number }}" \
             --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} || true
 
   build:
