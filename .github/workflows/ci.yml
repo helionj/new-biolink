@@ -98,6 +98,8 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - uses: supabase/setup-cli@v1
+        with:
+          version: 2.98.2
       - name: Create Supabase Branch
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -106,13 +108,12 @@ jobs:
           supabase --experimental branches create "$BRANCH_NAME" --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} || \
             supabase --experimental branches get "$BRANCH_NAME" --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
 
-          # Poll until branch is provisioned and db_url is populated (max ~5 min)
+          # Poll until branch exposes POSTGRES_URL_NON_POOLING (CLI v2.98 returns env-var-shaped JSON)
           BRANCH_URL=""
           for i in $(seq 1 30); do
             BRANCH_JSON=$(supabase --experimental branches get "$BRANCH_NAME" --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} -o json)
-            BRANCH_URL=$(echo "$BRANCH_JSON" | jq -r '.db_url // empty')
-            BRANCH_STATUS=$(echo "$BRANCH_JSON" | jq -r '.status // .branch_status // "unknown"')
-            echo "Attempt $i: status=$BRANCH_STATUS, db_url=${BRANCH_URL:+<set>}${BRANCH_URL:-<empty>}"
+            BRANCH_URL=$(echo "$BRANCH_JSON" | jq -r '.POSTGRES_URL_NON_POOLING // empty')
+            echo "Attempt $i: POSTGRES_URL_NON_POOLING=${BRANCH_URL:+<set>}${BRANCH_URL:-<empty>}"
             if [ -n "$BRANCH_URL" ] && [ "$BRANCH_URL" != "null" ]; then
               echo "Branch ready after $i attempts"
               break
@@ -121,8 +122,8 @@ jobs:
           done
 
           if [ -z "$BRANCH_URL" ] || [ "$BRANCH_URL" = "null" ]; then
-            echo "::error::Branch did not provision a db_url within 5min. Last JSON:"
-            echo "$BRANCH_JSON"
+            echo "::error::Branch did not expose POSTGRES_URL_NON_POOLING within 5min. Last JSON keys:"
+            echo "$BRANCH_JSON" | jq -r 'keys[]'
             exit 1
           fi
           echo "SUPABASE_DB_URL=$BRANCH_URL" >> $GITHUB_ENV
