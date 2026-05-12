@@ -109,3 +109,60 @@ O diagnóstico original ("arquivo malformado, sem `packages:`") estava **incorre
 - ✅ CI/dev podem rodar `pnpm install` direto, sem `--shamefully-hoist`.
 
 **Lição:** quando um diagnóstico parece exigir "deletar arquivo de configuração que está sintaticamente correto", verificar a documentação da ferramenta antes de inferir malformação.
+
+---
+
+## CI-001 — `test-integration` SASL auth fail no Supabase Branching pooler
+
+**Discovered:** 2026-05-12 (Story 1.3)
+**Severity:** Medium (bloqueia AC2 de Story 1.3 — deferido para Story 1.4)
+**Status:** Open — job desabilitado no MVP via comentário em `.github/workflows/ci.yml`
+**Affects:** `.github/workflows/ci.yml` → job `test-integration`
+
+### Sintoma
+
+Job `test-integration` no CI conseguia criar branch Supabase via `supabase --experimental branches create`, obter `POSTGRES_URL` do pooler IPv4, mas falhava em `supabase db push --db-url "$SUPABASE_DB_URL"` com:
+
+```
+failed to connect to postgres: failed to connect to `host=aws-1-sa-east-1.pooler.supabase.com user=postgres database=postgres`:
+failed SASL auth (FATAL: password authentication failed for user "postgres" (SQLSTATE 28P01))
+Connect to your database by setting the env var correctly: SUPABASE_DB_PASSWORD
+```
+
+### Cadeia de bugs descobertos (4 resolvidos, 1 bloqueio)
+
+Durante validação real do pipeline via PR de teste (Story 1.3 / PR #1):
+
+| # | Bug | Resolução |
+|---|-----|-----------|
+| 1 | `pnpm@11.x` requer Node ≥ 22.13 (`node:sqlite` builtin) | Downgrade para `pnpm@10.33.4` (commit `86316fe`) |
+| 2 | `supabase branches create` exige flag `--experimental` na CLI moderna | Adicionado `--experimental` aos 4 invocations (commit `48fc78d`) |
+| 3 | JSON de `branches get` mudou para uppercase env-var-shaped keys (não há mais `.db_url` assumido por arch §1888) | Trocar `.db_url` → `.POSTGRES_URL_NON_POOLING` (commit `0f7ea79`) |
+| 4 | Runners GitHub-hosted sem IPv6 + Supabase Direct Connection IPv6-only sem IPv4 add-on pago | Trocar para `POSTGRES_URL` (pooler com IPv4) (commit `d9a15d6`) |
+| **5** | **SASL auth fail no pooler — user "postgres" sem suffix `.project_ref` esperado pelo Supavisor** | **Bloqueado — deferido para Story 1.4** |
+
+### Causa raiz provável
+
+Pooler Supavisor da Supabase aceita usernames no formato `postgres.<project_ref>` (com suffix do branch/projeto). O `POSTGRES_URL` retornado pela API de branches da CLI v2.98.2 tem credenciais embedded em formato que provavelmente não inclui esse suffix (ou inclui mas a senha é diferente da database password do branch). Não há campo `db_password` explícito no JSON para construir URL manualmente.
+
+### Workaround atual (MVP)
+
+Job `test-integration` **comentado** em `.github/workflows/ci.yml` (linhas ~86-153). Story 1.3 fecha com AC2 marcado como DEFERIDO. Comentário no workflow documenta os 5 bloqueios + plano de re-ativação em Story 1.4.
+
+Branch protection rule de `main` deve listar os **6 jobs verdes** restantes (install, lint, typecheck, test-unit, test-components, build, gitleaks, audit — sem test-integration).
+
+### Resolução planejada (Story 1.4)
+
+Story 1.4 introduz primeiro DDL real (RLS policies + auth tables) e portanto **precisa** de test-integration funcional para validar políticas. Plano:
+
+1. **Investigar API direta da Supabase** — `https://api.supabase.com/v1/branches/{id}/credentials` (ou endpoint similar) pode retornar `db_user`/`db_password` separados em vez de URL pre-construído.
+2. **Construir URL manualmente** com formato `postgresql://postgres.<branch_ref>:<password>@aws-1-sa-east-1.pooler.supabase.com:6543/postgres` (suffix `.<branch_ref>` no user).
+3. **Alternativa:** considerar `supabase db push --linked` apontando para projeto separado de "CI" em vez de Branching (single projeto compartilhado, com truncate antes de cada test). Trade-off: perde isolamento de PR mas evita pooler auth.
+4. **Alternativa cara:** habilitar IPv4 add-on Supabase no projeto parent (paid, $4/mês) — permite usar `POSTGRES_URL_NON_POOLING` (direct) sem network unreachable.
+
+Decisão final entre (2), (3), (4) deve ser feita por @architect + @data-engineer no início de Story 1.4.
+
+### Tracking
+
+- Story 1.3 Change Log v0.5 documenta cadeia completa de descoberta.
+- Re-habilitar este job é tarefa explícita de Story 1.4.

@@ -8,13 +8,13 @@ Guia para conectar uma máquina nova ao BioLink em modo de desenvolvimento. Este
 
 ## 1. Pré-requisitos
 
-| Ferramenta | Versão mínima | Verificar |
-|-----------|---------------|-----------|
-| Node.js | ≥ 20 | `node -v` |
-| pnpm | ≥ 9 (instalado como `pnpm@11.0.8` via `corepack`) | `pnpm -v` |
-| Git | qualquer recente | `git --version` |
-| GitHub CLI (`gh`) | qualquer recente | `gh --version` |
-| Supabase CLI | latest (instalada como devDep deste projeto) | `pnpm exec supabase --version` |
+| Ferramenta        | Versão mínima                                     | Verificar                      |
+| ----------------- | ------------------------------------------------- | ------------------------------ |
+| Node.js           | ≥ 20                                              | `node -v`                      |
+| pnpm              | ≥ 9 (instalado como `pnpm@11.0.8` via `corepack`) | `pnpm -v`                      |
+| Git               | qualquer recente                                  | `git --version`                |
+| GitHub CLI (`gh`) | qualquer recente                                  | `gh --version`                 |
+| Supabase CLI      | latest (instalada como devDep deste projeto)      | `pnpm exec supabase --version` |
 
 Se você não tem `pnpm`, ative o gerenciador de pacotes via Corepack: `corepack enable && corepack prepare pnpm@11 --activate`.
 
@@ -89,12 +89,12 @@ A CLI pode pedir a senha do banco que você definiu em 2.1; cole quando solicita
 
 ## 3. Variáveis de ambiente — referência completa
 
-| Variável | Escopo | Onde obter | Notas |
-|----------|--------|-----------|-------|
-| `NEXT_PUBLIC_SUPABASE_URL` | client + server | Supabase Dashboard → API | Público (vai no bundle do browser) |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | client + server | Supabase Dashboard → API | Público (RLS aplica) |
-| `SUPABASE_SERVICE_ROLE_KEY` | **server-only** | Supabase Dashboard → API | Bypassa RLS — NUNCA prefixar com `NEXT_PUBLIC_`, NUNCA importar em Client Component (o `lib/supabase/admin.ts` lança erro se for chamado no browser) |
-| `HASH_SALT` | **server-only** | `openssl rand -hex 32` (local), gerado por env | Hash de PII; ≥ 32 chars |
+| Variável                        | Escopo          | Onde obter                                     | Notas                                                                                                                                                |
+| ------------------------------- | --------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | client + server | Supabase Dashboard → API                       | Público (vai no bundle do browser)                                                                                                                   |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | client + server | Supabase Dashboard → API                       | Público (RLS aplica)                                                                                                                                 |
+| `SUPABASE_SERVICE_ROLE_KEY`     | **server-only** | Supabase Dashboard → API                       | Bypassa RLS — NUNCA prefixar com `NEXT_PUBLIC_`, NUNCA importar em Client Component (o `lib/supabase/admin.ts` lança erro se for chamado no browser) |
+| `HASH_SALT`                     | **server-only** | `openssl rand -hex 32` (local), gerado por env | Hash de PII; ≥ 32 chars                                                                                                                              |
 
 Em **produção** (Story 1.3 — @devops):
 
@@ -161,13 +161,71 @@ Se os 4 comandos saírem com exit code `0`, seu ambiente está pronto.
 
 ## 8. Troubleshooting
 
-| Sintoma | Causa provável | Fix |
-|---------|---------------|-----|
-| `Invalid environment variables` no boot | Faltando key em `.env.local` ou `HASH_SALT` < 32 chars | Veja a lista de keys no erro; complete em `.env.local`. |
-| `supabase: command not found` | CLI não está no PATH | Use `pnpm exec supabase ...` ou instale globalmente. |
-| `Project not linked` ao rodar `pnpm db:types` | Falta rodar `supabase link --project-ref` | Execute o passo 2.4. |
-| `supabase link` pede senha do banco | Esperado | Cole a senha definida em 2.1. |
-| `node_modules/.bin/` vazio após `pnpm install` | Cache pnpm corrompido | `rm -rf node_modules && pnpm install` |
+| Sintoma                                        | Causa provável                                         | Fix                                                     |
+| ---------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------- |
+| `Invalid environment variables` no boot        | Faltando key em `.env.local` ou `HASH_SALT` < 32 chars | Veja a lista de keys no erro; complete em `.env.local`. |
+| `supabase: command not found`                  | CLI não está no PATH                                   | Use `pnpm exec supabase ...` ou instale globalmente.    |
+| `Project not linked` ao rodar `pnpm db:types`  | Falta rodar `supabase link --project-ref`              | Execute o passo 2.4.                                    |
+| `supabase link` pede senha do banco            | Esperado                                               | Cole a senha definida em 2.1.                           |
+| `node_modules/.bin/` vazio após `pnpm install` | Cache pnpm corrompido                                  | `rm -rf node_modules && pnpm install`                   |
+
+---
+
+## 9. GitHub Actions Secrets (CI/CD)
+
+Configurados pelo `@devops` durante Story 1.3 — listados aqui só para referência. Listar com `gh secret list --repo helionj/new-biolink`. **Valores nunca são commitados nem logados.**
+
+| Secret                          | Origem                                                                              | Usado em                                                                 |
+| ------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Supabase Dashboard → Settings → API → Project URL                                   | job `build`                                                              |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase Dashboard → Settings → API → anon public                                   | job `build`                                                              |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Supabase Dashboard → Settings → API → service_role                                  | job `build`                                                              |
+| `HASH_SALT`                     | `openssl rand -hex 32` (≥ 32 chars; **diferente** do `.env.local` e do de produção) | job `build`                                                              |
+| `SUPABASE_ACCESS_TOKEN`         | `supabase.com/dashboard/account/tokens` (Personal Access Token)                     | job `test-integration` (CLI auth para `supabase branches create/delete`) |
+| `SUPABASE_PROJECT_REF`          | `ibpliihqaceafdykgwiu` (projeto Supabase de dev — parent dos branches PR)           | job `test-integration`                                                   |
+
+> **Adicionar/atualizar secret:** `gh secret set <NAME> --repo helionj/new-biolink` (o `gh` lê o valor de stdin — nunca aparece no transcript).
+
+---
+
+## 10. Vercel Environment Variables (Deploy)
+
+Configurados em **Vercel Project Settings → Environment Variables**. URL de produção: `https://new-biolink.vercel.app`.
+
+| Variável                        | Production                                                                           | Preview                      | Development             |
+| ------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------- | ----------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | mesmo do GHA                                                                         | mesmo                        | mesmo                   |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | mesmo                                                                                | mesmo                        | mesmo                   |
+| `SUPABASE_SERVICE_ROLE_KEY`     | mesmo (`Encrypted`/`Sensitive`)                                                      | mesmo                        | mesmo                   |
+| `NEXT_PUBLIC_SITE_URL`          | `https://new-biolink.vercel.app`                                                     | herda `$VERCEL_URL` ou vazio | `http://localhost:3000` |
+| `HASH_SALT`                     | **novo** `openssl rand -hex 32` (≠ dev, ≠ CI; **não rotacionar** sem migration plan) | mesmo de Production          | local-dev value         |
+
+> **Deployment Protection** está desabilitada para tornar Vercel Previews públicos (validação por reviewers externos sem login). Para features sensíveis pré-launch, esconder atrás de feature flag.
+
+---
+
+## 11. Husky + lint-staged + gitleaks (hooks locais)
+
+Story 1.3 adicionou hooks Git que rodam automaticamente:
+
+| Hook         | Comando                                                              | Bloqueia se                                                |
+| ------------ | -------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `pre-commit` | `pnpm exec lint-staged` + `gitleaks protect --staged` (se instalado) | ESLint/Prettier falha em staged OU gitleaks detecta secret |
+| `pre-push`   | `pnpm typecheck`                                                     | TS reporta erro                                            |
+
+**Instalar gitleaks localmente (opcional, recomendado):**
+
+```bash
+# macOS
+brew install gitleaks
+
+# Linux (binário)
+# https://github.com/gitleaks/gitleaks/releases
+```
+
+Sem gitleaks local, o `pre-commit` mostra um warning e segue — o CI faz o scan canônico via `gitleaks/gitleaks-action@v2`, então não há risco de vazamento entrar em `main`.
+
+**Allowlist** está em `.gitleaks.toml` (rules default + ignorar `.env.example`, `docs/*.md`, `pnpm-lock.yaml`).
 
 ---
 
@@ -175,6 +233,7 @@ Se os 4 comandos saírem com exit code `0`, seu ambiente está pronto.
 
 - [`docs/architecture.md`](architecture.md) §Frontend Services Layer > API Client Setup
 - [`docs/architecture.md`](architecture.md) §Tech Stack
-- Story 1.2 (esta) — onde a configuração inicial mora
-- Story 1.3 — CI/CD com Supabase Branching e secrets em Vercel/GHA
+- [`docs/architecture.md`](architecture.md) §CI/CD Pipeline (Story 1.3)
+- Story 1.2 — setup inicial Supabase clients + env validation
+- Story 1.3 — CI/CD pipeline, Husky, secrets em Vercel/GHA
 - Story 1.4 — primeiro schema real

@@ -1,0 +1,7 @@
+pnpm exec lint-staged
+
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --no-banner --redact
+else
+  echo "⚠ gitleaks não instalado localmente — pulando scan (CI faz o scan canônico via gitleaks-action@v2)"
+fi

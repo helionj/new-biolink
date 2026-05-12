@@ -25,11 +25,11 @@ Comercialmente, o mercado é saturado e maduro — não há urgência de mercado
 
 ### Change Log
 
-| Data | Versão | Descrição | Autor |
-|------|--------|-----------|-------|
-| 2026-05-06 | 0.1 | Draft inicial do PRD a partir de `brief.md` (modo YOLO) | @pm (Morgan) |
-| 2026-05-07 | 0.2 | Ajustes: adoção de Next.js 15; remoção de testes E2E (Playwright); remoção de stack Supabase local (testes via Supabase Branching); padronização total das stories em PT-BR | @pm (Morgan) |
-| 2026-05-07 | 0.3 | Correção da versão do Next.js para a última estável (16.x) — substitui menções a Next.js 15 introduzidas em 0.2 | @pm (Morgan) |
+| Data       | Versão | Descrição                                                                                                                                                                   | Autor        |
+| ---------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| 2026-05-06 | 0.1    | Draft inicial do PRD a partir de `brief.md` (modo YOLO)                                                                                                                     | @pm (Morgan) |
+| 2026-05-07 | 0.2    | Ajustes: adoção de Next.js 15; remoção de testes E2E (Playwright); remoção de stack Supabase local (testes via Supabase Branching); padronização total das stories em PT-BR | @pm (Morgan) |
+| 2026-05-07 | 0.3    | Correção da versão do Next.js para a última estável (16.x) — substitui menções a Next.js 15 introduzidas em 0.2                                                             | @pm (Morgan) |
 
 ---
 
@@ -73,7 +73,7 @@ Comercialmente, o mercado é saturado e maduro — não há urgência de mercado
 - **NFR15:** Toda feature/decisão neste PRD deve traçar a `docs/brief.md` ou requirements explícitos do stakeholder (Constitution Article IV — No Invention).
 - **NFR16:** Acessibilidade alvo **WCAG 2.1 nível AA** na página pública e dashboard. (Lighthouse Accessibility ≥ 90 é o gate prático.)
 - **NFR17:** **Email transacional limitado** ao built-in do Supabase Auth (verificação + reset). Sem provider externo no MVP. (Open question resolvida)
-- **NFR18:** **Sem custom domain** no MVP — produção usa subpath/subdomínio Vercel (`biolink-app.vercel.app/@username` ou similar). Custom domain → Phase 2. (Open question resolvida)
+- **NFR18:** **Sem custom domain** no MVP — produção usa subpath/subdomínio Vercel (`new-biolink.vercel.app/@username`). Custom domain → Phase 2. (Open question resolvida)
 - **NFR19:** Repositório público no GitHub desde o dia 1, com `LICENSE` (MIT, sujeito a confirmação @architect) e `README` em qualidade pública. (Appendix B)
 - **NFR20:** **Sem Supabase local** (Docker stack). Desenvolvimento e CI usam projeto Supabase remoto + Supabase Branching para isolamento de dados em PRs/testes. (Decisão 2026-05-07)
 
@@ -122,6 +122,7 @@ A linguagem visual segue tradição "linktree-like" mas com refinamento: tipogra
 **Status:** placeholder no MVP — refino delegado a `@ux-design-expert` durante criação do `docs/frontend-spec.md`.
 
 **Seed para MVP:**
+
 - **Mood:** moderno-minimalista, mobile-first, "indie tech".
 - **Paleta tentativa:** brand color seed `#7C3AED` (violeta), neutros `slate` Tailwind, branco/preto puros para light/dark.
 - **Tipografia:** sans-serif sistema (Inter ou system stack) — sem custom fonts no MVP para preservar bundle.

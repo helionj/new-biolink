@@ -20,11 +20,11 @@ A abordagem unificada combina o que tradicionalmente seriam documentos separados
 
 ### Change Log
 
-| Date | Version | Description | Author |
-|------|---------|-------------|--------|
-| 2026-05-07 | 0.1 | Draft inicial completo (modo YOLO) a partir de `docs/brief.md` v1 e `docs/prd.md` v0.3 | @architect (Aria) |
-| 2026-05-07 | 0.2 | Incorpora findings do `*execute-checklist architect-checklist` (Risk 1-3): adiciona §Resilience, Degraded Mode & Recovery; documenta backup strategy do Supabase free tier; helper `revalidateUserSurface`; ESLint `no-restricted-imports` concreto; Dependabot na pipeline; encryption-at-rest explícito | @architect (Aria) |
-| 2026-05-07 | 0.3 | **Tech Stack §CSS Framework:** Tailwind 3.x → **Tailwind 4.x** (default Next 16; CSS-first config via `@theme` em `app/globals.css` em vez de `tailwind.config.ts`). Atualizado quality gate findings da Story 1.1: Project Structure (§High Level + §Source Tree) também removem referência a `tailwind.config.ts` e adicionam `postcss.config.mjs`. Razão: `create-next-app@latest` para Next 16 instala Tailwind 4 default; CSS-first alinha melhor com PRD §Premissas Técnicas ("design tokens via CSS variables"). | @architect (Aria) |
+| Date       | Version | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Author            |
+| ---------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| 2026-05-07 | 0.1     | Draft inicial completo (modo YOLO) a partir de `docs/brief.md` v1 e `docs/prd.md` v0.3                                                                                                                                                                                                                                                                                                                                                                                                                                  | @architect (Aria) |
+| 2026-05-07 | 0.2     | Incorpora findings do `*execute-checklist architect-checklist` (Risk 1-3): adiciona §Resilience, Degraded Mode & Recovery; documenta backup strategy do Supabase free tier; helper `revalidateUserSurface`; ESLint `no-restricted-imports` concreto; Dependabot na pipeline; encryption-at-rest explícito                                                                                                                                                                                                               | @architect (Aria) |
+| 2026-05-07 | 0.3     | **Tech Stack §CSS Framework:** Tailwind 3.x → **Tailwind 4.x** (default Next 16; CSS-first config via `@theme` em `app/globals.css` em vez de `tailwind.config.ts`). Atualizado quality gate findings da Story 1.1: Project Structure (§High Level + §Source Tree) também removem referência a `tailwind.config.ts` e adicionam `postcss.config.mjs`. Razão: `create-next-app@latest` para Next 16 instala Tailwind 4 default; CSS-first alinha melhor com PRD §Premissas Técnicas ("design tokens via CSS variables"). | @architect (Aria) |
 
 ---
 
@@ -42,10 +42,12 @@ Esta arquitetura entrega os objetivos do PRD: **Lighthouse ≥ 90**, **LCP < 2.5
 
 **Platform:** **Vercel + Supabase** (free tier durante MVP)
 **Key Services:**
+
 - **Vercel:** Hosting do Next.js, Edge Network/CDN, Vercel Functions (SSR + Server Actions), Preview Deployments por PR, Vercel Analytics (built-in, free tier — Web Vitals).
 - **Supabase:** Postgres 15+ (managed), Supabase Auth (email/password), Supabase Storage (bucket `avatars`), Supabase Branching (CI integration tests), Supabase Dashboard (logs, advisors, monitoring).
 
 **Deployment Host and Regions:**
+
 - **Vercel:** auto (Edge — multi-region; Functions IAD1 default, ajustável para `gru1` São Paulo se latência LATAM justificar pós-MVP).
 - **Supabase:** **`sa-east-1` (São Paulo)** — região mais próxima do público-alvo lusófono (brief §Target Users). Reduz latência DB→Function quando ambos estiverem em SP no Phase 2.
 
@@ -145,7 +147,7 @@ graph TB
 - **Token-Based Theming:** CSS variables sob `[data-theme="..."]` para 3 temas. _Rationale:_ FR12; permite SSR sem flash de tema.
 - **Schema-First Validation com Zod:** schemas Zod definem inputs de Server Actions, env vars, e gerar types compartilhados. _Rationale:_ single source of truth para validação client+server; integra com react-hook-form.
 - **Branched Database Testing:** integration tests em CI rodam contra Supabase Branch efêmero por PR. _Rationale:_ NFR7 do PRD; sem necessidade de stack Supabase local (decisão 2026-05-07).
-- **Hashed PII for Privacy:** ip_hash + user_agent_hash em analytics events. _Rationale:_ FR9, FR10, brief §LGPD-mindful; reduz risco LGPD sem perder utilidade analítica.
+- **Hashed PII for Privacy:** ip*hash + user_agent_hash em analytics events. \_Rationale:* FR9, FR10, brief §LGPD-mindful; reduz risco LGPD sem perder utilidade analítica.
 
 ---
 
@@ -155,40 +157,40 @@ graph TB
 
 ### Technology Stack Table
 
-| Category | Technology | Version | Purpose | Rationale |
-|---|---|---|---|---|
-| **Frontend Language** | TypeScript | 5.x (strict) | Type safety end-to-end | PRD §Premissas Técnicas: `strict: true` + `noUncheckedIndexedAccess: true`. |
-| **Frontend Framework** | Next.js | 16.x (latest stable) | App Router, RSC, SSR, Server Actions | PRD §Arquitetura de Serviço (decisão crítica). |
-| **UI Component Library** | shadcn/ui (Radix UI primitives) | latest | Componentes copy-paste, owned | PRD §Premissas Técnicas; sem dependência runtime. |
-| **Icon Library** | lucide-react | latest | Ícones consistentes (link icons, UI) | Compat shadcn/ui; tree-shakeable; alinhado a FR6. |
-| **State Management** | React Server Components + URL state + `useState` local | nativo | Sem store global | MVP não justifica Zustand/Redux; RSC + Server Actions cobrem 95%. |
-| **Drag-and-Drop** | @dnd-kit/core + @dnd-kit/sortable | latest | Reorder de links (FR7) | Touch-friendly, a11y nativa, ativamente mantido. |
-| **Forms** | react-hook-form + @hookform/resolvers/zod | latest | Forms tipados + validação | PRD §Premissas Técnicas. |
-| **Validation** | Zod | latest | Schemas compartilhados (form + Server Actions + env) | PRD §Premissas Técnicas. |
-| **CSS Framework** | Tailwind CSS | 4.x | Utility-first + design tokens via CSS vars (CSS-first config via `@theme` em `app/globals.css` — sem `tailwind.config.ts`) | PRD §Premissas Técnicas; default do Next.js 16 (validado em Story 1.1). |
-| **Charts (Analytics)** | recharts | latest | Gráficos de série temporal (Story 4.4) | PRD §Story 4.4 menciona "recharts ou similar lightweight"; recharts é o escolhido. |
-| **Backend Language** | TypeScript | 5.x | Mesmo runtime do frontend | Server Actions e Route Handlers em TS. |
-| **Backend Framework** | Next.js Server Actions + Route Handlers | 16.x | API layer | PRD §Arquitetura de Serviço. |
-| **API Style** | Server Actions (RPC-style) + 2 Route Handlers (POST /api/track/*) | nativo | Type-safe RPC para CRUD; HTTP para analytics | Server Actions cobrem 95%; Route Handlers necessários para tracking público sem auth. |
-| **Database** | Postgres (via Supabase) | 15+ | Persistência relacional + RLS | PRD §Premissas Técnicas. |
-| **Database Client** | @supabase/supabase-js + @supabase/ssr | latest | Clients server/browser | PRD §Premissas Técnicas. |
-| **Cache** | Next.js `unstable_cache` + `revalidatePath`/`revalidateTag` | nativo | Cache de páginas públicas com revalidação | Atende NFR2-4 sem infra extra. |
-| **File Storage** | Supabase Storage (bucket `avatars`) | nativo | Upload de avatar (FR13) | RLS policy no bucket; max 1 MB jpg/png/webp. |
-| **Authentication** | Supabase Auth (email + password) | nativo | Identidade dos usuários | PRD FR1, FR2; sem OAuth no MVP. |
-| **Frontend Testing** | Vitest + @testing-library/react + @testing-library/jest-dom | latest | Component tests | PRD §Requisitos de Testes; cobertura ≥ 50%. |
-| **Backend Testing** | Vitest + Supabase JS SDK contra Supabase Branch | latest | Unit + Integration (Server Actions, RLS) | PRD §Requisitos de Testes; cobertura ≥ 70%. |
-| **E2E Testing** | **N/A** | — | Sem E2E no MVP | PRD decisão crítica 2026-05-07; validação manual + integration tests cobrem fluxos. |
-| **Build Tool** | Next.js (Turbopack) | nativo | Build + dev server | Default do Next.js 16. |
-| **Bundler** | Turbopack (dev) / Webpack (build) | nativo | Bundling | Default Next.js 16. |
-| **IaC Tool** | **N/A** (MVP) | — | Sem IaC explícito | Vercel + Supabase configurados via dashboard + Supabase CLI; revisitar em Phase 2 (Terraform/Pulumi). |
-| **CI/CD** | GitHub Actions + Vercel | nativo | Pipeline + auto-deploy | PRD §Premissas Técnicas; NFR8. |
-| **Monitoring** | Vercel Analytics (Web Vitals) + Supabase Dashboard + Vercel Logs | free tier | Observabilidade mínima | Free; sem Sentry/Datadog no MVP (constraint budget). |
-| **Logging** | `console.*` capturado por Vercel Logs + Supabase Logs | nativo | Logs operacionais | Suficiente para 5+ usuários; revisitar pós-MVP. |
-| **Secret Scanning** | gitleaks (pre-commit + CI) | latest | NFR10 (0 secrets versionados) | Hook Husky + GitHub Action. |
-| **Linting** | ESLint (next/core-web-vitals) + Prettier + eslint-plugin-import | latest | Code quality | PRD §Premissas Técnicas. |
-| **Pre-commit** | Husky + lint-staged | latest | Gates locais (typecheck, lint, gitleaks) | PRD §Premissas Técnicas. |
-| **Package Manager** | pnpm | 9.x+ | Velocidade + workspaces-ready | Default moderno; Vercel suporta. |
-| **Node Runtime** | Node.js | 20.x LTS | Runtime Vercel Functions | LTS atual; compat Next.js 16. |
+| Category                 | Technology                                                         | Version              | Purpose                                                                                                                    | Rationale                                                                                             |
+| ------------------------ | ------------------------------------------------------------------ | -------------------- | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **Frontend Language**    | TypeScript                                                         | 5.x (strict)         | Type safety end-to-end                                                                                                     | PRD §Premissas Técnicas: `strict: true` + `noUncheckedIndexedAccess: true`.                           |
+| **Frontend Framework**   | Next.js                                                            | 16.x (latest stable) | App Router, RSC, SSR, Server Actions                                                                                       | PRD §Arquitetura de Serviço (decisão crítica).                                                        |
+| **UI Component Library** | shadcn/ui (Radix UI primitives)                                    | latest               | Componentes copy-paste, owned                                                                                              | PRD §Premissas Técnicas; sem dependência runtime.                                                     |
+| **Icon Library**         | lucide-react                                                       | latest               | Ícones consistentes (link icons, UI)                                                                                       | Compat shadcn/ui; tree-shakeable; alinhado a FR6.                                                     |
+| **State Management**     | React Server Components + URL state + `useState` local             | nativo               | Sem store global                                                                                                           | MVP não justifica Zustand/Redux; RSC + Server Actions cobrem 95%.                                     |
+| **Drag-and-Drop**        | @dnd-kit/core + @dnd-kit/sortable                                  | latest               | Reorder de links (FR7)                                                                                                     | Touch-friendly, a11y nativa, ativamente mantido.                                                      |
+| **Forms**                | react-hook-form + @hookform/resolvers/zod                          | latest               | Forms tipados + validação                                                                                                  | PRD §Premissas Técnicas.                                                                              |
+| **Validation**           | Zod                                                                | latest               | Schemas compartilhados (form + Server Actions + env)                                                                       | PRD §Premissas Técnicas.                                                                              |
+| **CSS Framework**        | Tailwind CSS                                                       | 4.x                  | Utility-first + design tokens via CSS vars (CSS-first config via `@theme` em `app/globals.css` — sem `tailwind.config.ts`) | PRD §Premissas Técnicas; default do Next.js 16 (validado em Story 1.1).                               |
+| **Charts (Analytics)**   | recharts                                                           | latest               | Gráficos de série temporal (Story 4.4)                                                                                     | PRD §Story 4.4 menciona "recharts ou similar lightweight"; recharts é o escolhido.                    |
+| **Backend Language**     | TypeScript                                                         | 5.x                  | Mesmo runtime do frontend                                                                                                  | Server Actions e Route Handlers em TS.                                                                |
+| **Backend Framework**    | Next.js Server Actions + Route Handlers                            | 16.x                 | API layer                                                                                                                  | PRD §Arquitetura de Serviço.                                                                          |
+| **API Style**            | Server Actions (RPC-style) + 2 Route Handlers (POST /api/track/\*) | nativo               | Type-safe RPC para CRUD; HTTP para analytics                                                                               | Server Actions cobrem 95%; Route Handlers necessários para tracking público sem auth.                 |
+| **Database**             | Postgres (via Supabase)                                            | 15+                  | Persistência relacional + RLS                                                                                              | PRD §Premissas Técnicas.                                                                              |
+| **Database Client**      | @supabase/supabase-js + @supabase/ssr                              | latest               | Clients server/browser                                                                                                     | PRD §Premissas Técnicas.                                                                              |
+| **Cache**                | Next.js `unstable_cache` + `revalidatePath`/`revalidateTag`        | nativo               | Cache de páginas públicas com revalidação                                                                                  | Atende NFR2-4 sem infra extra.                                                                        |
+| **File Storage**         | Supabase Storage (bucket `avatars`)                                | nativo               | Upload de avatar (FR13)                                                                                                    | RLS policy no bucket; max 1 MB jpg/png/webp.                                                          |
+| **Authentication**       | Supabase Auth (email + password)                                   | nativo               | Identidade dos usuários                                                                                                    | PRD FR1, FR2; sem OAuth no MVP.                                                                       |
+| **Frontend Testing**     | Vitest + @testing-library/react + @testing-library/jest-dom        | latest               | Component tests                                                                                                            | PRD §Requisitos de Testes; cobertura ≥ 50%.                                                           |
+| **Backend Testing**      | Vitest + Supabase JS SDK contra Supabase Branch                    | latest               | Unit + Integration (Server Actions, RLS)                                                                                   | PRD §Requisitos de Testes; cobertura ≥ 70%.                                                           |
+| **E2E Testing**          | **N/A**                                                            | —                    | Sem E2E no MVP                                                                                                             | PRD decisão crítica 2026-05-07; validação manual + integration tests cobrem fluxos.                   |
+| **Build Tool**           | Next.js (Turbopack)                                                | nativo               | Build + dev server                                                                                                         | Default do Next.js 16.                                                                                |
+| **Bundler**              | Turbopack (dev) / Webpack (build)                                  | nativo               | Bundling                                                                                                                   | Default Next.js 16.                                                                                   |
+| **IaC Tool**             | **N/A** (MVP)                                                      | —                    | Sem IaC explícito                                                                                                          | Vercel + Supabase configurados via dashboard + Supabase CLI; revisitar em Phase 2 (Terraform/Pulumi). |
+| **CI/CD**                | GitHub Actions + Vercel                                            | nativo               | Pipeline + auto-deploy                                                                                                     | PRD §Premissas Técnicas; NFR8.                                                                        |
+| **Monitoring**           | Vercel Analytics (Web Vitals) + Supabase Dashboard + Vercel Logs   | free tier            | Observabilidade mínima                                                                                                     | Free; sem Sentry/Datadog no MVP (constraint budget).                                                  |
+| **Logging**              | `console.*` capturado por Vercel Logs + Supabase Logs              | nativo               | Logs operacionais                                                                                                          | Suficiente para 5+ usuários; revisitar pós-MVP.                                                       |
+| **Secret Scanning**      | gitleaks (pre-commit + CI)                                         | latest               | NFR10 (0 secrets versionados)                                                                                              | Hook Husky + GitHub Action.                                                                           |
+| **Linting**              | ESLint (next/core-web-vitals) + Prettier + eslint-plugin-import    | latest               | Code quality                                                                                                               | PRD §Premissas Técnicas.                                                                              |
+| **Pre-commit**           | Husky + lint-staged                                                | latest               | Gates locais (typecheck, lint, gitleaks)                                                                                   | PRD §Premissas Técnicas.                                                                              |
+| **Package Manager**      | pnpm                                                               | 9.x+                 | Velocidade + workspaces-ready                                                                                              | Default moderno; Vercel suporta.                                                                      |
+| **Node Runtime**         | Node.js                                                            | 20.x LTS             | Runtime Vercel Functions                                                                                                   | LTS atual; compat Next.js 16.                                                                         |
 
 ---
 
@@ -201,6 +203,7 @@ graph TB
 **Purpose:** Identidade pública de cada usuário (FR4, FR13). 1:1 com `auth.users` (Supabase Auth).
 
 **Key Attributes:**
+
 - `id`: uuid (PK, ref `auth.users.id`, on delete cascade)
 - `username`: citext UNIQUE (3-30 chars, regex `^[a-z0-9-]+$`, não-reservado) — FR4
 - `display_name`: text (≤ 50 chars) — FR13
@@ -236,6 +239,7 @@ export type Profile = {
 **Purpose:** Container de configuração da página pública (FR5, FR12). 1:1 com Profile no MVP.
 
 **Key Attributes:**
+
 - `id`: uuid (PK)
 - `profile_id`: uuid (FK → profiles.id, UNIQUE, on delete cascade)
 - `theme`: enum `'light' | 'dark' | 'brand'` default `'light'` — FR12
@@ -268,6 +272,7 @@ export type Page = {
 **Purpose:** Item clicável na página pública (FR6, FR7, FR8).
 
 **Key Attributes:**
+
 - `id`: uuid (PK)
 - `page_id`: uuid (FK → pages.id, on delete cascade)
 - `title`: text NOT NULL (≤ 100 chars) — FR6
@@ -305,6 +310,7 @@ export type Link = {
 **Purpose:** Registro bruto de cliques em links (FR9). Hashed PII para LGPD-mindfulness.
 
 **Key Attributes:**
+
 - `id`: bigint (PK, identity) — escolhido sobre uuid pois volume pode ser alto e bigint é mais compacto/rápido para tabelas append-only
 - `link_id`: uuid (FK → links.id, on delete cascade)
 - `clicked_at`: timestamptz default `now()`
@@ -334,6 +340,7 @@ export type ClickEvent = {
 **Purpose:** Registro bruto de visualizações de página (FR10). Mesma estratégia de privacidade.
 
 **Key Attributes:**
+
 - `id`: bigint (PK, identity)
 - `page_id`: uuid (FK → pages.id, on delete cascade)
 - `viewed_at`: timestamptz default `now()`
@@ -349,6 +356,7 @@ export type ClickEvent = {
 ### Aggregation Views (Story 4.3)
 
 Views regulares (não-materialized no MVP):
+
 - `link_clicks_7d(link_id, day, count)`
 - `link_clicks_30d(link_id, day, count)`
 - `page_views_7d(page_id, day, count)`
@@ -377,29 +385,42 @@ Views regulares (não-materialized no MVP):
 // server/profile/actions.ts
 export async function updateProfile(input: UpdateProfileInput): Promise<ActionResult<Profile>>;
 export async function updateUsername(input: { username: string }): Promise<ActionResult<Profile>>;
-export async function uploadAvatar(formData: FormData): Promise<ActionResult<{ avatar_url: string }>>;
+export async function uploadAvatar(
+  formData: FormData,
+): Promise<ActionResult<{ avatar_url: string }>>;
 
 // server/links/actions.ts
 export async function createLink(input: CreateLinkInput): Promise<ActionResult<Link>>;
 export async function updateLink(input: UpdateLinkInput): Promise<ActionResult<Link>>;
 export async function deleteLink(input: { id: string }): Promise<ActionResult<void>>;
-export async function toggleLinkVisibility(input: { id: string; is_visible: boolean }): Promise<ActionResult<Link>>;
+export async function toggleLinkVisibility(input: {
+  id: string;
+  is_visible: boolean;
+}): Promise<ActionResult<Link>>;
 export async function reorderLinks(input: { orderedIds: string[] }): Promise<ActionResult<void>>;
 
 // server/page/actions.ts
-export async function updateTheme(input: { theme: 'light' | 'dark' | 'brand' }): Promise<ActionResult<Page>>;
-export async function togglePublished(input: { is_published: boolean }): Promise<ActionResult<Page>>;
+export async function updateTheme(input: {
+  theme: 'light' | 'dark' | 'brand';
+}): Promise<ActionResult<Page>>;
+export async function togglePublished(input: {
+  is_published: boolean;
+}): Promise<ActionResult<Page>>;
 
 // server/account/actions.ts
 export async function exportAccountData(): Promise<ActionResult<AccountExport>>;
-export async function deleteAccount(input: { confirmUsername: string }): Promise<ActionResult<void>>;
+export async function deleteAccount(input: {
+  confirmUsername: string;
+}): Promise<ActionResult<void>>;
 
 // server/auth/actions.ts (wrappers sobre supabase.auth)
 export async function signUp(input: SignUpInput): Promise<ActionResult<void>>;
 export async function signIn(input: SignInInput): Promise<ActionResult<void>>;
 export async function signOut(): Promise<ActionResult<void>>;
 export async function requestPasswordReset(input: { email: string }): Promise<ActionResult<void>>;
-export async function confirmPasswordReset(input: { newPassword: string }): Promise<ActionResult<void>>;
+export async function confirmPasswordReset(input: {
+  newPassword: string;
+}): Promise<ActionResult<void>>;
 ```
 
 ### Route Handlers
@@ -410,13 +431,13 @@ export async function confirmPasswordReset(input: { newPassword: string }): Prom
 // Resolve link via service-role client; rejeita 404 se inexistente ou page.is_published=false.
 // Hashifica user-agent e ip; insert em click_events.
 // Rate limit: 60 req/min por ip_hash (upstash-redis-free OU memory fallback).
-POST /api/track/click
+POST / api / track / click;
 
 // app/api/track/view/route.ts
 // Body: { page_id: string }
 // Deduplicação: 1 view por (ip_hash, page_id) em janela de 30 min.
 // Mesma estratégia de hash.
-POST /api/track/view
+POST / api / track / view;
 ```
 
 > **Nota:** tracking de page view é preferencialmente feito **server-side** dentro do Server Component da página pública (Story 4.2 AC2 — "preferível, evita JS extra"). O Route Handler `/api/track/view` existe como fallback para cenários onde o RSC não pode inserir (ex: página em ISR já renderizada).
@@ -441,6 +462,7 @@ export type ActionResult<T> =
 **Responsibility:** Validar sessão Supabase em rotas privadas; redirecionar guests; permitir rotas públicas (`/@username`, `/`, `/login`, `/signup`, `/reset-password`, `/api/track/*`).
 
 **Key Interfaces:**
+
 - `middleware.ts` matcher pattern excluindo assets e rotas públicas.
 - `@supabase/ssr` createServerClient para refresh de sessão automático.
 
@@ -453,6 +475,7 @@ export type ActionResult<T> =
 **Responsibility:** Render SSR de `/@<username>` — fetch de profile + page + links visíveis em uma única query, render layout vertical mobile-first, registro server-side de page view (Story 4.2).
 
 **Key Interfaces:**
+
 - `app/@[username]/page.tsx` (Server Component)
 - `lib/supabase/server.ts` (anon client com RLS)
 - `lib/track.ts` (insertPageView server-side)
@@ -466,6 +489,7 @@ export type ActionResult<T> =
 **Responsibility:** Páginas `/signup`, `/login`, `/reset-password`, `/auth/callback`. Forms validados client-side (react-hook-form + Zod), submetidos a Server Actions.
 
 **Key Interfaces:**
+
 - `app/(auth)/signup/page.tsx`, `app/(auth)/login/page.tsx`, `app/(auth)/reset-password/page.tsx`
 - `components/auth/SignupForm.tsx`, etc.
 - Server Actions de `server/auth/`
@@ -477,6 +501,7 @@ export type ActionResult<T> =
 **Responsibility:** Layout autenticado (`/dashboard/*`) — sidebar (desktop) / drawer (mobile), header com avatar dropdown, navegação entre tabs (Links, Profile, Theme, Analytics, Account).
 
 **Key Interfaces:**
+
 - `app/dashboard/layout.tsx`
 - `components/dashboard/Sidebar.tsx`, `MobileDrawer.tsx`, `UserMenu.tsx`
 
@@ -487,6 +512,7 @@ export type ActionResult<T> =
 **Responsibility:** CRUD de links (FR6) + reorder drag-drop (FR7) + toggle visibility (FR8).
 
 **Key Interfaces:**
+
 - `app/dashboard/page.tsx` (Server Component lista links)
 - `components/links/LinkList.tsx`, `LinkRow.tsx`, `AddLinkModal.tsx`
 - @dnd-kit/core + @dnd-kit/sortable
@@ -499,6 +525,7 @@ export type ActionResult<T> =
 **Responsibility:** Edição de profile (FR13) e seleção de tema (FR12) com preview live.
 
 **Key Interfaces:**
+
 - `app/dashboard/profile/page.tsx`, `app/dashboard/theme/page.tsx`
 - `components/profile/AvatarUpload.tsx`
 - Server Actions de `server/profile/`, `server/page/`
@@ -510,6 +537,7 @@ export type ActionResult<T> =
 **Responsibility:** Dashboard de métricas (FR11) — 4 cards de totais, gráfico de série temporal, tabela por link.
 
 **Key Interfaces:**
+
 - `app/dashboard/analytics/page.tsx` (Server Component fetch das views agregadas)
 - `components/analytics/MetricsCards.tsx`, `TimeSeriesChart.tsx`, `LinksTable.tsx`
 - recharts
@@ -521,6 +549,7 @@ export type ActionResult<T> =
 **Responsibility:** Receber events de cliques (FR9), opcionalmente views (FR10) — rate-limit, hash de PII, insert.
 
 **Key Interfaces:**
+
 - `app/api/track/click/route.ts`
 - `app/api/track/view/route.ts`
 - `lib/hash.ts` (sha256 com salt)
@@ -533,6 +562,7 @@ export type ActionResult<T> =
 **Responsibility:** Export de dados (FR16) e exclusão de conta (FR15) com cascade.
 
 **Key Interfaces:**
+
 - `app/dashboard/account/page.tsx`
 - Server Actions de `server/account/` (executam com service-role para exclusão segura)
 
@@ -549,6 +579,7 @@ export type ActionResult<T> =
 **Responsibility:** Utilitários cross-cutting.
 
 **Key Interfaces:**
+
 - `lib/supabase/server.ts`, `lib/supabase/client.ts`, `lib/supabase/admin.ts` (service-role)
 - `lib/env.ts` (validação Zod de env vars)
 - `lib/validators/*` (Zod schemas reutilizáveis)
@@ -562,6 +593,7 @@ export type ActionResult<T> =
 **Responsibility:** Quality gates antes de merge; auto-deploy em main.
 
 **Key Interfaces:**
+
 - `.github/workflows/ci.yml` (lint, typecheck, test:unit, test:integration, test:components, build, gitleaks)
 - `.github/workflows/lighthouse.yml` (Lighthouse CI em rotas-chave)
 - Vercel deploy hooks
@@ -969,6 +1001,7 @@ CREATE POLICY "page_views_select_own" ON page_views FOR SELECT USING (
 ```
 
 > **Notas para @data-engineer:**
+>
 > - Validar se `UNIQUE (page_id, position) DEFERRABLE INITIALLY DEFERRED` é a melhor estratégia para reorder atômico vs. trigger de "shift-on-delete".
 > - Confirmar volume esperado de `click_events` justifica `bigint` ID (default vs. uuid).
 > - Considerar partitioning por mês em `click_events`/`page_views` se NFR12 (retenção 90d) virar bottleneck.
@@ -1163,23 +1196,25 @@ export async function middleware(req: NextRequest) {
     {
       cookies: {
         getAll: () => req.cookies.getAll(),
-        setAll: (toSet) => toSet.forEach(({ name, value, options }) =>
-          res.cookies.set(name, value, options)),
+        setAll: (toSet) =>
+          toSet.forEach(({ name, value, options }) => res.cookies.set(name, value, options)),
       },
     },
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const path = req.nextUrl.pathname;
 
-  if (PROTECTED_PREFIXES.some(p => path.startsWith(p)) && !user) {
+  if (PROTECTED_PREFIXES.some((p) => path.startsWith(p)) && !user) {
     const url = req.nextUrl.clone();
     url.pathname = '/login';
     url.searchParams.set('next', path);
     return NextResponse.redirect(url);
   }
 
-  if (AUTH_PAGES.some(p => path.startsWith(p)) && user) {
+  if (AUTH_PAGES.some((p) => path.startsWith(p)) && user) {
     const url = req.nextUrl.clone();
     url.pathname = '/dashboard';
     return NextResponse.redirect(url);
@@ -1189,9 +1224,7 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 };
 ```
 
@@ -1210,8 +1243,8 @@ export async function createClient() {
   return createServerClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
     cookies: {
       getAll: () => cookieStore.getAll(),
-      setAll: (toSet) => toSet.forEach(({ name, value, options }) =>
-        cookieStore.set(name, value, options)),
+      setAll: (toSet) =>
+        toSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options)),
     },
   });
 }
@@ -1255,7 +1288,7 @@ import { revalidatePath } from 'next/cache';
  */
 export function revalidateUserSurface(
   username: string | null | undefined,
-  opts: { dashboardOnly?: boolean } = {}
+  opts: { dashboardOnly?: boolean } = {},
 ): void {
   revalidatePath('/dashboard', 'layout');
   if (!opts.dashboardOnly && username) {
@@ -1276,7 +1309,10 @@ import type { Link } from '@/lib/supabase/types';
 
 const CreateLinkInput = z.object({
   title: z.string().trim().min(1).max(100),
-  url: z.string().url().regex(/^https?:\/\//i),
+  url: z
+    .string()
+    .url()
+    .regex(/^https?:\/\//i),
   icon: z.string().max(50).optional(),
 });
 
@@ -1285,11 +1321,17 @@ export type CreateLinkInput = z.infer<typeof CreateLinkInput>;
 export async function createLink(raw: CreateLinkInput): Promise<ActionResult<Link>> {
   const parsed = CreateLinkInput.safeParse(raw);
   if (!parsed.success) {
-    return { ok: false, error: 'Entrada inválida', fieldErrors: parsed.error.flatten().fieldErrors as any };
+    return {
+      ok: false,
+      error: 'Entrada inválida',
+      fieldErrors: parsed.error.flatten().fieldErrors as any,
+    };
   }
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: 'Não autenticado' };
 
   // resolve page + username (1:1 no MVP) — single query
@@ -1367,7 +1409,11 @@ const Body = z.object({ link_id: z.string().uuid() });
 
 export async function POST(req: Request) {
   let body: unknown;
-  try { body = await req.json(); } catch { return NextResponse.json({ error: 'Bad JSON' }, { status: 400 }); }
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Bad JSON' }, { status: 400 });
+  }
 
   const parsed = Body.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
@@ -1431,16 +1477,21 @@ export async function getLinksByPageId(supabase: SupabaseClient<Database>, pageI
     .order('position', { ascending: true });
 }
 
-export async function getVisibleLinksByUsername(supabase: SupabaseClient<Database>, username: string) {
+export async function getVisibleLinksByUsername(
+  supabase: SupabaseClient<Database>,
+  username: string,
+) {
   // Single query com joins via select sintaxe Supabase
   return supabase
     .from('profiles')
-    .select(`
+    .select(
+      `
       id, username, display_name, bio, avatar_url,
       pages!inner(id, theme, is_published,
         links(id, title, url, icon, position)
       )
-    `)
+    `,
+    )
     .eq('username', username)
     .eq('pages.is_published', true)
     .single();
@@ -1511,6 +1562,7 @@ sequenceDiagram
 Ver [Protected Route Pattern](#protected-route-pattern) — `middleware.ts` é o único guard. Server Actions e Server Components também checam `auth.getUser()` defensivamente (defesa em profundidade).
 
 **Authorization model:**
+
 - **Authentication:** Supabase Auth gerencia identidade.
 - **Authorization:** RLS no Postgres é a fonte canônica. Aplicação confia que `supabase.from(...)` com client autenticado retorna apenas o autorizado.
 - **Service-role:** usado apenas em (a) trigger de signup, (b) Route Handler de tracking (insert anônimo), (c) deletar conta (cascade orquestrada). Lint rule bloqueia uso em Client Component.
@@ -1761,7 +1813,7 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 # Vercel (production env vars — UI dashboard)
 # ============================
 # Mesmos valores do .env.local, mas com SUPABASE_URL/KEYS apontando ao projeto de PROD,
-# NEXT_PUBLIC_SITE_URL=https://biolink-app.vercel.app
+# NEXT_PUBLIC_SITE_URL=https://new-biolink.vercel.app
 # HASH_SALT (rotacionável; histórico fica num secret manager se rotação for adotada)
 
 # ============================
@@ -1786,7 +1838,7 @@ const Env = z.object({
   HASH_SALT: z.string().min(32),
 });
 
-export const env = Env.parse(process.env);  // build falha se faltar
+export const env = Env.parse(process.env); // build falha se faltar
 ```
 
 ---
@@ -1796,12 +1848,14 @@ export const env = Env.parse(process.env);  // build falha se faltar
 ### Deployment Strategy
 
 **Frontend Deployment:**
+
 - **Platform:** Vercel (Hobby tier)
 - **Build Command:** `pnpm build` (Next.js auto-detect)
 - **Output Directory:** `.next` (gerenciado pela Vercel)
 - **CDN/Edge:** Vercel Edge Network (multi-region; estático cached automaticamente; SSR via Vercel Functions IAD1 default — revisar `gru1` em Phase 2)
 
 **Backend Deployment:**
+
 - **Platform:** Vercel Functions (Server Actions + Route Handlers) + Supabase Cloud (Postgres + Auth + Storage)
 - **Build Command:** mesmo `pnpm build` (monolithic)
 - **Deployment Method:** Git-based — `main` push triggera deploy de produção; PRs criam preview URLs únicos.
@@ -1930,7 +1984,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          NEXT_PUBLIC_SITE_URL: 'https://biolink-app.vercel.app'
+          NEXT_PUBLIC_SITE_URL: 'https://new-biolink.vercel.app'
           HASH_SALT: ${{ secrets.HASH_SALT }}
         run: pnpm build
 
@@ -1969,57 +2023,58 @@ Cadência de atualização automatizada para reduzir CVE exposure (open-source d
 version: 2
 updates:
   # Dependências npm (semanal)
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-      timezone: "America/Sao_Paulo"
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+      timezone: 'America/Sao_Paulo'
     open-pull-requests-limit: 5
     labels:
-      - "dependencies"
+      - 'dependencies'
     groups:
       # Agrupa updates não-major do mesmo ecosystem em 1 PR
       next-ecosystem:
         patterns:
-          - "next"
-          - "@next/*"
-          - "react"
-          - "react-dom"
+          - 'next'
+          - '@next/*'
+          - 'react'
+          - 'react-dom'
         update-types:
-          - "minor"
-          - "patch"
+          - 'minor'
+          - 'patch'
       supabase-ecosystem:
         patterns:
-          - "@supabase/*"
+          - '@supabase/*'
         update-types:
-          - "minor"
-          - "patch"
+          - 'minor'
+          - 'patch'
       tooling:
         patterns:
-          - "eslint*"
-          - "prettier"
-          - "vitest"
-          - "@testing-library/*"
+          - 'eslint*'
+          - 'prettier'
+          - 'vitest'
+          - '@testing-library/*'
         update-types:
-          - "minor"
-          - "patch"
+          - 'minor'
+          - 'patch'
     # Major updates ficam em PRs individuais para review consciente
     ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
 
   # GitHub Actions (mensal — menos churn)
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "monthly"
+      interval: 'monthly'
     labels:
-      - "ci"
+      - 'ci'
 ```
 
 **Política de Update (`docs/dev-setup.md` ref):**
+
 - **Patches/minors:** Dependabot abre PRs auto; @dev revisa e merge se CI passa.
 - **Majors:** PRs **manuais** com leitura de changelog; abrir issue de tracking primeiro.
 - **CVEs:** alertas do GitHub Security → priorizar como hotfix (Story emergencial via @sm).
@@ -2059,11 +2114,11 @@ jobs:
 
 ### Environments
 
-| Environment | Frontend URL | Backend URL | Purpose |
-|---|---|---|---|
-| **Local Dev** | `http://localhost:3000` | Supabase de dev (remoto, free tier) | Desenvolvimento individual |
-| **Preview (PR)** | `https://biolink-pr-<num>.vercel.app` | Supabase Branch efêmero (criado pelo CI, deletado ao fechar PR) | Review + integration tests |
-| **Production** | `https://biolink-app.vercel.app` (provisório; custom domain → Phase 2 conforme NFR18) | Projeto Supabase de produção (free tier) | Live |
+| Environment      | Frontend URL                                                                          | Backend URL                                                     | Purpose                    |
+| ---------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------- | -------------------------- |
+| **Local Dev**    | `http://localhost:3000`                                                               | Supabase de dev (remoto, free tier)                             | Desenvolvimento individual |
+| **Preview (PR)** | `https://new-biolink-<hash>.vercel.app`                                               | Supabase Branch efêmero (criado pelo CI, deletado ao fechar PR) | Review + integration tests |
+| **Production**   | `https://new-biolink.vercel.app` (provisório; custom domain → Phase 2 conforme NFR18) | Projeto Supabase de produção (free tier)                        | Live                       |
 
 ---
 
@@ -2072,35 +2127,41 @@ jobs:
 ### Security Requirements
 
 **Frontend Security:**
+
 - **CSP Headers:** definidos em `next.config.ts` via `headers()`. Default deny + allow self + supabase.co. Sem `unsafe-inline` em produção (Next.js 16 usa nonces).
 - **XSS Prevention:** React escapa por default. URL de links validada com Zod (`https?://`). `<a target="_blank" rel="noopener noreferrer">` em todos os links públicos (Story 2.7 AC4).
 - **Secure Storage:** session em **HTTP-only cookies** (Supabase SSR default). Sem tokens em localStorage.
 
 **Backend Security:**
+
 - **Input Validation:** Zod em **toda** Server Action e Route Handler antes de qualquer query. Erros de validação retornam mensagens PT-BR seguras (sem stack traces).
 - **Rate Limiting:** `/api/track/click` e `/api/track/view` limitados a 60 req/min por `ip_hash` via lib in-memory (`lib/rate-limit.ts`). Aceitar trade-off: in-memory não persiste entre invocações de função; em escala, migrar para Upstash Redis (free tier).
 - **CORS Policy:** Server Actions usam form-data com same-origin (Next default). Route Handlers `/api/track/*` aceitam mesma origin apenas (`Origin` header check explícito; rejeitar cross-origin com 403).
 - **Service-role isolation:** ESLint rule `no-restricted-imports` bloqueia `lib/supabase/admin` em Client Components. `createAdmin` lança erro em browser (defesa em profundidade).
 
 **Authentication Security:**
+
 - **Token Storage:** cookies HTTP-only + Secure + SameSite=Lax (Supabase SSR default).
 - **Session Management:** refresh automático via middleware; expiração padrão Supabase (1 hora access, 30 dias refresh).
 - **Password Policy:** mínimo 8 caracteres (PRD Story 1.5 AC1). Sem complexidade adicional no MVP — confiamos no Supabase Auth para detection de breached passwords (built-in).
 - **Email enumeration:** mensagens de erro genéricas ("se este email existe…") em login + reset.
 
 **Data Encryption:**
+
 - **At rest:** Postgres do Supabase é hospedado em **AWS RDS com encryption at rest habilitada por default** (AES-256, gerenciada pelo provider). Storage (avatars) também é encryptado em rest (AWS S3 SSE). **Sem trabalho adicional** no MVP — herdado do BaaS.
 - **In transit:** HTTPS/TLS 1.2+ end-to-end (Vercel terminação TLS automática + Supabase API só aceita HTTPS). Comunicação interna Vercel↔Supabase via TLS via Supabase REST/PostgREST.
 - **Backups:** daily backups do Supabase free tier também encryptados em rest pelo provider (AWS RDS snapshot encryption).
 - **Hashes de PII (ip_hash, user_agent_hash):** sha-256 com salt em env var; salt **nunca** versionado, rotacionável (rotação invalida correlação histórica — aceito como trade-off de privacidade).
 
 **Privacy (LGPD-mindful, brief §LGPD):**
+
 - IP e User-Agent **hashados** com salt em env var (rotacionável) antes de qualquer persistência (FR9, FR10).
 - Botão "Exportar dados" em JSON (FR16 / Story 4.5).
 - Botão "Excluir conta" com cascade total via `auth.users` ON DELETE CASCADE (FR15 / Story 4.5).
 - Retenção de events brutos: **90 dias** (NFR12). Cleanup manual no MVP; job programado em Phase 2.
 
 **Open-source posture (Appendix B do brief):**
+
 - **0 secrets versionados:** gitleaks pre-commit + CI (NFR10).
 - `.env.example` commitado, sempre sem valores.
 - LICENSE MIT na raiz desde Story 1.1.
@@ -2109,6 +2170,7 @@ jobs:
 ### Performance Optimization
 
 **Frontend Performance:**
+
 - **Bundle Size Target:** < 200 KB JS gzipped na página pública (NFR4). Garantido por:
   - RSC para todo conteúdo público; client components apenas onde necessário.
   - Tree-shaking lucide-react (importar ícones específicos: `import { Instagram } from 'lucide-react'`).
@@ -2123,6 +2185,7 @@ jobs:
   - Supabase queries em RSC: cacheadas via Next.js `unstable_cache` quando aplicável.
 
 **Backend Performance:**
+
 - **Response Time Target:** P95 < 300 ms para Server Actions; P95 < 500 ms para `/dashboard/analytics`.
 - **Database Optimization:**
   - Índice em `profiles(username)`, `links(page_id, position)`, `click_events(link_id, clicked_at DESC)`, `page_views(page_id, viewed_at DESC)`.
@@ -2263,27 +2326,42 @@ import { setupTestUsers, cleanupTestUsers } from '../helpers/test-users';
 
 const url = process.env.SUPABASE_DB_URL!;
 let alice: { client: ReturnType<typeof createClient>; pageId: string; linkId: string };
-let bob:   { client: ReturnType<typeof createClient>; pageId: string };
+let bob: { client: ReturnType<typeof createClient>; pageId: string };
 
-beforeAll(async () => { ({ alice, bob } = await setupTestUsers(url)); });
-afterAll(async () => { await cleanupTestUsers(); });
+beforeAll(async () => {
+  ({ alice, bob } = await setupTestUsers(url));
+});
+afterAll(async () => {
+  await cleanupTestUsers();
+});
 
 describe('RLS: links table', () => {
   it('owner pode ler seus próprios links', async () => {
-    const { data, error } = await alice.client.from('links').select('*').eq('id', alice.linkId).single();
+    const { data, error } = await alice.client
+      .from('links')
+      .select('*')
+      .eq('id', alice.linkId)
+      .single();
     expect(error).toBeNull();
     expect(data?.id).toBe(alice.linkId);
   });
 
   it('non-owner NÃO pode ler links privados (page is_published=false)', async () => {
     // alice setou is_published=false
-    const { data } = await bob.client.from('links').select('*').eq('id', alice.linkId).maybeSingle();
+    const { data } = await bob.client
+      .from('links')
+      .select('*')
+      .eq('id', alice.linkId)
+      .maybeSingle();
     expect(data).toBeNull();
   });
 
   it('non-owner NÃO pode inserir link em página de outro', async () => {
     const { error } = await bob.client.from('links').insert({
-      page_id: alice.pageId, title: 'Hack', url: 'https://x.com', position: 99,
+      page_id: alice.pageId,
+      title: 'Hack',
+      url: 'https://x.com',
+      position: 99,
     });
     expect(error).not.toBeNull();
     expect(error?.code).toMatch(/42501|RLS/);
@@ -2336,39 +2414,48 @@ export default [
   {
     files: ['components/**/*.{ts,tsx}', 'app/**/*.{ts,tsx}'],
     excludedFiles: [
-      'app/api/**',                    // Route Handlers podem usar admin
-      'app/auth/callback/**',          // callback usa admin
-      'server/**',                     // Server Actions podem usar admin
+      'app/api/**', // Route Handlers podem usar admin
+      'app/auth/callback/**', // callback usa admin
+      'server/**', // Server Actions podem usar admin
     ],
     rules: {
-      'no-restricted-imports': ['error', {
-        patterns: [
-          {
-            group: ['@/lib/supabase/admin', '**/lib/supabase/admin'],
-            message: '`lib/supabase/admin` é service-role e só pode ser usado em server/, app/api/ ou app/auth/callback/. Em RSC/Client Components use `lib/supabase/server` ou `lib/supabase/client`.',
-          },
-          {
-            group: ['next/cache'],
-            importNames: ['revalidatePath', 'revalidateTag'],
-            message: 'Use `revalidateUserSurface` de `lib/cache.ts` em vez de `revalidatePath`/`revalidateTag` direto. Centralizar revalidação evita stale cache em /@username.',
-          },
-        ],
-      }],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/lib/supabase/admin', '**/lib/supabase/admin'],
+              message:
+                '`lib/supabase/admin` é service-role e só pode ser usado em server/, app/api/ ou app/auth/callback/. Em RSC/Client Components use `lib/supabase/server` ou `lib/supabase/client`.',
+            },
+            {
+              group: ['next/cache'],
+              importNames: ['revalidatePath', 'revalidateTag'],
+              message:
+                'Use `revalidateUserSurface` de `lib/cache.ts` em vez de `revalidatePath`/`revalidateTag` direto. Centralizar revalidação evita stale cache em /@username.',
+            },
+          ],
+        },
+      ],
     },
   },
   // server/ pode usar admin mas continua proibido de chamar revalidatePath solto
   {
     files: ['server/**/*.{ts,tsx}'],
     rules: {
-      'no-restricted-imports': ['error', {
-        patterns: [
-          {
-            group: ['next/cache'],
-            importNames: ['revalidatePath', 'revalidateTag'],
-            message: 'Use `revalidateUserSurface` de `lib/cache.ts`. Exceção justificada: comente `// eslint-disable-next-line no-restricted-imports -- razão`.',
-          },
-        ],
-      }],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['next/cache'],
+              importNames: ['revalidatePath', 'revalidateTag'],
+              message:
+                'Use `revalidateUserSurface` de `lib/cache.ts`. Exceção justificada: comente `// eslint-disable-next-line no-restricted-imports -- razão`.',
+            },
+          ],
+        },
+      ],
     },
   },
 ];
@@ -2378,21 +2465,21 @@ export default [
 
 ### Naming Conventions
 
-| Element | Frontend | Backend | Example |
-|---|---|---|---|
-| **Components** | PascalCase | — | `LinkRow.tsx`, `SignupForm.tsx` |
-| **Hooks** | camelCase com `use` | — | `useSession.ts`, `useOptimisticReorder.ts` |
-| **Files (utils, validators)** | kebab-case | kebab-case | `reserved-usernames.ts`, `rate-limit.ts` |
-| **Server Actions (functions)** | — | camelCase verb | `createLink`, `updateProfile`, `deleteAccount` |
-| **API Routes (paths)** | — | kebab-case | `/api/track/click`, `/api/track/view` |
-| **Database Tables** | — | snake_case (singular) | `profiles`, `pages`, `links`, `click_events`, `page_views` |
-| **Database Columns** | — | snake_case | `profile_id`, `is_visible`, `clicked_at` |
-| **TypeScript Types/Interfaces** | PascalCase | PascalCase | `Profile`, `Link`, `ActionResult<T>` |
-| **Zod Schemas** | PascalCase com sufixo | PascalCase | `CreateLinkInput`, `SignupInput` |
-| **Env Vars** | UPPER_SNAKE_CASE | UPPER_SNAKE_CASE | `NEXT_PUBLIC_SUPABASE_URL`, `HASH_SALT` |
-| **CSS Classes** | Tailwind utilities | — | (sem classes custom — design tokens via CSS vars) |
-| **Theme tokens** | kebab-case | — | `--color-primary`, `--radius-md` |
-| **Test files** | `*.test.ts(x)` | `*.test.ts` | `LinkRow.test.tsx`, `links.test.ts` |
+| Element                         | Frontend              | Backend               | Example                                                    |
+| ------------------------------- | --------------------- | --------------------- | ---------------------------------------------------------- |
+| **Components**                  | PascalCase            | —                     | `LinkRow.tsx`, `SignupForm.tsx`                            |
+| **Hooks**                       | camelCase com `use`   | —                     | `useSession.ts`, `useOptimisticReorder.ts`                 |
+| **Files (utils, validators)**   | kebab-case            | kebab-case            | `reserved-usernames.ts`, `rate-limit.ts`                   |
+| **Server Actions (functions)**  | —                     | camelCase verb        | `createLink`, `updateProfile`, `deleteAccount`             |
+| **API Routes (paths)**          | —                     | kebab-case            | `/api/track/click`, `/api/track/view`                      |
+| **Database Tables**             | —                     | snake_case (singular) | `profiles`, `pages`, `links`, `click_events`, `page_views` |
+| **Database Columns**            | —                     | snake_case            | `profile_id`, `is_visible`, `clicked_at`                   |
+| **TypeScript Types/Interfaces** | PascalCase            | PascalCase            | `Profile`, `Link`, `ActionResult<T>`                       |
+| **Zod Schemas**                 | PascalCase com sufixo | PascalCase            | `CreateLinkInput`, `SignupInput`                           |
+| **Env Vars**                    | UPPER_SNAKE_CASE      | UPPER_SNAKE_CASE      | `NEXT_PUBLIC_SUPABASE_URL`, `HASH_SALT`                    |
+| **CSS Classes**                 | Tailwind utilities    | —                     | (sem classes custom — design tokens via CSS vars)          |
+| **Theme tokens**                | kebab-case            | —                     | `--color-primary`, `--radius-md`                           |
+| **Test files**                  | `*.test.ts(x)`        | `*.test.ts`           | `LinkRow.test.tsx`, `links.test.ts`                        |
 
 ---
 
@@ -2451,8 +2538,8 @@ export type ActionResult<T> =
 // Para Route Handlers HTTP (analytics endpoints) — formato JSON conciso
 export interface ApiError {
   error: {
-    code: string;       // 'INVALID_BODY' | 'NOT_FOUND' | 'RATE_LIMITED' | 'INTERNAL'
-    message: string;    // PT-BR
+    code: string; // 'INVALID_BODY' | 'NOT_FOUND' | 'RATE_LIMITED' | 'INTERNAL'
+    message: string; // PT-BR
     requestId?: string; // opcional, para correlação em logs
   };
 }
@@ -2508,14 +2595,18 @@ export async function POST(req: Request) {
   } catch (err) {
     // log estruturado captado por Vercel Logs
     console.error('track/click failed', { err: err instanceof Error ? err.message : String(err) });
-    return NextResponse.json<ApiError>({
-      error: { code: 'INTERNAL', message: 'Erro interno' }
-    }, { status: 500 });
+    return NextResponse.json<ApiError>(
+      {
+        error: { code: 'INTERNAL', message: 'Erro interno' },
+      },
+      { status: 500 },
+    );
   }
 }
 ```
 
 **Logging convention:**
+
 - `console.error` para falhas que justificam ação imediata.
 - `console.warn` para cenários esperados mas notáveis (RLS denial em fluxo conhecido).
 - `console.info` para eventos de auditoria leve.
@@ -2531,13 +2622,13 @@ export async function POST(req: Request) {
 
 A arquitetura tem **uma dependência crítica única** (Supabase) e um **único provider de hosting** (Vercel). Esta seção documenta o que acontece quando cada um falha e qual é a postura de resposta — **explicitamente aceitando que o MVP não implementa fallbacks ativos** (constraint de escopo + budget free tier), mas assegurando que a degradação seja **previsível e diagnosticável**.
 
-| Componente que falha | Sintoma observado | Comportamento atual (MVP) | Mitigação MVP | Mitigação Phase 2 |
-|---|---|---|---|---|
-| **Supabase Postgres (DB)** | Server Actions e SSR retornam 500 / dados vazios | Erro genérico exposto ao usuário via Toast / página `/error` | Página estática `/maintenance.html` servida quando `env.MAINTENANCE_MODE=true` (toggle manual em Vercel env vars) | Read replica + circuit breaker em `lib/supabase/server.ts` |
-| **Supabase Auth** | Signup/login falham; sessão atual continua válida (cached em cookie) | Usuário logado continua usando dashboard até refresh; novos logins falham com Toast | Mensagem clara "Serviço de autenticação indisponível, tente novamente em alguns minutos" | OAuth fallback (Google) ou self-hosted Auth |
-| **Supabase Storage** | Upload de avatar falha | Toast de erro; profile mantém avatar anterior | Aceitar — uploads são opcionais para uso do produto | CDN próprio ou R2 |
-| **Vercel Functions** | App inteiro indisponível | Vercel serve página de erro padrão | Aceitar (Vercel SLA cobre o caso) | Multi-provider (Cloudflare Pages como standby) |
-| **GitHub Actions / CI** | PRs não fazem merge | Dev local continua funcionando; deploys manuais via `vercel --prod` se urgente | Documentar override em `docs/runbook-recovery.md` | Status page automatizada |
+| Componente que falha       | Sintoma observado                                                    | Comportamento atual (MVP)                                                           | Mitigação MVP                                                                                                     | Mitigação Phase 2                                          |
+| -------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| **Supabase Postgres (DB)** | Server Actions e SSR retornam 500 / dados vazios                     | Erro genérico exposto ao usuário via Toast / página `/error`                        | Página estática `/maintenance.html` servida quando `env.MAINTENANCE_MODE=true` (toggle manual em Vercel env vars) | Read replica + circuit breaker em `lib/supabase/server.ts` |
+| **Supabase Auth**          | Signup/login falham; sessão atual continua válida (cached em cookie) | Usuário logado continua usando dashboard até refresh; novos logins falham com Toast | Mensagem clara "Serviço de autenticação indisponível, tente novamente em alguns minutos"                          | OAuth fallback (Google) ou self-hosted Auth                |
+| **Supabase Storage**       | Upload de avatar falha                                               | Toast de erro; profile mantém avatar anterior                                       | Aceitar — uploads são opcionais para uso do produto                                                               | CDN próprio ou R2                                          |
+| **Vercel Functions**       | App inteiro indisponível                                             | Vercel serve página de erro padrão                                                  | Aceitar (Vercel SLA cobre o caso)                                                                                 | Multi-provider (Cloudflare Pages como standby)             |
+| **GitHub Actions / CI**    | PRs não fazem merge                                                  | Dev local continua funcionando; deploys manuais via `vercel --prod` se urgente      | Documentar override em `docs/runbook-recovery.md`                                                                 | Status page automatizada                                   |
 
 ### Retry Policy
 
@@ -2551,11 +2642,16 @@ A arquitetura tem **uma dependência crítica única** (Supabase) e um **único 
 
 ```typescript
 // lib/retry.ts — exposto apenas para queries idempotentes (reads)
-export async function withRetry<T>(fn: () => Promise<T>, opts = { tries: 2, delayMs: 200 }): Promise<T> {
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  opts = { tries: 2, delayMs: 200 },
+): Promise<T> {
   for (let i = 0; i < opts.tries; i++) {
-    try { return await fn(); } catch (err) {
+    try {
+      return await fn();
+    } catch (err) {
       if (i === opts.tries - 1) throw err;
-      await new Promise(r => setTimeout(r, opts.delayMs * Math.pow(2, i)));
+      await new Promise((r) => setTimeout(r, opts.delayMs * Math.pow(2, i)));
     }
   }
   throw new Error('unreachable');
@@ -2563,6 +2659,7 @@ export async function withRetry<T>(fn: () => Promise<T>, opts = { tries: 2, dela
 ```
 
 Uso permitido:
+
 - ✅ Reads em RSC (page público, dashboard data fetch).
 - ❌ Server Actions (mutations) — **não retentar** (sem idempotency).
 - ❌ Tracking endpoints (`/api/track/*`) — cliente pode re-disparar; servidor não retenta DB write.
@@ -2613,17 +2710,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 #### Recovery Procedures
 
 **Scenario A — Migration aplicada com bug em prod:**
+
 1. Identificar via Vercel Logs / Supabase Dashboard.
 2. Criar `supabase/migrations/XXXX_revert_<bug>.sql` com SQL inverso.
 3. Aplicar via PR (CI valida em branch) → merge → auto-deploy.
 4. **Se urgência crítica:** `supabase db push --db-url $PROD_URL` direto após validação local (apenas @devops, autorizado por incidente).
 
 **Scenario B — Data loss em tabela específica:**
+
 1. Free tier: restaurar do daily backup mais recente — **perde até 24h de dados**.
 2. Procedure: dashboard Supabase → Database → Backups → Restore → confirmar.
 3. **Aceitar trade-off** ou upgradar para Pro tier (PITR).
 
 **Scenario C — Conta Supabase suspensa / dados inacessíveis:**
+
 1. Risco baixo (free tier rate-limits, não suspende sem aviso).
 2. Mitigação: backup manual mensal via `supabase db dump` armazenado em cofre externo (1Password, Bitwarden) — **incluir como tarefa periódica em `docs/runbook-recovery.md`**.
 
@@ -2635,6 +2735,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 ### Runbook Reference
 
 Criar `docs/runbook-recovery.md` em **Story 1.4** (primeira tabela em prod) com:
+
 1. Checklist de verificação pré-incidente (Vercel status, Supabase status).
 2. Procedures Scenario A/B/C acima detalhados.
 3. Comunicação informal com testers (template de mensagem).
@@ -2652,18 +2753,21 @@ Criar `docs/runbook-recovery.md` em **Story 1.4** (primeira tabela em prod) com:
 - **Performance Monitoring:** **Lighthouse CI** em PRs em rotas-chave (`.github/workflows/lighthouse.yml`). Falha se score < 85.
 
 **Free-tier alerts (NFR5):**
+
 - Configurar alertas no Supabase Dashboard (built-in) em **70%** de qualquer limite (DB size, storage, MAU).
 - Configurar Vercel Usage notifications similar.
 
 ### Key Metrics
 
 **Frontend Metrics (Vercel Analytics):**
+
 - **Core Web Vitals:** LCP, INP, CLS, FCP, TTFB — gates definidos em NFR2-3.
 - **JavaScript errors:** captados via `console.error` → Vercel Logs (sem Sentry).
 - **Page views:** providos automaticamente.
 - **Routes performance:** P50/P95/P99 por rota.
 
 **Backend Metrics (Supabase + Vercel):**
+
 - **Request rate:** Vercel Functions invocations.
 - **Error rate:** % 5xx em Route Handlers + count de Server Actions com `ok: false`.
 - **Response time:** Vercel Functions P95 < 300 ms para Server Actions.
@@ -2671,12 +2775,14 @@ Criar `docs/runbook-recovery.md` em **Story 1.4** (primeira tabela em prod) com:
 - **Auth events:** signups/logins/falhas — Supabase Dashboard.
 
 **Business Metrics (PRD KPIs):**
+
 - **Total registered users:** `SELECT count(*) FROM auth.users` (manual/dashboard, sem ferramenta extra).
 - **Pages published rate:** `SELECT count(*) FROM pages WHERE is_published`.
 - **Average click-through:** `SELECT avg(click_count) FROM ...`
 - Consultados via SQL no Supabase Studio até pós-MVP.
 
 **MTTR (NFR9):** processo manual no MVP — checklist de rollback em `docs/runbook.md` (criar quando houver primeiro incidente):
+
 1. Identificar commit problemático via Vercel Logs / Supabase Logs.
 2. `git revert <sha>` + push para main → auto-deploy < 5 min.
 3. Comunicar status (informalmente para amigos testers).
@@ -2696,6 +2802,7 @@ Criar `docs/runbook-recovery.md` em **Story 1.4** (primeira tabela em prod) com:
 ### Para @data-engineer (Dara)
 
 Este architecture doc define o schema lógico em [Database Schema](#database-schema). Por favor:
+
 1. Refinar **DDL completo** validando: tipo de PK em `click_events`/`page_views` (bigint vs uuid), índices secundários (incluindo parcial em `links` filtered by `is_visible`), trigger de cascade-shift de `position` em `links` após delete (vs UNIQUE deferrable).
 2. Refinar **RLS policies** completas — o template aqui cobre o caso médio; validar edge cases (RLS em INSERT de `click_events` precisa de policy específica para service-role vs anon, mesmo que o insert ocorra via service-role).
 3. Definir **estratégia de retenção** para NFR12 (90 dias rolling): job manual no MVP via SQL agendado externamente OU Edge Function diária.
@@ -2704,6 +2811,7 @@ Este architecture doc define o schema lógico em [Database Schema](#database-sch
 ### Para @ux-design-expert (Uma)
 
 Este doc define a arquitetura técnica e a estrutura de componentes em [Components](#components) e [Frontend Architecture](#frontend-architecture). Por favor produza `docs/frontend-spec.md` cobrindo:
+
 1. Wireframes das 10 telas core do PRD.
 2. Identidade visual definitiva (paleta, tipografia, logo seed) — brand seed `#7C3AED` é placeholder.
 3. Patterns de interação detalhados (drag-drop affordances, edição inline, toggle, theme preview).
@@ -2714,15 +2822,17 @@ Este doc define a arquitetura técnica e a estrutura de componentes em [Componen
 A arquitetura confirma viabilidade de todas as 4 epics e 22 stories. Nenhum requisito do PRD foi rejeitado nem inventado (Article IV — No Invention).
 
 **Open questions trazidas a esta fase:**
+
 - **Custom domain:** confirmado como NFR18 — fora do MVP.
 - **Retenção de eventos brutos:** confirmado como NFR12 (90 dias), mas mecanismo de cleanup precisa ser detalhado por @data-engineer.
 - **Email transacional:** confirmado limitado ao Supabase built-in (NFR17).
 
 **Riscos arquiteturais identificados (não-bloqueantes):**
+
 1. **Rate limiting in-memory** em `/api/track/*` não persiste entre invocações de função serverless — atacante distribuído pode burlar. _Mitigação MVP:_ aceitar; migrar para Upstash Redis em Phase 2 se abuso for observado.
 2. **Sem materialized views no MVP** pode degradar `/dashboard/analytics` quando `click_events` crescer. _Mitigação:_ trigger de upgrade definido (P95 > 500 ms) — observar nos primeiros usuários reais.
 3. **Sem Sentry** significa erros frontend só visíveis via Vercel Logs — tooling de busca limitado. _Mitigação:_ checklist explícito de QA em cada release de epic; revisitar pós-MVP se erro rate justificar.
 
 ---
 
-*Documento mantido por @architect (Aria). Mudanças significativas devem atualizar Change Log e re-rodar `*execute-checklist architect-checklist`.*
+*Documento mantido por @architect (Aria). Mudanças significativas devem atualizar Change Log e re-rodar `*execute-checklist architect-checklist`.\*
