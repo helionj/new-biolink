@@ -108,12 +108,16 @@ jobs:
           supabase --experimental branches create "$BRANCH_NAME" --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} || \
             supabase --experimental branches get "$BRANCH_NAME" --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
 
-          # Poll until branch exposes POSTGRES_URL_NON_POOLING (CLI v2.98 returns env-var-shaped JSON)
+          # Poll until branch exposes POSTGRES_URL (pooler/IPv4 — runners do GHA não têm IPv6;
+          # direct connection via POSTGRES_URL_NON_POOLING resolve apenas IPv6 e quebra com
+          # 'dial tcp [2600:...]: network is unreachable'). Pooler funciona para migrations
+          # simples desta story (placeholder). Stories com DDL real (1.4+) podem precisar
+          # de IPv4 add-on Supabase ou session-mode pooler.
           BRANCH_URL=""
           for i in $(seq 1 30); do
             BRANCH_JSON=$(supabase --experimental branches get "$BRANCH_NAME" --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} -o json)
-            BRANCH_URL=$(echo "$BRANCH_JSON" | jq -r '.POSTGRES_URL_NON_POOLING // empty')
-            echo "Attempt $i: POSTGRES_URL_NON_POOLING=${BRANCH_URL:+<set>}${BRANCH_URL:-<empty>}"
+            BRANCH_URL=$(echo "$BRANCH_JSON" | jq -r '.POSTGRES_URL // empty')
+            echo "Attempt $i: POSTGRES_URL=${BRANCH_URL:+<set>}${BRANCH_URL:-<empty>}"
             if [ -n "$BRANCH_URL" ] && [ "$BRANCH_URL" != "null" ]; then
               echo "Branch ready after $i attempts"
               break
@@ -122,7 +126,7 @@ jobs:
           done
 
           if [ -z "$BRANCH_URL" ] || [ "$BRANCH_URL" = "null" ]; then
-            echo "::error::Branch did not expose POSTGRES_URL_NON_POOLING within 5min. Last JSON keys:"
+            echo "::error::Branch did not expose POSTGRES_URL within 5min. Last JSON keys:"
             echo "$BRANCH_JSON" | jq -r 'keys[]'
             exit 1
           fi
