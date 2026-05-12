@@ -1,0 +1,85 @@
+schema: 1
+story: '1.2'
+gate: PASS
+status_reason: 'Todos 7 ACs satisfeitos com implementação literal de architecture.md §Frontend Services Layer. Quality gate tools (typecheck/lint/build/db:types) verdes. Fail-fast no build validado. Sem top_issues.'
+reviewer: 'Manual gate per QA-001 (CodeRabbit self-healing loop indisponível em macOS sem WSL/CodeRabbit CLI). @qa Quinn validated quality_gate_tools + 7 quality checks.'
+updated: '2026-05-11T13:30:00Z'
+top_issues: []
+waiver:
+  active: false
+
+quality_checks:
+  code_review:
+    status: PASS
+    notes: |
+      Três clientes (server.ts, client.ts, admin.ts) implementados literal conforme
+      architecture.md §1198-1240. lib/env.ts segue schema canônico (Zod parse top-level).
+      Guard `typeof window !== 'undefined' → throw` no admin.ts presente. Imports
+      ordenados (eslint-plugin-import passou). next.config.ts importa './lib/env' como
+      side-effect — solução correta para garantir fail-fast no build.
+  unit_tests:
+    status: N/A
+    notes: |
+      Vitest não instalado nesta story — postergado para Story 1.4+ quando RLS/auth
+      introduzirem lógica testável. Decisão documentada em Dev Notes §Testing.
+      Validação dos ACs feita manualmente (typecheck/lint/build/db:types + smoke
+      AC4 via `HASH_SALT=short pnpm build` falhando com ZodError esperado).
+  acceptance_criteria:
+    status: PASS
+    notes: |
+      AC1 (projeto dev ibpliihqaceafdykgwiu + .env.local) ✓; AC2 (.env.example já
+      tinha placeholders desde 1.1, .gitignore confirma .env.local) ✓; AC3 (3
+      clientes + guard admin) ✓; AC4 (Zod parse + side-effect import em
+      next.config.ts garantem fail-fast no build, validado com HASH_SALT=short) ✓;
+      AC5 (script db:types + 155 linhas geradas, typecheck OK) ✓; AC6 (migration
+      placeholder com comentário) ✓; AC7 (docs/dev-setup.md cobre 9 seções:
+      pré-requisitos, projeto Supabase, .env.local, HASH_SALT, link, db:types,
+      racional anti-`supabase start`, smoke test, troubleshooting) ✓.
+  regressions:
+    status: PASS
+    notes: |
+      Landing page Story 1.1 continua renderizando (4 static pages no build).
+      typecheck/lint/build passam limpos. Adição de `import './lib/env'` em
+      next.config.ts é aditiva — não modifica comportamento prévio.
+  performance:
+    status: PASS
+    notes: |
+      Build: compile 43s + TypeScript 23.6s + 4 static pages — aceitável para
+      bootstrap. db:types: ~5s. Sem regressão de performance vs Story 1.1.
+  security:
+    status: PASS
+    notes: |
+      SUPABASE_SERVICE_ROLE_KEY e HASH_SALT sem prefix NEXT_PUBLIC_ (verificado em
+      lib/env.ts). Guard `typeof window` no admin.ts barra uso em browser. .env.local,
+      .supabase/, supabase/.temp/ todos gitignored (3 confirmados via
+      `git check-ignore -v`). HASH_SALT validado >= 32 chars com mensagem de erro
+      acionável. Working tree limpo pós-commit, sem secrets staged. gitleaks entra
+      em CI na Story 1.3.
+  documentation:
+    status: PASS
+    notes: |
+      docs/dev-setup.md cobre fluxo end-to-end para dev novo conectar do zero.
+      README.md atualizado (link para dev-setup.md em Getting Started + row db:types
+      na tabela de scripts). known-issues.md QA-002 marcado Resolved com diagnóstico
+      revisado (lição: validar documentação da ferramenta antes de inferir
+      malformação). Change Log da story tem 5 versões rastreando Phase A → Phase B
+      → handoff @devops → push.
+
+deviations_reviewed:
+  - description: 'Script db:types usa `--linked` em vez de `--project-id $SUPABASE_PROJECT_ID` da AC5 textual'
+    resolution: 'APPROVED — `--linked` é o padrão atual da CLI Supabase e mais ergonômico após `supabase link`. Comportamento equivalente.'
+    severity: 'low'
+  - description: '`import "./lib/env"` adicionado em next.config.ts (não previsto nas Dev Notes)'
+    resolution: 'APPROVED — necessário para AC4 funcionar. Sem isso, env validation seria lazy e build da landing-page atual passaria com env inválido (porque nenhuma rota importa lib/env transitivamente). Side-effect import garante fail-fast verdadeiro. Validado: `HASH_SALT=short pnpm build` falha com ZodError esperado.'
+    severity: 'low'
+  - description: 'SUPABASE_ACCESS_TOKEN adicionado a .env.local (Personal Access Token para CLI)'
+    resolution: 'APPROVED — necessário para `supabase link` em non-TTY (login interativo falhou). Token gitignored em .env.local; separação Vercel/CI será feita por @devops em Story 1.3. Não está no schema Zod (correto — usado apenas pela CLI subprocess, não por código runtime).'
+    severity: 'low'
+  - description: 'Pivot QA-002 — diagnóstico original (`pnpm-workspace.yaml malformado, deletar`) revisado como incorreto'
+    resolution: 'APPROVED — investigação corrigiu rota: `allowBuilds:` é mecanismo oficial pnpm 10+. Fix real: `pnpm approve-builds --all` + remoção de `pnpm.onlyBuiltDependencies` redundante. Documentado em known-issues.md (status Resolved) e Dev Agent Record.'
+    severity: 'low'
+
+handoff:
+  next_agent: '@po'
+  next_command: '*close-story 1.2'
+  condition: 'Push remoto já executado por @github-devops (commits 0f907fe..b26be8f no origin/main, pre-push gate validado per Change Log v0.5). Story pode transicionar InReview → Done após esta gate decision PASS.'
