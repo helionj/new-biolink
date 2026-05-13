@@ -116,7 +116,7 @@ O diagnóstico original ("arquivo malformado, sem `packages:`") estava **incorre
 
 **Discovered:** 2026-05-12 (Story 1.3)
 **Severity:** Medium (bloqueia AC2 de Story 1.3 — deferido para Story 1.4)
-**Status:** Open — job desabilitado no MVP via comentário em `.github/workflows/ci.yml`
+**Status:** **Resolved** (2026-05-12, Story 1.4) — via reuso de `biolink-dev` em vez de Branching; SASL auth contornado completamente.
 **Affects:** `.github/workflows/ci.yml` → job `test-integration`
 
 ### Sintoma
@@ -166,3 +166,23 @@ Decisão final entre (2), (3), (4) deve ser feita por @architect + @data-enginee
 
 - Story 1.3 Change Log v0.5 documenta cadeia completa de descoberta.
 - Re-habilitar este job é tarefa explícita de Story 1.4.
+
+### Resolução (2026-05-12, Story 1.4)
+
+Após confirmação do owner de que `biolink-dev` (projeto Supabase já provisionado em Story 1.2, ref `ibpliihqaceafdykgwiu`) seria reusado para CI, o caminho de Branching foi abandonado em favor de **reuso single-project com isolamento por convenção de nomes**.
+
+**Decisão final (alt B revisada — não criamos `biolink-ci` separado):**
+
+1. **Mesmo projeto pra dev e CI** — `biolink-dev` serve ambos. Trade-off: perde isolamento por PR (compensa: solo dev, sem PRs concorrentes); ganha: preserva slot do Supabase free tier (2/org) pra `biolink-prod` futuro; zero custo recorrente.
+2. **Convenção de prefixo `cifx-`** ("CI fixture") — fixtures de teste usam username `cifx-alice`/`cifx-bob` (e UUIDs determinísticos `00000000-0000-0000-0000-000000001*`). Prefixo escolhido para satisfazer a CHECK constraint do schema (`username ~ '^[a-z0-9-]{3,30}$'` — underscores não são permitidos). Cleanup em `beforeAll`/`afterAll` dos próprios testes via service-role admin client — `auth.admin.deleteUser(uuid)` por UUID conhecido + fallback `auth.admin.listUsers` + filtro `username LIKE 'cifx-%'` defensivo.
+3. **Migrações aplicadas manualmente fora da CI** — dev roda `pnpm exec supabase db push` localmente antes de abrir PR. CI testa contra o estado atual de `biolink-dev`. Se migration pendente for esquecida, job falha com erro de schema (sinaliza claramente o esquecimento).
+4. **SASL auth pooler nunca precisou ser resolvido** — sem Branching, sem chamadas à API de branches do Supabase; integration tests usam Supabase JS SDK direto contra URL/anon/service-role já existentes em secrets.
+
+**Caminho destravado:**
+- `.github/workflows/ci.yml` — bloco `test-integration` ativo (linhas ~86-130 da versão Story 1.4); usa 4 dos 6 secrets já existentes em GH Actions; demais 2 (`SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`) ficam ociosos.
+- Bloqueio SASL (BUG #5) abandonado por design — não há pooler-via-Branching no caminho.
+- Job `test-integration` adicionado aos required status checks de `main` em Story 1.4 Task 1.5.
+
+**Upgrade path (quando aplicável):**
+- **Quando criar `biolink-prod`** (story dedicada pré-launch): manter `biolink-dev` exclusivamente pra dev; criar `biolink-ci` no mesmo nível e trocar 4 secrets em GH Actions (`NEXT_PUBLIC_SUPABASE_URL`, `_ANON_KEY`, `SERVICE_ROLE_KEY`, `HASH_SALT`). Zero refactor de código (workflow + helpers já parametrizados por env). Custo: 1 free slot ou upgrade pra Pro.
+- **Se conseguir Branching destravar** (Supabase melhorar API de branches no futuro): pode-se voltar à arquitetura original — `.github/workflows/ci.yml` comentado em Story 1.3 (linhas históricas) é referência da estrutura.

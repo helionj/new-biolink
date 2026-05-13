@@ -229,6 +229,82 @@ Sem gitleaks local, o `pre-commit` mostra um warning e segue — o CI faz o scan
 
 ---
 
+## 12. Schema, migrations e seed (Story 1.4)
+
+A partir da Story 1.4 o projeto tem schema real (`profiles` + RLS + trigger de bootstrap). Esta seção cobre o fluxo local de aplicar migrations e popular dados demo.
+
+### Fluxo canônico
+
+```bash
+# 1. Garantir projeto linkado (Story 1.2 já fez):
+pnpm exec supabase link --project-ref ibpliihqaceafdykgwiu
+
+# 2. Aplicar migrations no projeto remoto linkado:
+pnpm exec supabase db push
+
+# 3. Regenerar tipos TypeScript a partir do schema atual:
+pnpm db:types
+
+# 4. (opcional, apenas dev) zerar projeto remoto + reaplicar tudo + carregar seed:
+pnpm exec supabase db reset --linked
+```
+
+> ⚠️ **`supabase db reset --linked` é destrutivo** — drops todo o schema `public` do projeto remoto linkado e reaplica `migrations/*` em ordem + `seed.sql`. Usar **APENAS** em projeto de **dev** (`ibpliihqaceafdykgwiu`) ou no **projeto de CI dedicado** (alt B CI-001). **NUNCA** rodar contra produção.
+
+### Arquivos relevantes
+
+| Path                                     | Função                                                              |
+| ---------------------------------------- | ------------------------------------------------------------------- |
+| `supabase/migrations/0001_init.sql`      | Placeholder vazio (Story 1.2 — reserva ordem)                       |
+| `supabase/migrations/0002_profiles.sql`  | Schema profiles + RLS + trigger SECURITY DEFINER (Story 1.4)        |
+| `supabase/rollbacks/0002_profiles_*.sql` | Rollback companion — DROPs em ordem reversa (Story 1.4)             |
+| `supabase/seed.sql`                      | 3 profiles demo idempotentes (Story 1.4) — **não aplicado em prod** |
+
+### Seed demo (Story 1.4)
+
+`supabase/seed.sql` cria 3 users em `auth.users` que disparam o trigger `auth_user_created` e geram 3 rows em `profiles`:
+
+| Username | Email             | Password        | display_name | bio                             |
+| -------- | ----------------- | --------------- | ------------ | ------------------------------- |
+| alice    | alice@example.com | testpassword123 | Alice Demo   | Building cool things…           |
+| bob      | bob@example.com   | testpassword123 | Bob Demo     | Hello from BioLink.             |
+| carol    | carol@example.com | testpassword123 | _NULL_       | _NULL_ (testa colunas nullable) |
+
+**Senhas demo são públicas e intencionalmente fracas — usar apenas em dev/CI.** UUIDs hardcoded (`0001…`/`0002…`/`0003…`) para reprodutibilidade.
+
+### Smoke test pós-`db reset`
+
+```bash
+# Esperado: 3 rows após seed
+pnpm exec supabase db reset --linked
+psql "$DATABASE_URL" -c "SELECT count(*) FROM profiles;"  # → 3
+psql "$DATABASE_URL" -c "SELECT username, display_name FROM profiles ORDER BY username;"
+# alice | Alice Demo
+# bob   | Bob Demo
+# carol | NULL
+```
+
+> Não há `DATABASE_URL` no `.env.local` por padrão (cliente normal usa o Supabase JS SDK). Para `psql` ad-hoc, monte: `postgresql://postgres.<project_ref>:<db_password>@aws-1-sa-east-1.pooler.supabase.com:6543/postgres?sslmode=require`. Senha em dashboard Supabase → Project Settings → Database.
+
+### Rollback em prod (Phase 2+)
+
+Para reverter `0002_profiles.sql` em projeto remoto:
+
+```bash
+# 1. Snapshot pré-rollback (obrigatório)
+pnpm exec supabase db dump --linked > .ai/snapshots/pre-rollback-$(date +%s).sql
+
+# 2. Aplicar rollback companion
+psql "$DATABASE_URL" -f supabase/rollbacks/0002_profiles_rollback.sql
+
+# 3. Validar
+psql "$DATABASE_URL" -c "\dt profiles"  # → relation does not exist
+```
+
+⚠️ **`profiles` cascateia em todas as tabelas filhas** (pages, links, etc. quando existirem). Rodar rollbacks em **ordem reversa** das migrations.
+
+---
+
 ## Referências
 
 - [`docs/architecture.md`](architecture.md) §Frontend Services Layer > API Client Setup
