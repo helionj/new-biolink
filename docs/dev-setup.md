@@ -305,6 +305,42 @@ psql "$DATABASE_URL" -c "\dt profiles"  # → relation does not exist
 
 ---
 
+## 13. Configuração de Auth (transitória — Story 1.5 / 1.6)
+
+> **Escopo:** este toggle existe para destravar o fluxo `signUp → /dashboard` da Story 1.5. **Story 1.6 reverte** o `mailer_autoconfirm` para `false` e implementa `/auth/callback` + `requestPasswordReset` / `confirmPasswordReset`.
+
+### Setting atual em `biolink-dev` (ref `ibpliihqaceafdykgwiu`)
+
+| Setting                                                                        | Valor atual (1.5)      | Plano (1.6)                  | Motivo                                                                                                                                               |
+| ------------------------------------------------------------------------------ | ---------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mailer_autoconfirm` (Dashboard: **Auth → Providers → Email → Confirm email**) | `true` (auto-confirma) | `false` (requer confirmação) | AC5 de 1.5 exige session imediata pós-signup → redirect direto a `/dashboard`. Com `false`, signUp retorna `session: null` e middleware loop quebra. |
+| `password_min_length`                                                          | `6` (default)          | mantido                      | Server-side; o validator Zod (`lib/validators/auth.ts`) impõe mínimo 8 chars no client + server-side parse.                                          |
+| `mailer_secure_email_change_enabled`                                           | `true` (default)       | mantido                      | Não afeta signup.                                                                                                                                    |
+
+### Como toggle foi aplicado (Story 1.5)
+
+```bash
+PROJECT_REF=ibpliihqaceafdykgwiu
+TOKEN=$SUPABASE_ACCESS_TOKEN  # do .env.local
+curl -X PATCH "https://api.supabase.com/v1/projects/$PROJECT_REF/config/auth" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"mailer_autoconfirm": true}'
+```
+
+Ou via Dashboard: **Authentication → Providers → Email → toggle "Confirm email" para OFF**.
+
+### Impacto em CI
+
+- `tests/integration/server-actions/auth.test.ts` (Story 1.5) **assume `mailer_autoconfirm: true`**. Caso volte a `false`, o cenário "signUp cria auth.users + profiles row" falhará por `signUp` retornar `session: null` em vez de `NEXT_REDIRECT`.
+- Story 1.6 atualiza essa suíte para usar `/auth/callback` flow.
+
+### Reativar em produção (`biolink-prod`)
+
+`biolink-prod` (a ser criado em pipeline de release pública) **DEVE** ter `mailer_autoconfirm: false` (Confirm email ON) antes do go-live. Cross-ref Story 1.6.
+
+---
+
 ## Referências
 
 - [`docs/architecture.md`](architecture.md) §Frontend Services Layer > API Client Setup
@@ -313,3 +349,4 @@ psql "$DATABASE_URL" -c "\dt profiles"  # → relation does not exist
 - Story 1.2 — setup inicial Supabase clients + env validation
 - Story 1.3 — CI/CD pipeline, Husky, secrets em Vercel/GHA
 - Story 1.4 — primeiro schema real
+- Story 1.5 — UI Auth (signup/login/logout) + decisão `mailer_autoconfirm` transitória

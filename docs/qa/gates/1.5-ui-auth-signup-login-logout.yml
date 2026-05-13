@@ -1,0 +1,324 @@
+schema: 1
+story: '1.5'
+gate: PASS
+status_reason: '9/9 ACs satisfeitos com primeiro fluxo UI auth do projeto (signup/login/logout) end-to-end: 5 shadcn primitives instalados (button, input, label, form, sonner) sob shadcn 3.x base-nova; 3 Server Actions canônicas (signUp/signIn/signOut) com Zod safeParse defensivo + mapeamento de erros PT-BR + redirect server-side; pre-check de username + fallback SQLSTATE 23505 + anti-enumeration em signIn ("Email ou senha incorretos" genérico); middleware mínimo com matcher reduzido (/signup, /login, /dashboard/:path*) per design Story 1.7-expansion; dashboard placeholder com defesa em profundidade (layout + page ambos chamam getUser); EmailVerificationBanner renderizado quando email_confirmed_at null. Quality gate 6/6 verde local (typecheck/lint/build/test:unit/test:components/test:integration) com 39 testes totais (15 unit validators + reserved + 11 component SignupForm/LoginForm + 13 integration — 8 RLS de 1.4 mantidos verdes + 5 auth novos cobrindo signUp happy path + dup username + signIn válido/inválido + signOut). Task 7.1 aplicada via Management API HTTP PATCH (mailer_autoconfirm: true em biolink-dev) — documentado em docs/dev-setup.md §13 com plano explícito de reversão em Story 1.6 + setup de /auth/callback. 5 deviations vs draft documentadas em Change Log v0.3 (shadcn 3.x base-nova em vez de clássico; form.tsx criado manualmente pois registry 3.x não inclui code; tests/setup.ts ganhou afterEach(cleanup); vitest.config.ts replica resolve.alias em cada project; Auth config via Management API em vez de Dashboard UI) — todas no espírito da Story e justificadas tecnicamente. Sem critical/high issues; 4 observações low/medium não-bloqueantes (acceptTerms cast duplo cosmético, middleware.ts deprecation Next 16 deferida pra 1.7, smoke E2E manual deferido pra revisão humana, mailer_autoconfirm transitório pra 1.6).'
+reviewer: 'Manual gate per QA-001 (CodeRabbit self-healing loop indisponível em macOS sem WSL/CodeRabbit CLI). @qa Quinn validated quality_gate_tools (typecheck/lint/build/test:unit/test:components/test:integration) + 7 quality checks contra entrega não-committed sobre main 8fd3636.'
+updated: '2026-05-13T16:40:00Z'
+top_issues:
+  - severity: 'medium'
+    category: 'verification'
+    description: 'Smoke manual end-to-end da Task 8.2 (signup happy path real no `pnpm dev` → redirect /dashboard → banner verification → logout → login subsequente → middleware redirects bi-direcionais) NÃO executado pelo @dev neste turno — deferido para validação humana em InReview per Completion Notes. Integration tests cobrem o caminho do Server Action contra biolink-dev (8/8 RLS de 1.4 + 5 auth verdes), mas o loop completo navegador→middleware→Server Action→DB→Server Component dashboard só foi validado em CI/integration, não com olhos humanos.'
+    recommendation: 'Antes do merge (push por @devops), executar manualmente: (a) `pnpm dev` → /signup com username único + email único + senha 8+ → submit → verificar redirect a /dashboard + banner amarelo de verificação de email + saudação "Olá, {email}"; (b) clicar Sair → redirect a /; (c) /login com mesmas credenciais → redirect a /dashboard novamente; (d) /login com senha errada → toast "Email ou senha incorretos"; (e) /dashboard deslogado → /login?next=/dashboard; (f) /signup já logado → /dashboard. Cleanup do user via Supabase Studio ou `auth.admin.deleteUser(id)`. Esta validação cobre o gap entre tests unitários/integration e UX real.'
+  - severity: 'medium'
+    category: 'maintainability'
+    description: 'Next.js 16 deprecou `middleware.ts` em favor de `proxy.ts` (warning explícito durante `pnpm build`: "The middleware file convention is deprecated. Please use proxy instead"). Arquivo `middleware.ts` está atualmente em uso e funciona, mas será removido em release futura do Next.js. Story 1.7 já está mapeada para tratar (expansão do matcher + edge cases) — natural ponto para renomear.'
+    recommendation: 'Story 1.7 (Middleware completo) deve incluir como primeira subtask: renomear `middleware.ts` → `proxy.ts` (mesmo conteúdo + mesmo `export const config = { matcher: [...] }`). Documentar como Constraint: "Next 16 middleware → proxy migration". Não-bloqueante pra Story 1.5 (deprecation warning, não erro).'
+  - severity: 'low'
+    category: 'code-cleanliness'
+    description: 'Em `components/auth/SignupForm.tsx` linha 34, `defaultValues.acceptTerms` usa cast duplo `false as unknown as true` para satisfazer o tipo `z.literal(true)` derivado do schema. Funcional (RHF aceita o valor false em runtime; Zod refine rejeita no submit), mas o cast pode confundir reviewers que olhem o código fora do contexto. Pattern reusará em todos os forms futuros com checkbox obrigatório (terms, newsletter consent, etc.).'
+    recommendation: 'Considerar em Story 1.8 (Seed Design System) introduzir helper `unsetLiteralDefault<T>()` em `lib/form-helpers.ts` ou alternativa: refatorar schema para `acceptTerms: z.boolean().refine(v => v === true, ...)` que aceita default `false` natural. Trade-off: literal(true) ainda é semanticamente mais preciso (campo só pode ter UM valor válido); refine permite default natural mas perde a precisão no tipo derivado. Decisão pode ser tomada em 1.8 quando outros forms inaugurarem o pattern.'
+  - severity: 'low'
+    category: 'tech-debt'
+    description: 'Decisão `mailer_autoconfirm: true` em biolink-dev (Task 7.1) é explicitamente TRANSITÓRIA para destravar AC5 (signup → session imediata → redirect /dashboard). Esse setting persiste no projeto Supabase até ser revertido em Story 1.6, o que significa que (a) qualquer dev que rode signup local pula confirmação de email; (b) prod (biolink-prod ainda não criado) DEVE ser criado com este setting OFF; (c) integration tests assumem auto-confirm e quebrarão se o setting voltar a false sem o fix de /auth/callback.'
+    recommendation: 'Story 1.6 (Reset Password + Email Verification) deve ter como tasks explícitas: (a) implementar `app/auth/callback/route.ts` handler do link de confirmação; (b) PATCH `mailer_autoconfirm: false` via Management API; (c) atualizar `tests/integration/server-actions/auth.test.ts` para usar fluxo callback OU manter mock via admin createUser. Cross-ref já documentado em docs/dev-setup.md §13 e Project Structure Notes #3 da Story 1.5.'
+
+waiver:
+  active: false
+
+quality_checks:
+  code_review:
+    status: PASS
+    notes: |
+      Server Actions (server/auth/actions.ts) seguem padrão canônico de arch §API Specification:
+      'use server' + Zod safeParse + ActionResult<T> + redirect() em sucesso. Pattern correto
+      de defesa em profundidade: signUp pre-check de username via SELECT (UX-friendly antes
+      do round-trip Auth), fallback para mensagem amigável em SQLSTATE 23505 (race window
+      entre check e insert do trigger 1.4), mensagem genérica anti-enumeration em signIn
+      ("Email ou senha incorretos") per arch §Security. Helper `flattenFieldErrors` interno
+      tipado contra Zod 4 flatten shape (Record<string, string[] | undefined>) — robusto
+      contra a mudança de API em Zod 4.x. Server Action signatures usam `raw: unknown` em
+      vez de typed inputs — correto, pois cliente pode passar qualquer coisa e o servidor
+      não deve confiar no contrato TS.
+
+      Middleware (middleware.ts) usa createServerClient + env validado via Zod (per arch
+      §Coding Standards linha 2396); matcher reduzido a 3 paths intencionalmente per Story
+      AC7 + comentário inline cross-ref Story 1.7 para expansão. Pattern compatível com
+      arch §Routing > Protected Route Pattern linhas 1178-1229. Warning Next 16
+      (middleware → proxy) tratado como tech-debt low para Story 1.7.
+
+      SignupForm/LoginForm seguem pattern RHF + zodResolver + FormProvider de shadcn/ui.
+      Refactor inteligente do FormControl em campos com wrapper visual (password com toggle
+      Eye/EyeOff): InputPrimitive direto em FormControl, wrapper div externo — preserva
+      label association via FormLabel htmlFor sincronizado por useFormField context.
+      LogoutButton usa useTransition para loading state — ergonômico.
+
+      Dashboard layout + page usam defense-in-depth (ambos chamam getUser()) — pattern
+      compatível com arch §Backend Architecture > Auth Flow linhas 1505-1558. Layout é a
+      1ª linha (middleware é a 0ª); page é a 2ª linha. Marker comment em page.tsx documenta
+      o placeholder (Story 2.x substituirá).
+
+      shadcn 3.x base-nova deviation vs draft documentada extensivamente em Completion
+      Notes — Button mantém @base-ui/react/button (Story 1.5 não tem label association
+      issues com Button); Input reescrito como native <input> (correto, pois
+      @base-ui/react/input substitui id e quebra label[for]); form.tsx criado manualmente
+      com pattern clássico shadcn (FormFieldContext + useFormField hook + cloneElement em
+      FormControl) — manutenibilidade preservada.
+
+      Tokens em app/globals.css reconciliados: 6 placeholders originais do projeto
+      preservados (--background: #ffffff, --foreground: #171717, --primary: #0f172a etc.)
+      + tokens shadcn novos (--card, --popover, --destructive, --ring, --input, --chart-*,
+      --sidebar-*). Tokens conflitantes do shadcn init (oklch) revertidos para hex do
+      projeto. [data-theme='dark'] + [data-theme='brand'] mantidos como placeholders pra
+      Story 3.1+.
+
+      Validators (lib/validators/auth.ts) usam Zod 4 nova API (`z.literal(true, { message })`
+      em vez do deprecated errorMap). Reserved-usernames helper (lib/reserved-usernames.ts)
+      é case-insensitive por princípio (lowercase before compare), embora o regex
+      `^[a-z0-9-]{3,30}$` já force lowercase — defesa em profundidade aceitável.
+
+  unit_tests:
+    status: PASS
+    notes: |
+      15 testes verdes em 2 suites — distribuição:
+
+      tests/unit/validators/auth.test.ts (11 cenários):
+        - SignUpInput aceita payload válido
+        - email inválido → "Informe um email válido"
+        - password < 8 chars → "A senha precisa ter no mínimo 8 caracteres"
+        - confirmPassword diferente → "As senhas não coincidem" no path correto
+        - username < 3 chars → mensagem regex
+        - username uppercase → mensagem regex (case sensitivity)
+        - username reservado → "Este username é reservado"
+        - acceptTerms=false → "Aceite os termos para continuar"
+        - SignInInput aceita payload válido
+        - SignInInput password vazia → "Informe sua senha"
+        - SignInInput email inválido → "Informe um email válido"
+
+      tests/unit/reserved-usernames.test.ts (4 cenários):
+        - lista contém keys obrigatórios (admin, api, dashboard, login, signup,
+          reset-password, auth, www, public)
+        - isReservedUsername('admin') → true (lowercase direto)
+        - isReservedUsername('Admin') + 'DASHBOARD' → true (case-insensitive)
+        - isReservedUsername('alice') + 'biolink-user' → false
+
+      Helper `firstMessage` em auth.test.ts é elegante — extrai issue por path para
+      assertion direta. Pattern reusará em validators futuros (links, profile-update).
+      vitest.config.ts ajustado para replicar resolve.alias em cada project entry —
+      necessário pra vitest 4.x (deviation documentada em Completion Notes).
+
+  acceptance_criteria:
+    status: PASS
+    notes: |
+      AC1 (página /signup + SignupForm com 5 campos validados via RHF+Zod): PASS —
+      app/(auth)/signup/page.tsx renderiza SignupForm com email, username, password,
+      confirmPassword, acceptTerms. Validators Zod corretos: regex `^[a-z0-9-]{3,30}$`
+      (espelha CHECK da migration 0002), refine reserved-usernames, .min(8) password,
+      .literal(true) acceptTerms, .refine cross-field password match. Renomeação
+      slug→username consistente com canônico do projeto (arch + trigger 1.4 +
+      profiles.username) — documentado em Project Structure Notes #1.
+
+      AC2 (página /login + LoginForm com email/password + link Esqueci a senha): PASS —
+      app/(auth)/login/page.tsx renderiza LoginForm; SignInInput Zod schema mínimo
+      (email válido + password não-vazia, sem mínimo de chars no login per
+      anti-enumeration); Link "Esqueci a senha" aponta para /reset-password (404 hoje;
+      será implementado em Story 1.6, aceitável per Story PSN #4).
+
+      AC3 (logout no /dashboard + email user + EmailVerificationBanner): PASS —
+      app/dashboard/page.tsx (placeholder declarado) exibe email do user authenticated,
+      EmailVerificationBanner condicionado a email_confirmed_at null, LogoutButton com
+      useTransition. Layout dashboard com auth guard server-side adicional (defense in
+      depth). Polish do shell (sidebar, UserMenu) deferido pra Story 1.9 + Epic 2 conforme
+      AC3 textual.
+
+      AC4 (Toaster sonner + ActionResult error path): PASS — <Toaster /> mounted em
+      app/layout.tsx (root) uma única vez; SignupForm e LoginForm chamam toast.error(res.error)
+      quando res.ok === false e propagam fieldErrors via form.setError. Cenários cobertos
+      no integration test "signIn credenciais erradas" + componente test "Server Action
+      retorna { ok: false }".
+
+      AC5 (signUp → session imediata → redirect /dashboard + banner): PASS — Server Action
+      signUp chama auth.signUp({ email, password, options: { data: { username } } }) +
+      redirect('/dashboard') em sucesso. Trigger on_auth_user_created (Story 1.4) consome
+      username via raw_user_meta_data — integration test #1 valida cadeia completa
+      (signUp → NEXT_REDIRECT → profile row criada por trigger com username correto + id
+      bate com user.id em auth.users via getUserById). EmailVerificationBanner renderiza
+      quando email_confirmed_at null. Decisão `mailer_autoconfirm: true` aplicada via
+      Management API documentada em §13 dev-setup.md (top_issues #4 trata reversão em 1.6).
+
+      AC6 (PT-BR em todas as strings visíveis): PASS — labels (Email, Username, Senha,
+      Confirmar senha), placeholders (seu@email.com, seu-username), botões (Criar conta,
+      Entrar, Sair), mensagens Zod (10+ strings PT-BR), toasts, banner ("Confirme seu
+      email para garantir o acesso à sua conta"), link "Esqueci a senha", helper texts
+      ("Seu @ público (3-30 caracteres...)"). `lang="pt-BR"` no <html>. metadata.title
+      atualizado para "BioLink" (cleanup pendente desde Story 1.1).
+
+      AC7 (middleware mínimo /signup /login /dashboard:path*): PASS — middleware.ts na
+      raiz com matcher reduzido EXATAMENTE conforme spec; PROTECTED_PATHS=['/dashboard'];
+      AUTH_PAGES=['/login', '/signup']; redirect bi-direcional implementado
+      (guest→/login?next=path; user→/dashboard). createServerClient via @supabase/ssr
+      gerencia cookies HTTP-only conforme arch §Routing. Comentário inline cross-ref
+      Story 1.7 expansion.
+
+      AC8 (cobertura de testes): PASS — 15 unit + 11 component + 13 integration = 39
+      totais. Plano original era 29 cenários (10 unit validators + 4 unit reserved + 7
+      component signup + 4 component login + 4 integration auth); entregue:
+        - 11 unit validators (1 extra: SignInInput email inválido)
+        - 4 unit reserved
+        - 7 component SignupForm
+        - 4 component LoginForm
+        - 5 integration auth (1 extra: signIn senha errada → ActionResult ok:false)
+      Helper sweep `deleteByUsername` em auth.test.ts é resiliente (resolve via profiles
+      table primeiro, depois admin sweep). Pattern NEXT_REDIRECT documentado em comentário
+      inline (reusará em Server Actions futuras).
+
+      AC9 (gate 6/6 verde): PASS — typecheck ✓, lint ✓, build ✓, test:unit (15) ✓,
+      test:components (11) ✓, test:integration (13 — 8 RLS de 1.4 mantidos + 5 auth) ✓.
+      Re-validado nesta sessão de QA gate independentemente: 39/39 testes verdes em
+      ~50s totais. CI não muda — branch protection rule de main mantém 9 required checks
+      (test-integration já incluído desde Story 1.4 Task 1.5).
+
+  regressions:
+    status: PASS
+    notes: |
+      Stories 1.1-1.4 mantidas verdes:
+        - 8 RLS tests de Story 1.4 continuam PASS no test:integration run desta sessão
+          (sessões compartilham `biolink-dev` mas convenção `cifx-*` + UUIDs determinísticos
+          previne colisões; helper cleanup defensivo em beforeAll/afterAll funciona).
+        - app/page.tsx (landing boilerplate Next.js de Story 1.1) inalterada — só
+          metadata em app/layout.tsx ganhou title/description PT-BR + lang="pt-BR" +
+          <Toaster /> mount.
+        - lib/supabase/{server,client,admin}.ts inalterados (Story 1.5 consome via
+          createClient existente).
+        - Migrations 0001 + 0002 inalteradas; nenhum DDL novo.
+        - .github/workflows/ci.yml inalterado — todos os 9 jobs requeridos continuam
+          válidos (test-integration agora cobre 13 testes em vez de 8).
+        - app/globals.css aumentou (+tokens shadcn) mas placeholders originais preservados
+          — tema visual da landing page mantido idêntico.
+        - vitest.config.ts mudou (alias replicado por project entry) mas backward-compatible:
+          os 8 RLS tests continuam passando sem mudança no test file.
+      Dependências adicionadas runtime: react-hook-form, @hookform/resolvers, sonner,
+      lucide-react, clsx, tailwind-merge, class-variance-authority, @base-ui/react
+      (transitive). devDep: tw-animate-css. Nenhuma versão downgrade; nenhum override
+      forçado em pnpm-workspace.yaml.
+
+  performance:
+    status: PASS
+    notes: |
+      Quality gate local executa em ~50s (typecheck 1s, lint 1s, build ~50s, test:unit
+      ~5s, test:components ~14s, test:integration ~10s). Bundle do Next.js: 4 routes
+      (/, /_not-found, /dashboard ƒ, /login, /signup) — /signup e /login STÁTICAS;
+      /dashboard DINÂMICA (server-rendered on demand pra checar auth). Middleware roda
+      em apenas 3 paths (matcher reduzido) — overhead mínimo.
+
+      Server Action signUp faz 2 round-trips a Supabase: (1) SELECT profile por username,
+      (2) auth.signUp. Trade-off explícito documentado em Story PSN #2: 1 extra round-trip
+      vs UX melhor (evita criar auth.users e falhar no trigger por race). Aceitável para
+      UX flow não-quente (signup acontece 1x por user).
+
+      signIn faz 1 round-trip (signInWithPassword). signOut 1 round-trip + redirect.
+      Pattern adequado.
+
+      shadcn primitives e RHF + Zod resolver não introduzem overhead arquitetural
+      relevante. Build minifica corretamente; @base-ui/react adiciona ~5KB gzip ao bundle
+      do dashboard (Button), aceitável.
+
+  security:
+    status: PASS
+    notes: |
+      8-point security checklist:
+      1. **Anti-enumeration:** signIn retorna mensagem genérica "Email ou senha incorretos"
+         (não revela se email existe). Aplicado per arch §Security > Email enumeration
+         linha 2147.
+      2. **Server-side validation:** Server Actions re-validam input via Zod safeParse —
+         cliente não pode bypass via DevTools. Padrão correto contra trusted-client
+         antipattern.
+      3. **Reserved usernames:** Dupla validação — client-side via Zod refine
+         (UX immediate feedback) + server-side via mesmo schema (safeParse re-aplica).
+         Lista hardcoded em lib/reserved-usernames.ts cobre paths Next.js reservados
+         (api, dashboard, login, signup, etc.) + paths semânticos universais
+         (about, terms, privacy).
+      4. **Race window mitigation:** Pre-check de username via SELECT + DB UNIQUE constraint
+         em profiles.username (de Story 1.4) garantem integridade. Server Action fallback
+         para SQLSTATE 23505 com mensagem amigável.
+      5. **RLS aware:** Server Actions usam createClient() (anon + cookies, RLS-aware) —
+         NÃO usam admin/service-role. Conformidade com arch §Coding Standards linha 2395
+         (service-role isolado em integration tests apenas).
+      6. **CSRF:** Next.js Server Actions têm built-in CSRF mitigation via
+         origin/referer checks + actionId opaco — sem necessidade de implementar manual.
+      7. **Session cookies:** @supabase/ssr gerencia HTTP-only cookies automaticamente
+         via createServerClient. Não há manipulação manual de tokens em client-side.
+      8. **Defense in depth:** Middleware (1ª linha) + Layout dashboard auth guard
+         (2ª linha) + Page dashboard re-check (3ª linha) protegem rotas privadas.
+         Sobreposição intencional documentada em Story Task 4.8.
+
+      Decisão `mailer_autoconfirm: true` é transitória e está em DEV apenas — biolink-prod
+      (ainda não criado) DEVE ter false antes do release público (documentado em §13
+      dev-setup.md). Risco aceitável no contexto de development project pessoal.
+
+      Gitleaks pre-commit não foi rodado nesta sessão de QA (story ainda não committada);
+      arquivos novos foram inspecionados manualmente — sem secrets hardcoded. Senhas de
+      teste em integration test (`testpassword123`) são strings claramente reconhecíveis
+      como NÃO-secrets (semântica óbvia).
+
+  documentation:
+    status: PASS
+    notes: |
+      Story 1.5 file: Change Log v0.3 documenta a implementação completa com 5 deviations
+      explicadas vs draft (shadcn 3.x base-nova; form.tsx manual; tests/setup cleanup;
+      vitest alias por project; Management API patch para auth config). Dev Agent Record
+      completo: Agent Model Used, Debug Log References (2 issues principais com root
+      cause analysis), Completion Notes (8 bullets cobrindo deviations, rationale,
+      cleanup pendente), File List separando Novos (26) vs Atualizados (7).
+
+      docs/dev-setup.md §13 nova: explica setting transitório `mailer_autoconfirm: true`
+      em biolink-dev, fornece curl command para reproduzir, documenta plano de reversão
+      em Story 1.6, e cross-reference impacto em CI.
+
+      Inline comments criteriosos: middleware.ts cross-ref Story 1.7 expansion;
+      app/dashboard/page.tsx marker "Placeholder Story 1.5 — substituído em Stories 2.x";
+      tests/integration/server-actions/auth.test.ts documenta NEXT_REDIRECT pattern
+      pra reuso futuro.
+
+      Não há docs órfãos; nenhum file novo sem comment block contextual. README do projeto
+      não foi tocado nesta story (escopo apropriado; README cleanup vem em Story 1.9
+      Landing).
+
+      Smoke manual de Task 8.2 deferido — explicitamente documentado em Completion Notes
+      como "deixado para validação humana em InReview". Top_issues #1 captura como
+      medium-severity recommendation pre-merge.
+
+deviations_reviewed:
+  - description: 'shadcn 3.x base-nova instalado em vez do clássico "default" mencionado em Story Task 1.2 (que assumia @radix-ui primitives)'
+    resolution: 'APPROVED — "default" não existe mais na CLI shadcn 3.x; base-nova é o novo default e usa @base-ui/react. Button mantido com @base-ui/react/button (não tem label association issues). Input REESCRITO como <input> native pois @base-ui/react/input substitui id e quebra label[for] (descoberto via failing component test). Trade-off: perde algumas convenções a11y do base-ui/react/input (focus management) mas mantém label association funcional + a11y básico via HTML semantic. Aceitável para Story 1.5; futura migration para shadcn classic ou completar adoption de base-ui pode ser tratada em Story 1.8 (Seed Design System).'
+    severity: 'medium'
+  - description: 'components/ui/form.tsx criado manualmente pelo @dev — registry shadcn 3.x não inclui code (apenas metadata `{ name: "form", type: "registry:ui" }`)'
+    resolution: 'APPROVED — implementação manual segue pattern clássico shadcn faithful (FormProvider + Controller + FormFieldContext + useFormField hook + cloneElement em FormControl). Mantém todas as funcionalidades expected (FormItem grid, FormLabel htmlFor sync, FormControl id/aria-describedby/aria-invalid via cloneElement, FormMessage com error fallback). Manutenibilidade preservada — code é familiar pra qualquer dev que conheça shadcn. Possível tech-debt futura: verificar se shadcn 3.x eventualmente publica form na registry e migrar; no curto prazo, código local é estável.'
+    severity: 'low'
+  - description: 'tests/setup.ts ganhou afterEach(cleanup) explícito — Testing Library 16.x não faz auto-cleanup sem isso quando vitest globals=false'
+    resolution: 'APPROVED — fix necessário descoberto via failing component tests (acumulação de DOM entre testes). Adicionado import explícito de cleanup + afterEach hook. Sem impacto em outros tests (integration project usa setupFiles diferente; unit project node-env sem DOM). Validado: 11 component tests verdes após o fix.'
+    severity: 'low'
+  - description: 'vitest.config.ts replica resolve.alias em cada projects[] entry em vez de só top-level'
+    resolution: 'APPROVED — vitest 4.x não propaga top-level resolve para projects subconfigs no caso de imports via Node ESM (unit project com environment: node). Fix descoberto via "Cannot find package @/lib/..." em unit tests. Backward-compatible: integration tests anteriores (que funcionavam por acaso via top-level alias) continuam passando. Refactor opcional futuro: extrair alias para const compartilhada já feito (linha 4-6 do vitest.config.ts).'
+    severity: 'low'
+  - description: 'Task 7.1 Auth config aplicada via Management API HTTP PATCH em vez de Dashboard UI manual (originalmente proposto na Story)'
+    resolution: 'APPROVED — Management API é mais automatizável e auditável que clique manual no Dashboard. Comando documentado em §13 dev-setup.md (curl PATCH com SUPABASE_ACCESS_TOKEN). Idempotente (PATCH com mesmo payload é no-op). Vantagem secundária: pode ser scriptado em supabase/scripts/auth-config.mjs no futuro pra reset-environment. mailer_autoconfirm: true validado via GET subsequente.'
+    severity: 'low'
+
+handoff:
+  next_agent: '@devops'
+  next_command: '*push (Story 1.5)'
+  condition: |
+    Quality gate PASS confirmado — typecheck/lint/build/test:unit/test:components/test:integration
+    verdes (39/39 testes). 9/9 ACs satisfeitos com primeiro fluxo UI auth do projeto. 5
+    deviations vs draft documentadas e aprovadas no review (shadcn 3.x; form.tsx manual;
+    cleanup hook; vitest alias propagation; Management API patch). 4 observations
+    não-bloqueantes registradas em top_issues:
+      #1 (medium) — smoke manual E2E deferido, RECOMENDADO executar pré-merge
+      #2 (medium) — middleware.ts → proxy.ts migration deferida pra Story 1.7
+      #3 (low) — acceptTerms cast cosmético, cleanup futuro em 1.8
+      #4 (low) — mailer_autoconfirm: true transitório, reversão em 1.6
+
+    Story 1.5 pode transicionar InReview → Done com gate decision PASS — sem blockers.
+    Próximo passo: @devops *push para abrir PR + merge sobre main quando CI verde.
+    Próxima story sugerida: **Story 1.6 — Reset Password + Email Verification** que
+    reverterá mailer_autoconfirm e implementará /auth/callback (cross-ref top_issues #4).
