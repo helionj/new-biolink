@@ -84,70 +84,50 @@ jobs:
       - run: pnpm test:components
 
   # =========================================================================
-  # test-integration — DEFERIDO para Story 1.4 (primeiro DDL real)
+  # test-integration — Story 1.4 (CI-001 RESOLVED via reuso biolink-dev)
   # =========================================================================
-  # Job removido do MVP por bloqueio na cadeia Supabase Branching + GHA runners:
-  #   1. pnpm 11.x quebra com Node 20 (resolvido — pnpm 10.33.4)
-  #   2. supabase branches exige --experimental flag (resolvido)
-  #   3. JSON de 'branches get' mudou para uppercase env-var-shaped keys
-  #      (resolvido — POSTGRES_URL no lugar de assumed .db_url)
-  #   4. GHA runners sem IPv6 + Supabase Direct Connection IPv6-only sem IPv4
-  #      add-on pago (resolvido via pooler URL)
-  #   5. **BLOQUEADO:** SASL auth fail no pooler ('password authentication
-  #      failed for user "postgres"') — credenciais embed no POSTGRES_URL do
-  #      branch parecem incompatíveis com formato esperado pelo pooler
-  #      (provavelmente exige `postgres.<project_ref>` user prefix). Não há
-  #      campo password explícito no JSON; investigação > 1h não destravou.
+  # Modelo: testes integration apontam para o MESMO projeto Supabase de dev
+  # (ibpliihqaceafdykgwiu / biolink-dev). Isolamento por convenção de prefixo:
+  # fixtures de teste usam username 'cifx-*' e UUIDs determinísticos
+  # (00000000-0000-0000-0000-000000001*). Cleanup acontece em beforeAll/afterAll
+  # dos próprios testes (tests/integration/helpers/test-users.ts) usando
+  # service-role admin client.
   #
-  # Decisão (@devops + owner, 2026-05-12): deferir job para Story 1.4 que
-  # introduz o primeiro DDL real (RLS policies + auth tables). Stories 1.3
-  # entrega scaffold completo (vitest, husky, pipeline, Vercel, secrets);
-  # branching API ficou apenas documentada no ci.yml comentado abaixo.
+  # Trade-off aceito (vs Supabase Branching original de Story 1.3):
+  #   - perde isolamento por PR (compensa: solo dev, sem PRs concorrentes)
+  #   - ganha simplicidade e zero custo recorrente
+  #   - preserva slot do free tier para biolink-prod futuro
   #
-  # AC2 da Story 1.3 marcado como DEFERIDO; Story 1.4 deve:
-  #   (a) Resolver SASL auth — provavelmente extrair user.password do JSON
-  #       e construir URL manualmente OU usar session-mode pooler
-  #   (b) Re-habilitar este job descomentando o bloco abaixo
-  #   (c) Atualizar architecture.md §1883-1917 com a versão funcional
+  # Migrações: dev aplica localmente via `pnpm exec supabase db push` ANTES
+  # de abrir o PR. CI NÃO aplica migrations — testa contra o estado atual de
+  # biolink-dev. Se uma migration pendente for esquecida, este job falha com
+  # erro de schema, sinalizando claramente o esquecimento.
   #
-  # # test-integration:
-  # #   needs: install
-  # #   runs-on: ubuntu-latest
-  # #   if: github.event_name == 'pull_request'
-  # #   steps:
-  # #     - uses: actions/checkout@v4
-  # #     - uses: pnpm/action-setup@v3
-  # #       with: { version: '${{ env.PNPM_VERSION }}' }
-  # #     - uses: actions/setup-node@v4
-  # #       with: { node-version: '${{ env.NODE_VERSION }}', cache: 'pnpm' }
-  # #     - run: pnpm install --frozen-lockfile
-  # #     - uses: supabase/setup-cli@v1
-  # #       with: { version: '2.98.2' }
-  # #     - name: Create Supabase Branch
-  # #       env:
-  # #         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-  # #       run: |
-  # #         BRANCH_NAME="pr-${{ github.event.pull_request.number }}"
-  # #         supabase --experimental branches create "$BRANCH_NAME" \
-  # #           --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} || true
-  # #         # Poll até POSTGRES_URL aparecer; extrair user.password explicitamente
-  # #         # e construir URL com formato `postgres.<ref>:<pwd>@host:6543/postgres`
-  # #         # (TODO Story 1.4 — destravar SASL auth)
-  # #         ...
-  # #     - name: Apply migrations
-  # #       run: supabase db push --db-url "$SUPABASE_DB_URL"
-  # #     - name: Run integration tests
-  # #       env:
-  # #         SUPABASE_DB_URL: ${{ env.SUPABASE_DB_URL }}
-  # #         HASH_SALT: 'ci-fixed-salt-32-chars-minimum-aaaaaa'
-  # #       run: pnpm test:integration
-  # #     - name: Cleanup Supabase Branch
-  # #       if: always()
-  # #       env:
-  # #         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-  # #       run: |
-  # #         supabase --experimental branches delete "pr-${{ github.event.pull_request.number }}" \
-  # #           --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} || true
+  # Upgrade path: quando projeto monetizar/ganhar contribuidores, criar
+  # biolink-ci dedicado e trocar 2 secrets (NEXT_PUBLIC_SUPABASE_URL + ANON_KEY
+  # + SERVICE_ROLE_KEY). Nenhuma mudança de código necessária.
+
+  test-integration:
+    needs: install
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      HASH_SALT: ${{ secrets.HASH_SALT }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Run integration tests
+        run: pnpm test:integration
 
   build:
     needs: [lint, typecheck, test-unit, test-components]

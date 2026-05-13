@@ -1,6 +1,15 @@
+import { resolve } from 'node:path';
+
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  // Resolve `@/*` to project root — mirrors tsconfig.json paths so test imports
+  // like `@/lib/supabase/types` work without `vite-tsconfig-paths` dep.
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, './'),
+    },
+  },
   test: {
     passWithNoTests: true,
     projects: [
@@ -24,6 +33,11 @@ export default defineConfig({
           name: 'integration',
           environment: 'node',
           include: ['tests/integration/**/*.test.{ts,tsx}'],
+          setupFiles: ['./tests/integration/setup.ts'],
+          // RLS tests mutate shared auth.users in biolink-dev (CI-001 alt B).
+          // Sequential file execution avoids cross-file race conditions when
+          // future stories add more integration suites.
+          fileParallelism: false,
         },
       },
     ],
