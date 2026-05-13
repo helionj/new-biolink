@@ -1,0 +1,141 @@
+schema: 1
+story: '1.3'
+gate: CONCERNS
+status_reason: '6/7 ACs satisfeitos com pipeline CI/CD end-to-end validada (8 jobs verdes em main + Vercel auto-deploy 69s + branch protection com 8 required checks). AC2 (test-integration) DEFERIDO para Story 1.4 após cadeia de 5 bloqueios — 4 resolvidos + 1 bloqueio SASL pooler documentado em known-issues.md CI-001 com plano de re-ativação. Concerns: AC2 deferral cria dependência hard para Story 1.4; branch protection enforce_admins=false (Plan B intencional, admin bypass aceitável no MVP solo per Task 6.6).'
+reviewer: 'Manual gate per QA-001 (CodeRabbit self-healing loop indisponível em macOS sem WSL/CodeRabbit CLI). @architect Aria validated quality_gate_tools (typecheck/lint/build/ci-yaml-valid/husky-hooks-run) + 7 quality checks.'
+updated: '2026-05-12T02:00:00Z'
+top_issues:
+  - severity: 'medium'
+    category: 'requirements'
+    description: 'AC2 (job test-integration com Supabase Branching) deferido para Story 1.4 após bloqueio SASL auth fail no pooler Supavisor (user "postgres" sem suffix .project_ref).'
+    recommendation: 'Story 1.4 (primeiro DDL real + RLS) deve incluir resolução obrigatória do CI-001 antes de adicionar test-integration real. Avaliar 3 caminhos: (a) extrair user/password do JSON da API Supabase em vez de POSTGRES_URL; (b) projeto Supabase CI dedicado com truncate; (c) IPv4 add-on pago para usar Direct Connection.'
+  - severity: 'low'
+    category: 'security'
+    description: 'Branch protection rule criada com enforce_admins=false (admin bypass habilitado) — Plan B intencional per Task 6.6.2 para permitir hotfix emergencial pelo owner solo no MVP.'
+    recommendation: 'Revisitar em story dedicada ou imediatamente após onboarding de 2º contributor para endurecer com enforce_admins=true (zero-bypass). Manter bypass admin é aceitável enquanto projeto for solo.'
+
+waiver:
+  active: false
+
+quality_checks:
+  code_review:
+    status: PASS
+    notes: |
+      Implementação literal de architecture.md §1809-1961 para ci.yml (8 jobs ativos:
+      install/lint/typecheck/test-unit/test-components/build/gitleaks/audit). Husky 9.x
+      configurado com .husky/_ entrypoints (padrão atual). lint-staged config em
+      package.json com globs corretos (.ts/.tsx/.js/.jsx + .json/.md/.yml/.yaml/.css).
+      .gitleaks.toml com [extend] useDefault=true — sem isso defaults seriam substituídas
+      (deviation corretiva validada experimentalmente). pre-commit usa `command -v
+      gitleaks` em vez do `||` literal — deviation de segurança aprovada (evita bypass
+      silencioso de leaks reais). vitest.config.ts usa `projects` array (Vitest 4.x
+      moderno), substituto do legacy vitest.workspace.ts.
+  unit_tests:
+    status: N/A
+    notes: |
+      Scaffold-only por design (Task 1.7). Os 3 projects (unit/components/integration)
+      configurados com passWithNoTests:true permitem CI jobs sucederem antes dos
+      primeiros testes reais. Validação: `pnpm test:unit/components/integration` 3×
+      exit 0 com mensagem "No test files found, exiting with code 0" (vitest 4.1.5).
+      Primeiros testes reais: RLS em Story 1.4, componentes em Story 1.8.
+  acceptance_criteria:
+    status: CONCERNS
+    notes: |
+      AC1 (8 jobs paralelos): PASS — install/lint/typecheck/test-unit/test-components/
+      build/gitleaks/audit todos verdes em ci.yml + validados em main run 25708250239.
+      AC2 (test-integration Supabase Branching): **DEFERIDO** para Story 1.4 — cadeia
+      de 5 bloqueios (4 resolvidos: pnpm/Node 22 compat, --experimental flag,
+      POSTGRES_URL uppercase keys, IPv6→pooler IPv4; 1 bloqueado: SASL auth fail).
+      Documentado em known-issues.md CI-001 com 3 caminhos de resolução.
+      AC3 (branch protection): PASS — rule criada via gh api -X PUT com 8 required
+      status checks + strict:true + allow_force_pushes:false + allow_deletions:false.
+      enforce_admins:false (Plan B intencional, ver top_issues).
+      AC4 (Vercel auto-deploy <5min): PASS — smoke deploy mediu 69s (1m9s) em
+      2026-05-12T01:47:10Z → 2026-05-12T01:48:19Z. Região gru1.
+      AC5 (PR previews): PASS — preview Vercel `new-biolink-git-feat-story-13-cicd-
+      helionj-projects.vercel.app` HTTP 200 + bot comment com link clicável.
+      AC6 (Husky + lint-staged + gitleaks): PASS — validado em 6 pre-commit hooks
+      do PR #1 (lint-staged + prettier + gitleaks "no leaks found") + 6 pre-push hooks
+      (typecheck exit 0). Fake GitHub PAT bloqueado em teste local (HOOK_EXIT=1).
+      AC7 (README documenta): PASS — README.md ampliado com 6 scripts test:* + seção
+      "Como contribuir" (4 passos); docs/dev-setup.md §9 (6 GHA secrets), §10 (5
+      Vercel env vars por escopo), §11 (Husky/lint-staged/gitleaks install macOS/Linux).
+  regressions:
+    status: PASS
+    notes: |
+      Stories 1.1 e 1.2 mantidas verdes: typecheck/lint/build em main run 25708250239
+      sobre commit 5c2c842 PASS (estado final após merge). Landing page boilerplate
+      Next.js continua renderizando em produção (https://new-biolink.vercel.app HTTP
+      200 confirmado). Migration 0001_init.sql placeholder inalterada. Schema Zod
+      env.ts inalterado. Single source of truth de pnpm preservada (packageManager
+      field + lockfile v9.0 compatível com pnpm 10.33.4 downgrade).
+  performance:
+    status: PASS
+    notes: |
+      Pipeline CI completa em ~21s no caminho crítico (build job, gargalo via
+      needs:[lint,typecheck,test-unit,test-components]). Jobs paralelos rodam em
+      10-20s cada (install 14s, lint 15s, typecheck 14s, test-unit 18s, test-
+      components 20s, build 19s, gitleaks 10s, audit 21s) — bem dentro do esperado
+      para repo bootstrap. Vercel auto-deploy 69s end-to-end (SLA AC4 era <5min;
+      delta 4× melhor). Pre-commit + pre-push hooks executam <5s cada (lint-staged
+      em escopo restrito + typecheck incremental).
+  security:
+    status: PASS
+    notes: |
+      gitleaks ativo em 2 camadas (defense-in-depth): (1) local pre-commit hook com
+      command -v guard + [extend] useDefault=true para herdar defaults oficiais;
+      (2) CI canônico via gitleaks/gitleaks-action@v2 com fetch-depth:0 (full history).
+      6 GitHub Actions secrets configurados via subshell + indireção bash (valores
+      nunca apareceram em transcript). SUPABASE_SERVICE_ROLE_KEY isolado no job
+      build (não vaza para test-integration). Vercel env vars com Sensitive flag em
+      SUPABASE_SERVICE_ROLE_KEY. Deployment Protection desabilitada para previews
+      públicos no MVP open-source (trade-off documentado). HASH_SALT separado por
+      ambiente (dev/CI/prod) — 3 valores `openssl rand -hex 32` distintos. Branch
+      protection: allow_force_pushes:false + allow_deletions:false barram destrutivos.
+  documentation:
+    status: PASS
+    notes: |
+      README.md ampliado com 6 scripts test:* (test, test:unit, test:components,
+      test:integration, test:watch, test:coverage) + nota sobre passWithNoTests +
+      seção "Como contribuir" (4 passos: setup local, branches & PRs, hooks Husky,
+      secrets). docs/dev-setup.md ganhou 3 seções novas (§9-§11) cobrindo GHA secrets,
+      Vercel env vars por escopo, Husky hooks com install macOS/Linux. known-issues.md
+      ganhou entry CI-001 completa com cadeia de 5 bloqueios + 3 caminhos de
+      resolução documentados. Change Log da story tem 6 versões rastreando draft →
+      validate → pre-flight → vercel setup → PR #1 debugging → close. ci.yml tem
+      comentário inline explicando os 5 bloqueios + plano de re-ativação Story 1.4.
+
+deviations_reviewed:
+  - description: 'AC2 (test-integration) DEFERIDO para Story 1.4 — bloqueio SASL auth fail no pooler Supavisor após 4 bugs resolvidos'
+    resolution: 'APPROVED — escopo da Story 1.3 é infra CI/CD; AC2 requer credenciais Supabase Branching que mudaram shape (CLI v2.98.2) e dependem de Direct Connection IPv4 (paid add-on) ou suffix .project_ref no user (não emitido pela API). Story 1.4 (primeiro DDL real + RLS) é o ponto natural de re-ativação porque introduz testes que precisam do branch isolado. CI-001 documenta 3 caminhos de resolução.'
+    severity: 'medium'
+  - description: 'Branch protection rule com enforce_admins:false (Plan B per Task 6.6.2)'
+    resolution: 'APPROVED — owner solo no MVP precisa de bypass para hotfix emergencial e para resolver bootstrap problem (commit que adiciona ci.yml não tem CI verde sobre si mesmo). Revisitar quando 2º contributor entrar ou em story dedicada de hardening.'
+    severity: 'low'
+  - description: 'pnpm downgrade 11.x → 10.33.4 (vs Pre-Flight decision v0.3 de manter 11.x)'
+    resolution: 'APPROVED — pnpm 11.x requer Node ≥22.13 (node:sqlite builtin) e CI usa Node 20 LTS (architecture §Tech Stack linha 191). Decisão Pre-Flight foi revisada com base em erro real de CI em commit e9873bc. packageManager field e ci.yml reconciliados; lockfile v9.0 compatível com ambas as versões.'
+    severity: 'low'
+  - description: 'Pre-commit usa `command -v gitleaks` em vez do `||` literal de Task 2.6'
+    resolution: 'APPROVED — pattern `cmd || { echo ...; exit 0 }` faria bypass silencioso de leaks reais (mesmo exit code 1 para "não instalado" e "leak detectado"). `command -v` diferencia binário ausente (skip + warning) de detecção legítima (bloqueia commit). Deviation de segurança válida.'
+    severity: 'low'
+  - description: '.gitleaks.toml com `[extend] useDefault=true` (não previsto na Task 2.7 literal)'
+    resolution: 'APPROVED — sem essa flag, gitleaks substitui defaults pelo conteúdo do toml e roda com zero rules (validado experimentalmente — nenhum leak detectado em teste). Com useDefault=true, allowlist do projeto estende as defaults oficiais. Correção crítica para AC6 funcionar.'
+    severity: 'low'
+  - description: 'AC1 textual lista 8 jobs incluindo test-integration; ci.yml final tem 8 jobs SEM test-integration'
+    resolution: 'APPROVED — test-integration comentado (linhas ~86-153) com documentação completa dos 5 bloqueios. AC1 reconciliado em nota inline ("test-integration originalmente listado aqui — DEFERIDO para Story 1.4"). Pipeline ativa tem 8 jobs: install/lint/typecheck/test-unit/test-components/build/gitleaks/audit.'
+    severity: 'low'
+  - description: 'Job audit incluído (architecture §1946 recomenda; PRD AC não pede explicitamente)'
+    resolution: 'APPROVED — política de waiver SF-2 documentada em Task 3.7 para CRITICAL sem fix upstream. Custo baixo, valor de segurança alto. Permanência aceita.'
+    severity: 'low'
+  - description: 'URL final Vercel é `new-biolink.vercel.app` (não `biolink-app.vercel.app` planejado em Pre-Flight)'
+    resolution: 'APPROVED — todos os 10 lugares com referência antiga (ci.yml, story 1.3, architecture.md §Vercel env + §1933 + §2066, prd.md NFR18) reconciliados em commit incluído no PR #1. Single source of truth preservada.'
+    severity: 'low'
+  - description: '`.gitleaks.toml` em vez de `.gitleaksignore` (architecture §1632 menciona o legacy)'
+    resolution: 'APPROVED — `.gitleaks.toml` é o formato moderno (gitleaks v8+) com config + allowlist mais expressiva. Funcionalmente equivalente. Documentado em Project Structure Notes.'
+    severity: 'low'
+
+handoff:
+  next_agent: '@po'
+  next_command: '*close-story 1.3'
+  condition: |
+    Push remoto já executado por @devops (PR #1 mergeado em commit 5c2c842 em main, CI 8/8 verdes sobre o próprio commit do CI per run 25708250239). Branch protection rule ativa. Story pode transicionar InReview → Done com gate decision CONCERNS — verdict aprovado com 2 observações documentadas (AC2 deferral + enforce_admins:false). Story 1.4 DEVE iniciar com resolução obrigatória de CI-001 antes de adicionar test-integration real.
