@@ -1,0 +1,198 @@
+schema: 1
+story: '1.4'
+gate: PASS
+status_reason: '7/7 ACs satisfeitos com primeiro DDL real do projeto (profiles + RLS + trigger SECURITY DEFINER + seed) aplicado limpo em biolink-dev e validado via 8 cenários integration (RLS owner/non-owner/anon + INSERT bloqueado + trigger bootstrap) + smoke E2E público (anon.auth.signUp → trigger → cascade). CI-001 deferred de Story 1.3 RESOLVED via reuso biolink-dev (alt B revisada com prefix cifx-) — preserva slot Supabase free tier e zera custo recorrente. CI pipeline upgrada para 9 jobs (test-integration adicionado aos required status checks pós-merge per Task 1.5 Plan B). 5 bugs descobertos e corrigidos inline durante implementação (3 dev-time + 2 CI-time) — todos com debug log na story. 2 nice-to-have observations registradas como tech-debt low-severity (Node version pin local vs CI; db:types regen produz diff cosmético) — não-bloqueantes.'
+reviewer: 'Manual gate per QA-001 (CodeRabbit self-healing loop indisponível em macOS sem WSL/CodeRabbit CLI). @architect Aria validated quality_gate_tools (typecheck/lint/build/db:types/supabase-db-push/rls-tests) + 7 quality checks contra main 208c602.'
+updated: '2026-05-13T14:40:00Z'
+top_issues:
+  - severity: 'low'
+    category: 'developer-experience'
+    description: 'Node version mismatch local (Dara estava em Node 25, native WebSocket disponível) vs CI (Node 20 LTS, sem native WebSocket) causou false-negative no quality gate local — bug do RealtimeClient só foi capturado em CI (run 25804495390). Fix WebSocket polyfill (ws@8.20.1 devDep) resolveu, mas o gap existe e pode reincidir em deps futuras.'
+    recommendation: 'Adicionar pin de Node local via .nvmrc (ou .tool-versions para asdf/mise) alinhado ao NODE_VERSION do ci.yml (atualmente 20.x LTS). Story 1.5+ pode incluir como housekeeping ou criar story dedicada de developer-experience. Path documentado em Story 1.4 Change Log v0.6 e implicitamente na lição do bug WebSocket.'
+  - severity: 'low'
+    category: 'maintainability'
+    description: 'pnpm db:types regen produz diff cosmético (Supabase CLI raw output: double quotes + sem semicolons) vs versão commitada (Prettier-processed). Schema idêntico, mas diff de ~190 linhas a cada regen confunde reviewers e gera ruído em PRs futuros que tocam o schema.'
+    recommendation: 'Encadear `prettier --write lib/supabase/types.ts` no script `db:types` em package.json. Pattern: `"db:types": "supabase gen types typescript --linked --schema public > lib/supabase/types.ts && prettier --write lib/supabase/types.ts"`. Trade-off: +1s no script, mas elimina ruído visual permanentemente.'
+
+waiver:
+  active: false
+
+quality_checks:
+  code_review:
+    status: PASS
+    notes: |
+      Migration 0002_profiles.sql segue DDL canônico de docs/architecture/schema-design.md
+      §4 #profiles linhas 405-446: extensions citext+pgcrypto idempotentes, set_updated_at()
+      utility function (genérica para reuso em pages/links/etc), profiles table com 7 colunas
+      + 5 CHECK constraints (username regex `^[a-z0-9-]{3,30}$`, display_name/bio/avatar_url
+      length+regex), id como PK+FK simultânea com ON DELETE CASCADE, COMMENT ON em todas as
+      colunas para autodocumentação. RLS policies: profiles_select_public USING (true) +
+      profiles_update_own USING (auth.uid()=id) WITH CHECK (auth.uid()=id) — WITH CHECK
+      defensivo aprovado (Aria). Trigger function on_auth_user_created() com hardening
+      completo: SECURITY DEFINER + SET search_path = public, pg_catalog + guard de
+      username vazio/curto com RAISE EXCEPTION + lower() explícito sobre raw_user_meta_data.
+      Idempotência reforçada com DROP TRIGGER/POLICY IF EXISTS antes de cada CREATE (Postgres
+      não suporta CREATE OR REPLACE TRIGGER nativamente). Rollback companion em
+      supabase/rollbacks/0002_profiles_rollback.sql com DROPs em ordem reversa de
+      dependências (triggers → policies → table → functions); extensions preservadas
+      (deps de migrations futuras). Helpers de teste em tests/integration/helpers/test-users.ts
+      usam @supabase/supabase-js direto (bypassa lib/env.ts strict validation), fixtures
+      com UUIDs determinísticos `0…00001…` distintos de seed `0…0000…`. Vitest config
+      ganhou resolve.alias `@→./` (substitui vite-tsconfig-paths sem nova dep) + integration
+      setupFiles + fileParallelism:false (evita race em futuras suites). Smoke E2E em
+      scripts/smoke-signup.mjs valida fluxo público anon.auth.signUp complementar a AC5(h)
+      (que usa admin path).
+  unit_tests:
+    status: N/A
+    notes: |
+      Story 1.4 é majoritariamente SQL (DDL + trigger function + RLS policies). Não há
+      lógica TS unitestável — toda validação acontece em integration tests contra
+      Postgres real. Validators TS (reserved-usernames, etc.) virão em Story 1.5+
+      (UI de signup). project Vitest `unit` continua com passWithNoTests:true.
+  acceptance_criteria:
+    status: PASS
+    notes: |
+      AC1 (migration profiles com extensions+columns+constraints): PASS — 0002_profiles.sql
+      aplicada em biolink-dev (supabase migration list confirma Local=Remote em 0001+0002).
+      Decisão arquitetural: SEM coluna `theme` em profiles (PRD textual cita "theme enum"
+      mas arch §schema-design.md §4 #profiles + arch §Data Models > Profile colocam theme
+      em `pages`; Story 2.2 adicionará).
+      AC2 (username CHECK regex + trigger updated_at + COMMENTs): PASS — CHECK regex
+      `^[a-z0-9-]{3,30}$` validado funcionalmente (bug `__test_` prefix rejeitado pela
+      constraint, corrigido para `cifx-` durante implementação). Trigger
+      trg_profiles_set_updated_at e COMMENT ON TABLE/COLUMN ativos.
+      AC3 (RLS policies): PASS — profiles_select_public USING(true) + profiles_update_own
+      USING + WITH CHECK auth.uid()=id. Decisão arquitetural: select_public permissivo
+      (true) per arch §RLS High-Level Strategy linha 939, NÃO o restritivo "linha visível
+      somente se referenciada por página publicada" do PRD AC3 textual — PRD frase
+      "refinado em Epic 2" confirma que MVP permissivo é aceitável. INSERT/DELETE sem
+      policy = bloqueado para anon/authenticated; INSERT via SECURITY DEFINER trigger,
+      DELETE via auth.users CASCADE.
+      AC4 (trigger SECURITY DEFINER bootstrap): PASS — on_auth_user_created() com
+      SET search_path hardening + guard + RAISE EXCEPTION. Trigger auth_user_created
+      AFTER INSERT ON auth.users ativo. Validado em AC5(h) integration test + smoke
+      signup E2E. **Escopo restrito Story 1.4:** insere apenas em profiles (arch canonical
+      inclui pages; Story 2.2 estende via CREATE OR REPLACE FUNCTION — zero-downtime
+      pattern).
+      AC5 (CI job test-integration + 8 cenários RLS): PASS — CI-001 resolved via reuso
+      biolink-dev (alt B revisada, ver deviation #5). 8/8 cenários PASS em CI run
+      25805429515 (após fix WebSocket polyfill commit 6b6e090). Cenários: (a) owner read,
+      (b) owner update + updated_at refresh, (c) non-owner read (permissivo), (d) non-owner
+      UPDATE blocked, (e) anon read, (f) anon UPDATE blocked, (g) direct INSERT blocked,
+      (h) trigger bootstrap. test-integration adicionado aos required status checks de
+      main via gh api PATCH (Task 1.5 Plan B post-merge).
+      AC6 (seed 3 profiles idempotente): PASS — supabase/seed.sql cria alice/bob/carol
+      via INSERT auth.users + ON CONFLICT (id) DO NOTHING; trigger cria 3 profiles
+      automaticamente; UPDATEs subsequentes populam display_name/bio em alice+bob (carol
+      fica NULL para testar nullable). Aplicado via `supabase db reset --linked` em
+      biolink-dev; query subsequente confirmou 3 profiles com shape esperado. Schema-qualified
+      extensions.crypt + extensions.gen_salt (bug corrigido inline durante implementação).
+      AC7 (types regen): PASS — pnpm db:types regenerou lib/supabase/types.ts (155→184
+      linhas, schema concreto de profiles com Row/Insert/Update tipados). pnpm typecheck
+      continua exit 0. Types commitados na branch.
+  regressions:
+    status: PASS
+    notes: |
+      Stories 1.1, 1.2, 1.3 mantidas verdes em CI run 25805429515 sobre main 208c602.
+      Landing page Story 1.1 (boilerplate Next.js) continua rendering em produção
+      (`https://new-biolink.vercel.app` HTTP 200). Migration 0001_init.sql placeholder
+      inalterada (apenas posição na sequência preservada). Schema Zod env.ts inalterado.
+      pnpm-workspace.yaml allowBuilds inalterado. CI pipeline preservou 8 jobs anteriores
+      verdes + adicionou test-integration ativo (9 total). Branch protection upgrade
+      8→9 required checks (test-integration added) sem regressão nos 8 anteriores.
+      Vercel auto-deploy continua funcional (pré-CI gate em ambos os PRs desta sessão).
+  performance:
+    status: PASS
+    notes: |
+      Quality gate local executa em <90s (typecheck 1s, lint 2s, build 5s, db:types 15s,
+      test:integration 5-23s dependendo de latência Supabase, smoke E2E 1.6s). CI pipeline
+      completa em ~30s no caminho crítico (test-integration ~10s contra biolink-dev).
+      RLS policies sem overhead arquitetural notável: profiles_select_public USING(true)
+      compila como always-true (zero cost); profiles_update_own USING(auth.uid()=id)
+      faz lookup STABLE cacheable per arch §9 Performance considerations. Migration
+      aplica em <2s contra biolink-dev. Smoke deploy Vercel mantém SLA <5min (78s no
+      PR #2 fix commit 6b6e090, 84s no merge). Sem queries N+1, sem full table scans
+      (UNIQUE index em username é o único secundário). Pattern de helpers test (sweep
+      listUsers com perPage default + graceful degrade após bug 5xx) mantém runtime
+      cleanup curto.
+  security:
+    status: PASS
+    notes: |
+      RLS habilitada em profiles via ALTER TABLE ENABLE ROW LEVEL SECURITY. Defense-in-depth:
+      (1) CHECK constraints como guardrails de input (length+regex em todos os campos
+      semi-públicos); (2) RLS policies stricta (anon read OK por design, anon UPDATE
+      blocked, authenticated non-owner UPDATE blocked, direct INSERT blocked sem path
+      via trigger); (3) trigger SECURITY DEFINER com SET search_path = public, pg_catalog
+      hardening contra search_path injection; (4) WITH CHECK (auth.uid()=id) na policy
+      UPDATE para defesa em profundidade. Validação RLS positiva+negativa cobre 8 cenários
+      AC5 a-h. Gitleaks pre-commit barrou 2 false positives durante implementação
+      (TEST_USER_PASSWORD em test-users.ts + password em smoke-signup.mjs), corrigidos
+      via inline `gitleaks:allow` annotation cirúrgica — hook funcionou conforme projetado.
+      Service-role key isolado em SUPABASE_SERVICE_ROLE_KEY (env block do test-integration
+      job, mascarado nos logs como `***`). Senhas de fixture são strings reconhecíveis
+      como NÃO-secrets (`integration-test-pw-32-chars-min`, `smoke-signup-test-pw-32-chars-min`)
+      — semântica clara mesmo sem o annotation. Anon read permissivo: trade-off documentado
+      em Project Structure Notes #2 e arch §schema-design.md (handle é público por design;
+      restringir introduz JOIN com pages em SSR quente).
+  documentation:
+    status: PASS
+    notes: |
+      Story 1.4 file ganhou 6 versões de Change Log (v0.1 draft → v0.6 InReview) rastreando
+      cada decisão arquitetural + bug + fix. Dev Notes com Source citations [Source:
+      docs/architecture/*.md#section] em 100% dos technical details (tech stack, DDL,
+      RLS, trigger, seed, testing, file locations, project structure). Project Structure
+      Notes documenta 7 discrepâncias PRD↔arch + decisões tomadas. Dev Agent Record com
+      Debug Log References cobre 3 bugs (regex, schema-qualification, signUp validation)
+      + 1 issue de robustez (listUsers 5xx). File List separa Created/Modified/NOT-to-commit
+      explicitamente. docs/dev-setup.md ganhou §12 cobrindo fluxo `db push`/`db reset`/`db:types`,
+      tabela de seed demos, smoke test pós-reset, advertência destrutiva, plano rollback
+      prod, paths relevantes (migration/rollback/seed). docs/qa/known-issues.md CI-001
+      atualizada para Resolved com sumário da decisão final + upgrade path documentado
+      (criar biolink-ci separado quando projeto monetizar/escalar — trocar 4 secrets,
+      zero refactor de código).
+
+deviations_reviewed:
+  - description: 'PRD AC1 cita `theme enum` em profiles; arch §schema-design.md §4 + arch §Data Models > Profile colocam theme em `pages` (1:1)'
+    resolution: 'APPROVED — seguir arch. profiles sem theme; coluna `theme theme_preset` será adicionada à tabela `pages` em Story 2.2. AC1 reescrito para refletir essa decisão. Trade-off: PRD literal não atendido mas spirit do requisito (cada user tem 1 theme) preservado via 1:1 pages-profile.'
+    severity: 'low'
+  - description: 'PRD AC3 propõe `select_public` restritivo ("visível somente se referenciada por página publicada"); arch §RLS linha 939 + arch §Database Schema linha 956 definem permissivo `USING (true)`'
+    resolution: 'APPROVED — seguir arch. PRD frase "refinado em Epic 2" confirma que MVP permissivo é aceitável. Razão arquitetural: handle é público por design (descoberto via UNIQUE constraint em signup); restringir SELECT introduziria JOIN com pages em path quente de SSR /@username com benefício de privacidade marginal.'
+    severity: 'low'
+  - description: 'Trigger canônico arch (schema-design.md §4 Auth Trigger linhas 660-666) insere em profiles + pages; Story 1.4 implementa só profiles'
+    resolution: 'APPROVED — pages não existe até Story 2.2. Pattern documentado: Story 2.2 substituirá a função via CREATE OR REPLACE FUNCTION adicionando INSERT em pages — zero-downtime per arch §10 Backward Compatibility. Função atual marcada com COMMENT explicitando que Story 2.2 estenderá.'
+    severity: 'low'
+  - description: 'Migration naming `0002_profiles.sql` (NNNN_descritivo); arch §schema-design.md §10 cita timestamp `YYYYMMDDHHMMSS_*.sql` (Supabase CLI default)'
+    resolution: 'APPROVED — manter convenção do projeto (0001_init.sql de Story 1.2 inaugurou o padrão NNNN). Padronizar para timestamp via Story dedicada de housekeeping (não-MVP). Cross-ref: Project Structure Notes #4.'
+    severity: 'low'
+  - description: 'CI-001 alt B revisada após elicitação: REUSO biolink-dev (não projeto CI dedicado original)'
+    resolution: 'APPROVED — owner solo no MVP, sem PRs concorrentes; reuso preserva slot Supabase free tier (2/org) para biolink-prod futuro; zero custo recorrente; cleanup via convenção prefix cifx- + UUIDs determinísticos + LIKE fallback. Upgrade path para projeto CI dedicado é trocar 4 secrets (zero refactor de código) quando projeto monetizar/escalar — documentado em known-issues.md CI-001 §Resolução.'
+    severity: 'low'
+  - description: 'Bug inline #1 (dev-time): prefixo `__test_` viola CHECK regex `^[a-z0-9-]{3,30}$` (underscore não permitido)'
+    resolution: 'APPROVED — corrigido inline para `cifx-` (CI fixture). Bug capturado na 1ª run de integration tests local com erro "Database error creating new user" (mensagem vaga do Supabase Auth). Propagação `__test_` → `cifx-` em ~8 arquivos (helpers, tests, docs, CI workflow comment). Lição documentada em Change Log v0.5.'
+    severity: 'low'
+  - description: 'Bug inline #2 (dev-time): `gen_salt`/`crypt` no seed.sql precisam schema-qualification (Supabase managed instala pgcrypto em `extensions` schema, não `public`)'
+    resolution: 'APPROVED — corrigido inline para `extensions.crypt` + `extensions.gen_salt`. Capturado na 1ª run de `supabase db reset --linked` com erro `SQLSTATE 42883: function gen_salt(unknown) does not exist`. Lição: Supabase managed isola extensions em schema dedicado por convenção de segurança. Documentado em comentário inline no seed.sql.'
+    severity: 'low'
+  - description: 'Bug inline #3 (dev-time): Supabase Auth rejeita `@example.com` no signUp anônimo (anti-test-domain validation)'
+    resolution: 'APPROVED — corrigido inline para `@biolink.dev` no smoke-signup.mjs (real-looking TLD, sem entrega configurada → zero risco de spam). Bug NÃO afeta seed (admin.createUser bypassa validação) nem AC5(h) integration test (também admin path). Smoke é o único path público (anon.auth.signUp) e por isso é exposto à validação.'
+    severity: 'low'
+  - description: 'Bug inline #4 (dev-time, robustez): `admin.auth.admin.listUsers({ perPage: 1000 })` errou pós-`db reset` com "Database error finding users" 5xx'
+    resolution: 'APPROVED — reduzido para SDK default (50) + graceful degrade (log warning + continue, não falha) + hard safety `page > 100` no helper sweep. Cleanup primário por UUID conhecido é o contrato; sweep é insurance opportunística contra crashes catastróficos. Pattern resiliente para futuros helpers de teste.'
+    severity: 'low'
+  - description: 'Bug inline #5 (CI-time): Node 20 LTS (CI) não tem native WebSocket; @supabase/realtime-js instancia RealtimeClient eager em createClient(); local Node 25 tem nativo (false-negative no quality gate local)'
+    resolution: 'APPROVED — corrigido via fix commit 6b6e090 com polyfill condicional em tests/integration/setup.ts usando ws@8.20.1 (devDep) + @types/ws (TS strict). No-op em Node 22+ (typeof globalThis.WebSocket !== "undefined"). Validado: CI run 25805429515 11/11 verde pós-fix. Lição: pin de Node local (ver top_issues #1) preveniria reincidência.'
+    severity: 'low'
+
+handoff:
+  next_agent: '@po'
+  next_command: '*close-story 1.4'
+  condition: |
+    Push remoto já executado por @devops (PR #2 mergeado como squash commit 208c602 em main,
+    CI sobre o próprio commit do CI verde — bootstrap order resolvido pela 2ª vez). Branch
+    protection rule upgrada de 8 para 9 required status checks (test-integration adicionado
+    via Task 1.5 Plan B post-merge). Story pode transicionar InReview → Done com gate
+    decision PASS — verdict aprovado sem blockers; 2 nice-to-have observations registradas
+    em top_issues como tech-debt low-severity (Node version pin local; db:types prettier
+    integration). CI-001 RESOLVED via reuso biolink-dev (alt B revisada). Próxima story
+    sugerida: **Story 1.5 — UI de Auth** (PRD §282-310, Cadastro/Login/Logout) que será
+    o primeiro consumer real do trigger auth_user_created via fluxo público anon.signUp.
