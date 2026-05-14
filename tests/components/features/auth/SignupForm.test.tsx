@@ -2,10 +2,19 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+const mockedPush = vi.fn();
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockedPush, replace: vi.fn(), refresh: vi.fn() }),
+}));
+
 vi.mock('@/server/auth/actions', () => ({
   signUp: vi.fn(),
   signIn: vi.fn(),
   signOut: vi.fn(),
+  requestPasswordReset: vi.fn(),
+  confirmPasswordReset: vi.fn(),
+  resendVerificationEmail: vi.fn(),
 }));
 
 import { SignupForm } from '@/components/auth/SignupForm';
@@ -15,6 +24,7 @@ const mockedSignUp = vi.mocked(actions.signUp);
 
 afterEach(() => {
   mockedSignUp.mockReset();
+  mockedPush.mockReset();
 });
 
 async function fillValidForm() {
@@ -113,5 +123,15 @@ describe('<SignupForm>', () => {
         acceptTerms: true,
       }),
     );
+  });
+
+  it('em sucesso, redireciona para /login?message=verify_email (Story 1.6 mailer_autoconfirm:false)', async () => {
+    mockedSignUp.mockResolvedValue({ ok: true, data: undefined });
+    render(<SignupForm />);
+    await fillValidForm();
+    await userEvent.click(screen.getByRole('button', { name: /criar conta/i }));
+    await waitFor(() => {
+      expect(mockedPush).toHaveBeenCalledWith('/login?message=verify_email');
+    });
   });
 });

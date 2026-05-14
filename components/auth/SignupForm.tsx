@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -23,6 +24,7 @@ type FormValues = SignUpInput;
 
 export function SignupForm() {
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(SignUpInput),
@@ -37,14 +39,20 @@ export function SignupForm() {
 
   async function onSubmit(values: FormValues) {
     const res = await signUp(values);
-    if (res && !res.ok) {
+    if (!res) return;
+    if (!res.ok) {
       toast.error(res.error);
       if (res.fieldErrors) {
         for (const [field, message] of Object.entries(res.fieldErrors)) {
           form.setError(field as keyof FormValues, { message: String(message) });
         }
       }
+      return;
     }
+    // Sucesso: com `mailer_autoconfirm: false` (Story 1.6) signUp não cria
+    // session — usuário precisa confirmar email antes. Redireciona para
+    // /login com flag de toast.
+    router.push('/login?message=verify_email');
   }
 
   return (

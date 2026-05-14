@@ -1,20 +1,46 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { toast } from 'sonner';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { LoginForm } from '@/components/auth/LoginForm';
+import * as actions from '@/server/auth/actions';
+
+let searchParamsString = '';
+
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => new URLSearchParams(searchParamsString),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
+}));
 
 vi.mock('@/server/auth/actions', () => ({
   signUp: vi.fn(),
   signIn: vi.fn(),
   signOut: vi.fn(),
+  requestPasswordReset: vi.fn(),
+  confirmPasswordReset: vi.fn(),
+  resendVerificationEmail: vi.fn(),
 }));
 
-import { LoginForm } from '@/components/auth/LoginForm';
-import * as actions from '@/server/auth/actions';
+vi.mock('sonner', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
 
 const mockedSignIn = vi.mocked(actions.signIn);
+const mockedToastSuccess = vi.mocked(toast.success);
+const mockedToastError = vi.mocked(toast.error);
+
+beforeEach(() => {
+  searchParamsString = '';
+});
 
 afterEach(() => {
   mockedSignIn.mockReset();
+  mockedToastSuccess.mockReset();
+  mockedToastError.mockReset();
 });
 
 describe('<LoginForm>', () => {
@@ -62,5 +88,17 @@ describe('<LoginForm>', () => {
     await waitFor(() => {
       expect(mockedSignIn).toHaveBeenCalled();
     });
+  });
+
+  it('exibe toast.success quando ?message=verify_email', () => {
+    searchParamsString = 'message=verify_email';
+    render(<LoginForm />);
+    expect(mockedToastSuccess).toHaveBeenCalledWith(expect.stringMatching(/conta criada/i));
+  });
+
+  it('exibe toast.error quando ?error=auth_callback_failed', () => {
+    searchParamsString = 'error=auth_callback_failed';
+    render(<LoginForm />);
+    expect(mockedToastError).toHaveBeenCalledWith(expect.stringMatching(/não foi possível/i));
   });
 });
