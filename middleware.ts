@@ -4,7 +4,11 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { env } from '@/lib/env';
 
 const PROTECTED_PATHS = ['/dashboard'];
-const AUTH_PAGES = ['/login', '/signup'];
+// Exact match (Story 1.6): comparar `path === p` em vez de `startsWith`.
+// Motivo: `/reset-password/confirm` precisa de session válida (oposto do
+// "se logado → /dashboard" das auth pages). `startsWith('/reset-password')`
+// quebraria esse comportamento. Story 1.7 redesenhará com regex mais sofisticado.
+const AUTH_PAGES_EXACT = ['/login', '/signup', '/reset-password'];
 
 export async function middleware(req: NextRequest) {
   // Padrão oficial @supabase/ssr para Next middleware: a response deve ser
@@ -55,7 +59,7 @@ export async function middleware(req: NextRequest) {
     return redirectWithCookies('/login', path);
   }
 
-  if (AUTH_PAGES.some((p) => path.startsWith(p)) && user) {
+  if (AUTH_PAGES_EXACT.includes(path) && user) {
     return redirectWithCookies('/dashboard');
   }
 
@@ -63,11 +67,22 @@ export async function middleware(req: NextRequest) {
 }
 
 // Story 1.7 expandirá o matcher para `/((?!_next/static|...).*)` cobrindo todas
-// as rotas privadas. Aqui é deliberadamente reduzido a /signup, /login,
-// /dashboard, /dashboard/* para minimizar surface de bugs no MVP de auth UI.
-// /dashboard listado explicitamente além de /dashboard/:path* — defensivo
-// contra mudança de path-to-regexp v8 no Next 16 (`:path*` pode não cobrir o
-// segmento vazio em todas as versões).
+// as rotas privadas. Aqui é deliberadamente reduzido às rotas conhecidas para
+// minimizar surface de bugs no MVP de auth UI. /dashboard listado explicitamente
+// além de /dashboard/:path* — defensivo contra mudança de path-to-regexp v8 no
+// Next 16 (`:path*` pode não cobrir o segmento vazio em todas as versões).
+//
+// `/auth/callback` está no matcher para que o middleware refresque cookies se
+// necessário antes do GET do Route Handler — porém NÃO está em AUTH_PAGES_EXACT
+// nem em PROTECTED_PATHS, então cai no `return supabaseResponse` neutro.
 export const config = {
-  matcher: ['/signup', '/login', '/dashboard', '/dashboard/:path*'],
+  matcher: [
+    '/signup',
+    '/login',
+    '/reset-password',
+    '/reset-password/confirm',
+    '/auth/callback',
+    '/dashboard',
+    '/dashboard/:path*',
+  ],
 };

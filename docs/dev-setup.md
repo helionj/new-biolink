@@ -94,6 +94,7 @@ A CLI pode pedir a senha do banco que você definiu em 2.1; cole quando solicita
 | `NEXT_PUBLIC_SUPABASE_URL`      | client + server | Supabase Dashboard → API                       | Público (vai no bundle do browser)                                                                                                                   |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | client + server | Supabase Dashboard → API                       | Público (RLS aplica)                                                                                                                                 |
 | `SUPABASE_SERVICE_ROLE_KEY`     | **server-only** | Supabase Dashboard → API                       | Bypassa RLS — NUNCA prefixar com `NEXT_PUBLIC_`, NUNCA importar em Client Component (o `lib/supabase/admin.ts` lança erro se for chamado no browser) |
+| `NEXT_PUBLIC_SITE_URL`          | client + server | `http://localhost:3000` (dev) / Vercel URL     | Base URL absoluta para `redirectTo` de emails Supabase Auth (Story 1.6). Zod `.url()`; build falha se ausente.                                       |
 | `HASH_SALT`                     | **server-only** | `openssl rand -hex 32` (local), gerado por env | Hash de PII; ≥ 32 chars                                                                                                                              |
 
 Em **produção** (Story 1.3 — @devops):
@@ -180,6 +181,7 @@ Configurados pelo `@devops` durante Story 1.3 — listados aqui só para referê
 | `NEXT_PUBLIC_SUPABASE_URL`      | Supabase Dashboard → Settings → API → Project URL                                   | job `build`                                                              |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase Dashboard → Settings → API → anon public                                   | job `build`                                                              |
 | `SUPABASE_SERVICE_ROLE_KEY`     | Supabase Dashboard → Settings → API → service_role                                  | job `build`                                                              |
+| `NEXT_PUBLIC_SITE_URL`          | URL do CI/preview (ex: `http://localhost:3000` para `pnpm build` em CI dev)         | job `build` (env compile-time é resolvido em build)                      |
 | `HASH_SALT`                     | `openssl rand -hex 32` (≥ 32 chars; **diferente** do `.env.local` e do de produção) | job `build`                                                              |
 | `SUPABASE_ACCESS_TOKEN`         | `supabase.com/dashboard/account/tokens` (Personal Access Token)                     | job `test-integration` (CLI auth para `supabase branches create/delete`) |
 | `SUPABASE_PROJECT_REF`          | `ibpliihqaceafdykgwiu` (projeto Supabase de dev — parent dos branches PR)           | job `test-integration`                                                   |
@@ -305,39 +307,71 @@ psql "$DATABASE_URL" -c "\dt profiles"  # → relation does not exist
 
 ---
 
-## 13. Configuração de Auth (transitória — Story 1.5 / 1.6)
+## 13. Configuração de Auth (Story 1.6 — definitivo)
 
-> **Escopo:** este toggle existe para destravar o fluxo `signUp → /dashboard` da Story 1.5. **Story 1.6 reverte** o `mailer_autoconfirm` para `false` e implementa `/auth/callback` + `requestPasswordReset` / `confirmPasswordReset`.
+> **Escopo:** Story 1.6 reverte o toggle transitório de 1.5 (`mailer_autoconfirm: true`) e habilita o fluxo definitivo de verificação de email + reset de senha via `/auth/callback` (PKCE `exchangeCodeForSession`) + Server Actions `requestPasswordReset` / `confirmPasswordReset` / `resendVerificationEmail`.
 
-### Setting atual em `biolink-dev` (ref `ibpliihqaceafdykgwiu`)
+### Settings finais em `biolink-dev` (ref `ibpliihqaceafdykgwiu`)
 
-| Setting                                                                        | Valor atual (1.5)      | Plano (1.6)                  | Motivo                                                                                                                                               |
-| ------------------------------------------------------------------------------ | ---------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `mailer_autoconfirm` (Dashboard: **Auth → Providers → Email → Confirm email**) | `true` (auto-confirma) | `false` (requer confirmação) | AC5 de 1.5 exige session imediata pós-signup → redirect direto a `/dashboard`. Com `false`, signUp retorna `session: null` e middleware loop quebra. |
-| `password_min_length`                                                          | `6` (default)          | mantido                      | Server-side; o validator Zod (`lib/validators/auth.ts`) impõe mínimo 8 chars no client + server-side parse.                                          |
-| `mailer_secure_email_change_enabled`                                           | `true` (default)       | mantido                      | Não afeta signup.                                                                                                                                    |
+| Setting                                                                        | Valor                                                                                                                                                    | Motivo                                                                                                                                                                 |
+| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mailer_autoconfirm` (Dashboard: **Auth → Providers → Email → Confirm email**) | `false` (requer confirmação)                                                                                                                             | AC1 de Story 1.6 — usuário precisa clicar no link do email antes de ter session ativa. Flow: signUp → email → `/auth/callback` → `exchangeCodeForSession` → dashboard. |
+| `site_url`                                                                     | `http://localhost:3000`                                                                                                                                  | Base para `{{ .SiteURL }}` nos templates; em prod aponta para domínio Vercel.                                                                                          |
+| `uri_allow_list`                                                               | `http://localhost:3000/auth/callback,https://*.vercel.app/auth/callback,https://new-biolink.vercel.app/auth/callback`                                    | Allowlist do `redirectTo` que Server Actions passam para `resetPasswordForEmail` — sem allowlist correto, Supabase recusa por segurança.                               |
+| `mailer_subjects_confirmation`                                                 | `Confirme seu email no BioLink`                                                                                                                          | Template PT-BR do email de signup.                                                                                                                                     |
+| `mailer_templates_confirmation_content`                                        | HTML PT-BR com `{{ .ConfirmationURL }}` apontando para `/auth/callback?code=...&type=signup`                                                             | Idem.                                                                                                                                                                  |
+| `mailer_subjects_recovery`                                                     | `Redefina sua senha do BioLink`                                                                                                                          | Template PT-BR do email de password recovery.                                                                                                                          |
+| `mailer_templates_recovery_content`                                            | HTML PT-BR com `{{ .ConfirmationURL }}` (Supabase injeta `code` + path do `redirectTo` da Server Action — `/auth/callback?next=/reset-password/confirm`) | Idem.                                                                                                                                                                  |
+| `password_min_length`                                                          | `6` (default)                                                                                                                                            | Server-side; o validator Zod (`lib/validators/auth.ts`) impõe mínimo 8 chars no client + server-side parse.                                                            |
 
-### Como toggle foi aplicado (Story 1.5)
+### Como aplicar (canônico — Story 1.6)
 
 ```bash
 PROJECT_REF=ibpliihqaceafdykgwiu
 TOKEN=$SUPABASE_ACCESS_TOKEN  # do .env.local
+
+curl -X PATCH "https://api.supabase.com/v1/projects/$PROJECT_REF/config/auth" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "mailer_autoconfirm": false,
+    "site_url": "http://localhost:3000",
+    "uri_allow_list": "http://localhost:3000/auth/callback,https://*.vercel.app/auth/callback,https://new-biolink.vercel.app/auth/callback",
+    "mailer_subjects_confirmation": "Confirme seu email no BioLink",
+    "mailer_templates_confirmation_content": "<h2>Bem-vindo(a) ao BioLink!</h2><p>Clique no link abaixo para confirmar seu email e acessar sua conta:</p><p><a href=\"{{ .ConfirmationURL }}\">Confirmar email</a></p><p>Se você não criou esta conta, ignore este email.</p>",
+    "mailer_subjects_recovery": "Redefina sua senha do BioLink",
+    "mailer_templates_recovery_content": "<h2>Redefinição de senha</h2><p>Recebemos um pedido para redefinir sua senha. Clique no link abaixo para escolher uma nova senha:</p><p><a href=\"{{ .ConfirmationURL }}\">Redefinir senha</a></p><p>O link expira em 1 hora. Se você não solicitou redefinição, ignore este email.</p>"
+  }'
+```
+
+Templates `mailer_subjects_*` para `magic_link`, `invite` e `email_change` permanecem com strings default em inglês — revisitar quando features futuras (magic link, admin invite, profile edit) os exigirem.
+
+`{{ .ConfirmationURL }}` é o placeholder do template engine GoTrue. Supabase substitui pelo URL completo `${site_url}` + path do `redirectTo` que a Server Action passa (`/auth/callback?code=...&type=signup` para signup, `/auth/callback?code=...&next=/reset-password/confirm` para recovery).
+
+### Impacto em CI
+
+- `tests/integration/server-actions/auth.test.ts` foi atualizado nesta story para o novo modelo: o cenário de signUp passa a verificar `auth.users.email_confirmed_at IS NULL` (não confirmado pós-signUp) em vez de aguardar `NEXT_REDIRECT`. Profile row continua existindo via trigger `on_auth_user_created` (Story 1.4 — disparado independente de confirmação).
+- Novos cenários cobrem `requestPasswordReset` (anti-enumeration), `confirmPasswordReset` (auth guard) e `resendVerificationEmail` (auth guard).
+- `pnpm build` em CI exige `NEXT_PUBLIC_SITE_URL` em GH Secrets/Vars (env compile-time é resolvido em build). Handoff a @devops antes do PR merge.
+
+### Reativar em produção (`biolink-prod`)
+
+`biolink-prod` (a ser criado em pipeline de release pública) **DEVE** receber o mesmo payload com `PROJECT_REF` correspondente — `mailer_autoconfirm: false`, templates PT-BR aplicados, allowlist apontando para `https://new-biolink.vercel.app/auth/callback` + Vercel previews. Cross-ref Story 1.3 (secrets pipeline) e Story 1.6 (este capítulo).
+
+### Histórico — Story 1.5 (transitório, revertido)
+
+Story 1.5 aplicou `mailer_autoconfirm: true` como decisão transitória para destravar o fluxo `signUp → /dashboard` enquanto o callback handler ainda não existia. Comando de referência:
+
+```bash
+PROJECT_REF=ibpliihqaceafdykgwiu
+TOKEN=$SUPABASE_ACCESS_TOKEN
 curl -X PATCH "https://api.supabase.com/v1/projects/$PROJECT_REF/config/auth" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"mailer_autoconfirm": true}'
 ```
 
-Ou via Dashboard: **Authentication → Providers → Email → toggle "Confirm email" para OFF**.
-
-### Impacto em CI
-
-- `tests/integration/server-actions/auth.test.ts` (Story 1.5) **assume `mailer_autoconfirm: true`**. Caso volte a `false`, o cenário "signUp cria auth.users + profiles row" falhará por `signUp` retornar `session: null` em vez de `NEXT_REDIRECT`.
-- Story 1.6 atualiza essa suíte para usar `/auth/callback` flow.
-
-### Reativar em produção (`biolink-prod`)
-
-`biolink-prod` (a ser criado em pipeline de release pública) **DEVE** ter `mailer_autoconfirm: false` (Confirm email ON) antes do go-live. Cross-ref Story 1.6.
+Story 1.6 reverteu este toggle e implementou o fluxo definitivo. Esta sub-seção fica como histórico para reviewers que precisarem entender a trajetória.
 
 ---
 

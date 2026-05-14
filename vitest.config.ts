@@ -28,6 +28,14 @@ export default defineConfig({
           environment: 'jsdom',
           include: ['tests/components/**/*.test.{ts,tsx}'],
           setupFiles: ['./tests/setup.ts'],
+          // userEvent.type em jsdom 29 + React 19 + RHF + zodResolver pode
+          // disparar re-renders mais lentos que o default de 5s — bumping
+          // para 15s mantém os testes verdes sem ocultar regressões reais.
+          testTimeout: 15_000,
+          // Vitest 4 + jsdom 29 + forks pool intermitentemente trava
+          // ("Timeout waiting for worker to respond") ao spawn paralelo de
+          // workers em macOS. Sequential execution remove a contenção.
+          fileParallelism: false,
         },
       },
       {

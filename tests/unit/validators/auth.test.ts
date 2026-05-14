@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { SignInInput, SignUpInput } from '@/lib/validators/auth';
+import {
+  ResetPasswordConfirmInput,
+  ResetPasswordRequestInput,
+  SignInInput,
+  SignUpInput,
+} from '@/lib/validators/auth';
 
 const validSignUp = {
   email: 'alice@biolink.dev',
@@ -83,5 +88,64 @@ describe('SignInInput', () => {
       const msg = r.error.issues.find((i) => i.path.join('.') === 'email')?.message;
       expect(msg).toBe('Informe um email válido');
     }
+  });
+});
+
+describe('ResetPasswordRequestInput', () => {
+  it('aceita email válido', () => {
+    const r = ResetPasswordRequestInput.safeParse({ email: 'foo@bar.com' });
+    expect(r.success).toBe(true);
+  });
+
+  it('rejeita email syntax-inválido com mensagem PT-BR', () => {
+    const r = ResetPasswordRequestInput.safeParse({ email: 'invalid' });
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      const msg = r.error.issues.find((i) => i.path.join('.') === 'email')?.message;
+      expect(msg).toBe('Informe um email válido');
+    }
+  });
+
+  it('rejeita email vazio', () => {
+    const r = ResetPasswordRequestInput.safeParse({ email: '' });
+    expect(r.success).toBe(false);
+  });
+});
+
+describe('ResetPasswordConfirmInput', () => {
+  const valid = { newPassword: 'password123', confirmPassword: 'password123' };
+
+  function firstMessage(
+    result: ReturnType<typeof ResetPasswordConfirmInput.safeParse>,
+    path: string,
+  ) {
+    if (result.success) throw new Error('expected failure');
+    return result.error.issues.find((i) => i.path.join('.') === path)?.message;
+  }
+
+  it('aceita payload válido', () => {
+    const r = ResetPasswordConfirmInput.safeParse(valid);
+    expect(r.success).toBe(true);
+  });
+
+  it('rejeita newPassword < 8 chars', () => {
+    const r = ResetPasswordConfirmInput.safeParse({
+      newPassword: 'short',
+      confirmPassword: 'short',
+    });
+    expect(firstMessage(r, 'newPassword')).toBe('A senha precisa ter no mínimo 8 caracteres');
+  });
+
+  it('rejeita confirmPassword diferente no path correto', () => {
+    const r = ResetPasswordConfirmInput.safeParse({ ...valid, confirmPassword: 'different1' });
+    expect(firstMessage(r, 'confirmPassword')).toBe('As senhas não coincidem');
+  });
+
+  it('aceita payload com 8 chars exatos', () => {
+    const r = ResetPasswordConfirmInput.safeParse({
+      newPassword: '12345678',
+      confirmPassword: '12345678',
+    });
+    expect(r.success).toBe(true);
   });
 });

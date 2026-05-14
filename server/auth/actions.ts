@@ -2,9 +2,15 @@
 
 import { redirect } from 'next/navigation';
 
+import { env } from '@/lib/env';
 import type { ActionResult } from '@/lib/result';
 import { createClient } from '@/lib/supabase/server';
-import { SignInInput, SignUpInput } from '@/lib/validators/auth';
+import {
+  ResetPasswordConfirmInput,
+  ResetPasswordRequestInput,
+  SignInInput,
+  SignUpInput,
+} from '@/lib/validators/auth';
 
 function flattenFieldErrors(error: {
   flatten: () => { fieldErrors: Record<string, string[] | undefined> };
@@ -69,7 +75,11 @@ export async function signUp(raw: unknown): Promise<ActionResult<void>> {
     return { ok: false, error: 'Erro ao criar conta. Tente novamente' };
   }
 
-  redirect('/dashboard');
+  // Com `mailer_autoconfirm: false` (Story 1.6), signUp retorna `session: null`
+  // — usuário precisa clicar no link do email antes de ter session ativa.
+  // Form do signup faz router.push('/login?message=verify_email') client-side
+  // exibindo toast PT-BR no /login.
+  return { ok: true, data: undefined };
 }
 
 export async function signIn(raw: unknown): Promise<ActionResult<void>> {
@@ -102,4 +112,94 @@ export async function signOut(): Promise<ActionResult<void>> {
     return { ok: false, error: 'Erro ao sair. Tente novamente' };
   }
   redirect('/');
+}
+
+export async function requestPasswordReset(raw: unknown): Promise<ActionResult<void>> {
+  const parsed = ResetPasswordRequestInput.safeParse(raw);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: 'Entrada inválida',
+      fieldErrors: flattenFieldErrors(parsed.error),
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
+    redirectTo: `${env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=/reset-password/confirm`,
+  });
+
+  // Anti-enumeration (arch §Security linha 2147): sempre sucesso ao client.
+  // Log server-side para investigação interna de anomalias.
+  if (error) {
+    console.error('[requestPasswordReset] supabase error:', error.message);
+  }
+  return { ok: true, data: undefined };
+}
+
+export async function confirmPasswordReset(raw: unknown): Promise<ActionResult<void>> {
+  const parsed = ResetPasswordConfirmInput.safeParse(raw);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: 'Entrada inválida',
+      fieldErrors: flattenFieldErrors(parsed.error),
+    };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Defense in depth — a Server Component da page também faz esse check.
+  if (!user) {
+    return {
+      ok: false,
+      error: 'Sessão expirada. Solicite um novo link de redefinição.',
+    };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.newPassword });
+  if (error) {
+    const message = error.message ?? '';
+    if (/same.?password|new.?password/i.test(message)) {
+      return { ok: false, error: 'A nova senha deve ser diferente da anterior' };
+    }
+    return { ok: false, error: 'Erro ao atualizar senha. Tente novamente' };
+  }
+
+  redirect('/dashboard');
+}
+
+export async function resendVerificationEmail(): Promise<ActionResult<void>> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false, error: 'Não autenticado' };
+  }
+
+  // No-op UX-friendly: email já confirmado, nada a fazer.
+  if (user.email_confirmed_at) {
+    return { ok: true, data: undefined };
+  }
+
+  const email = user.email;
+  if (!email) {
+    return { ok: false, error: 'Usuário sem email cadastrado' };
+  }
+
+  const { error } = await supabase.auth.resend({ type: 'signup', email });
+  if (error) {
+    const message = error.message ?? '';
+    if (/rate.?limit|over_email_send_rate_limit|429/i.test(message)) {
+      return { ok: false, error: 'Aguarde um minuto antes de reenviar' };
+    }
+    return { ok: false, error: 'Erro ao reenviar email. Tente novamente' };
+  }
+
+  return { ok: true, data: undefined };
 }

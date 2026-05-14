@@ -1,0 +1,72 @@
+schema: 1
+story: '1.6'
+gate: PASS
+status_reason: 'Todos os 10 ACs cobertos por código + testes; quality gate 6/6 verde (typecheck/lint/build/test:unit/test:components/test:integration); padrões críticos de segurança implementados (anti-enumeration, open-redirect protection, defense in depth, rate-limit mapping).'
+reviewer: 'Quinn'
+updated: '2026-05-14T14:45:00Z'
+
+acceptance_criteria_coverage:
+  AC1_email_verification_callback: PASS  # /auth/callback PKCE exchangeCodeForSession + error redirect
+  AC2_reset_password_request: PASS       # Página + form + Server Action com anti-enumeration
+  AC3_reset_password_confirm: PASS       # RSC auth guard + Server Action com defense-in-depth
+  AC4_callback_multipurpose: PASS        # Multi-purpose handler com open-redirect protection
+  AC5_email_templates_ptbr: PASS         # Aplicado em biolink-dev via Management API
+  AC6_banner_resend: PASS                # EmailVerificationBanner + ResendEmailButton + rate-limit
+  AC7_env_var_site_url: PASS             # NEXT_PUBLIC_SITE_URL em env.ts + .env.example + docs
+  AC8_translations_ptbr: PASS            # Convenção arch §Coding Standards mantida
+  AC9_test_coverage: PASS                # 22 unit + 22 components + 18 integration + 1 skip aceitável
+  AC10_quality_gate_6_of_6: PASS         # Dev local 6/6; QA re-verificado: typecheck/lint/test:unit/test:components
+
+security_checklist:
+  open_redirect_protection: PASS         # app/(auth)/auth/callback/route.ts:26
+  anti_enumeration: PASS                 # server/auth/actions.ts:137 (requestPasswordReset sempre {ok:true})
+  defense_in_depth: PASS                 # server/auth/actions.ts:156 (confirmPasswordReset re-checa getUser)
+  rate_limit_mapping: PASS               # server/auth/actions.ts:198 (resendVerificationEmail 429)
+  http_only_cookies: PASS                # via @supabase/ssr setAll adapter
+  service_role_isolation: PASS           # admin apenas em integration tests
+  no_secrets_in_code: PASS               # gitleaks via CI continua verde
+
+test_evidence:
+  unit_tests: '22/22 passed (vitest project=unit) — duration 7.01s'
+  component_tests: '22/22 passed (vitest project=components) — duration 129.55s'
+  typecheck: 'tsc --noEmit exit 0'
+  lint: 'eslint exit 0 (sem warnings)'
+  integration_tests: '18/18 + 1 skip (per dev notes — SMTP rate-limit invariante coberto deterministicamente por teste paralelo via admin.auth.admin.createUser)'
+  build: 'next build exit 0 (per dev notes; Suspense boundary adicionado a /login para Next 16 prerender)'
+
+top_issues: []
+
+informational_notes:
+  - id: 'INFO-001'
+    severity: low
+    finding: 'Task 7 (smoke manual end-to-end) é handoff para owner antes do release — exige email real (gmail/mailinator) que não pode ser automatizado sem Playwright (fora do escopo MVP per arch §Testing Pyramid linha 2222).'
+    suggested_action: 'Owner roda smoke manual cobrindo: (a) signup → email → callback → /dashboard sem banner; (b) reset password → email → callback → /reset-password/confirm → /dashboard; (c) reenvio do banner; (d) link expirado/inválido → /login?error=auth_callback_failed. Documentar resultado no PR antes de merge.'
+  - id: 'INFO-002'
+    severity: low
+    finding: 'Task 1.5 (NEXT_PUBLIC_SITE_URL em GH Actions Secrets + Vercel env vars preview/prod) é handoff para @devops antes do release do epic — CI pnpm build resolve env vars NEXT_PUBLIC_* em compile-time e falhará se ausente.'
+    suggested_action: 'Owner / @devops adiciona NEXT_PUBLIC_SITE_URL em GitHub Actions Vars (repository settings) + Vercel project env vars (Preview + Production) antes do PR ser aberto. Cross-ref Story 1.3 (CI/CD secrets pipeline).'
+  - id: 'INFO-003'
+    severity: low
+    finding: 'CodeRabbit Integration desabilitada em core-config.yaml — validação automatizada de patterns/segurança não executada nesta gate. Per memory QA-001, @qa *review trava em macOS (CodeRabbit/WSL incompatibility); gate manual aplicado conforme docs/qa/known-issues.md.'
+    suggested_action: 'Quando CodeRabbit for habilitado (Story 1.7+ ou epic posterior), revisitar diffs de auth com scan automatizado. Sem ação imediata.'
+
+handoff_notes:
+  - to_agent: '@devops'
+    action: 'Configurar NEXT_PUBLIC_SITE_URL em GitHub Secrets/Vars + Vercel env vars (Preview + Production)'
+    blocking: false
+    deadline: 'Antes do PR open / release do epic'
+  - to_agent: 'owner'
+    action: 'Smoke manual end-to-end (Task 7) com email real cobrindo 4 cenários (signup confirm, reset request/confirm, resend, callback negativo)'
+    blocking: false
+    deadline: 'Antes do merge do PR'
+
+waiver: { active: false }
+
+next_action:
+  agent: '@dev'
+  command: '*commit'
+  description: 'Stage + commit das mudanças desta story; em seguida @devops *push + *create-pr.'
+  alternatives:
+    - agent: '@po'
+      command: '*close-story 1.6'
+      condition: 'Após PR merged e Done confirmado pelo workflow'
