@@ -1,0 +1,115 @@
+schema: 1
+story: '1.8'
+gate: PASS
+status_reason: 'Consolidação/formalização do design system seed (Button/Input/Form/Toast). Os 6 ACs cobertos: AC1/AC4 verificação de primitives e pattern RHF+Zod pré-entregues por 1.5; AC2 comentário documentando decisão PO de spacing (Tailwind 4 default, sem tokens custom); AC5 `lib/toast.ts` (façade type-safe sobre sonner + adaptador notify reconciliando §Drift) com 6 consumidores migrados cirurgicamente; AC3/AC6 4 component tests com snapshot+variantes, cobertura 88.88–100% (≫50%). Quality gate 6/6 verde re-verificado independentemente pelo @qa. Zero regressão (4 testes auth verdes pós-migração + mocks atualizados), 0 deps NPM novas, 0 mudanças DB/Server Actions/migrations. Desvio `asChild`→`render` (button é @base-ui, não Radix) aprovado pelo owner e correto per Constitution Art. IV.'
+reviewer: 'Quinn'
+updated: '2026-05-15T12:58:00Z'
+
+acceptance_criteria_coverage:
+  AC1_shadcn_init_primitives: PASS        # components.json (base-nova/slate/rsc/cssVariables/aliases) coerente; button/input/form/label/sonner.tsx íntegros (importam cn; tokens via @theme inline). Init pré-entregue 1.5; esta story formaliza/verifica. Zero alteração de código (correto — nenhum primitive incompleto).
+  AC2_tokens_css_base: PASS               # globals.css: cores+radius scale+font-stack já presentes (1.1+1.5). "spacing" resolvido pelo PO (Change Log v0.2): escala default Tailwind 4, sem tokens --spacing-* custom (Constitution Art. IV — não inventar); comentário documentando adicionado antes de @theme inline; header/placeholders preservados, nenhum valor de tema sobrescrito.
+  AC3_component_tests_snapshot_variantes: PASS  # tests/components/ui/{button,input,form,sonner}.test.tsx — variantes (6 variant + 4 size button), onClick, disabled, polimorfismo, controlled input, aria-invalid, RHF+Zod submit válido/inválido, toast portal, notify 3 branches. Snapshots reais gerados (button 14 / form 37 / input 11 / sonner 15 linhas).
+  AC4_form_rhf_zod_signup: PASS           # SignupForm.tsx consome Form/FormField/FormItem/FormLabel/FormControl/FormMessage de @/components/ui/form com useForm+zodResolver(SignUpInput); renderizado em app/(auth)/signup/page.tsx. Pattern canônico p/ Epic 2 documentado em Completion Notes (Dev Notes não é seção @dev-editável — boundary respeitado corretamente).
+  AC5_toast_global_helper: PASS           # <Toaster/> global em app/layout.tsx:4,32 (intocado — AC5-global pré-satisfeito 1.5). lib/toast.ts criado: toast.success/error/info type-safe (forward ExternalToast) + notify({title,description,variant}) mapeando destructive→error / success→success / default→base. 6 consumidores (NÃO 7 — components/ui/sonner.tsx é o wrapper, mantém import from 'sonner') migrados sonner→@/lib/toast; mocks atualizados em LoginForm.test.tsx + ResetPasswordRequestForm.test.tsx.
+  AC6_cobertura_50pct: PASS               # lines: button.tsx 100% · input.tsx 100% · form.tsx 88.88% · sonner.tsx 100% · lib/toast.ts 100% — todos ≫ 50% (verificado via --coverage.reporter=json-summary).
+
+security_checklist:
+  no_injection_surface: PASS              # lib/toast.ts é passthrough puro; sonner renderiza conteúdo como texto (não dangerouslySetInnerHTML). Mensagens são strings app-controladas (constantes / erros de Server Action), não HTML de usuário. Zero superfície XSS introduzida.
+  no_secrets_in_code: PASS                # diff = linhas de import + 1 comentário CSS + wrapper puro; nenhum secret hardcoded; gitleaks (CI) inalterado.
+  no_authz_change: PASS                   # nenhuma mudança de auth/authz/RLS/Server Actions; refactor é indireção de import de notificação.
+  no_new_env_or_config: PASS              # 0 env vars novas; 0 deps NPM novas; tests/setup.ts compartilhado intocado (polyfill matchMedia escopado em sonner.test.tsx).
+  external_toast_data_app_controlled: PASS # notify/toast encaminham ExternalToast (ex.: description) — todos valores app-controlados, sem path de input não-sanitizado.
+
+test_evidence:
+  typecheck: 'tsc --noEmit exit 0 (re-run independente @qa)'
+  lint: 'eslint exit 0, sem warnings (import/order limpo nos 6 consumidores + 4 testes novos + 2 mocks atualizados)'
+  build: 'next build exit 0 — compiled 53s; TS 31.8s; 10/10 static pages; output "ƒ Proxy (Middleware)" = rename Next 16 (INFO-001 herdado 1.7), não-bloqueante'
+  unit_tests: 'incluído na suíte full (vitest project=unit)'
+  component_tests: 'incluído na suíte full (4 ui novos + 4 auth regressão)'
+  integration_tests: 'incluído na suíte full + 1 skipped pré-existente'
+  full_suite: '13 test files passed, 106 passed | 1 skipped (107) — duration 68.46s; re-run independente @qa idêntico à claim do @dev'
+  coverage: 'json-summary: button/input/sonner.tsx + lib/toast.ts 100% lines; form.tsx 88.88% lines — AC6 ≥50% satisfeito'
+
+code_review_findings:
+  - id: 'CR-001'
+    severity: info
+    finding: 'button.test.tsx testa a prop `render` (polimorfismo @base-ui) em vez de `asChild`. `button.tsx` usa `@base-ui/react/button` (style base-nova), que NÃO possui `asChild` (API Slot do Radix). Desvio aprovado pelo owner via AskUserQuestion durante *develop; correto per Constitution Art. IV (No Invention) — testar a API real preservando a intenção (cobrir polimorfismo). Asserção compara className com cn(buttonVariants(...)) — contrato robusto, não-frágil.'
+    location: 'tests/components/ui/button.test.tsx'
+    action_required: false
+  - id: 'CR-002'
+    severity: info
+    finding: 'Polyfill local de window.matchMedia em sonner.test.tsx (jsdom não implementa; sonner usa para theme="system"). Escopado no arquivo de teste via beforeAll — tests/setup.ts compartilhado intocado, zero blast radius nos outros 7 test files. Decisão conservadora correta.'
+    location: 'tests/components/ui/sonner.test.tsx:8-22'
+    action_required: false
+  - id: 'CR-003'
+    severity: info
+    finding: 'lib/toast.ts recria `toast` como wrappers arrow (não re-export direto de sonner). Intencional: desacopla feature code de sonner (§Drift) e abre ponto único para cross-cutting futuro. Forwarding fiel de ExternalToast mantém a API type-safe e sem perda vs sonner. notify() cobre as 3 branches (destructive/success/default) reconciliando a assinatura {title,description,variant} dos exemplos antigos do arch.'
+    location: 'lib/toast.ts'
+    action_required: false
+  - id: 'CR-004'
+    severity: info
+    finding: 'Migração dos 6 consumidores é cirúrgica: git diff = exatamente 1 linha de import trocada por arquivo (sonner → @/lib/toast), mensagens/comportamento idênticos. Regressão coberta pelos 4 component tests de auth (22 testes) verdes pós-migração; mocks sonner→@/lib/toast atualizados em LoginForm.test.tsx + ResetPasswordRequestForm.test.tsx (os outros 2 não mockavam sonner).'
+    location: 'components/auth/*, components/dashboard/ResendEmailButton.tsx'
+    action_required: false
+
+regression_check:
+  auth_component_tests_green: PASS        # 4 testes auth (SignupForm/LoginForm/ResetPasswordRequestForm/ResetPasswordConfirmForm) verdes após migração sonner→@/lib/toast; 22 testes sem regressão
+  integration_suite_unchanged: PASS       # 1 skip pré-existente mantido (per histórico 1.7); zero regressão nos cenários anteriores
+  toaster_global_untouched: PASS          # app/layout.tsx não tocado — AC5-global pré-satisfeito 1.5 preservado
+  no_dep_or_schema_change: PASS           # 0 deps NPM novas; 0 mudanças DB/migrations/Server Actions; package.json inalterado
+  files_changed_minimal: PASS             # git diff --stat: 6 consumidores (1 import cada) + globals.css (+8, comentário) + 2 test mocks; novos: lib/toast.ts + tests/components/ui/* + 4 snapshots
+
+performance_check:
+  toast_wrapper_zero_overhead: PASS       # lib/toast.ts é passthrough — mesma chamada sonner, sem latência adicional
+  test_runtime_within_budget: PASS        # suíte full 68.46s (component project com fileParallelism:false + testTimeout:15s herdados, esperado em macOS per Dev Notes/1.5)
+  build_time_normal: PASS                 # next build 53s — dentro do padrão Next 16 do projeto (1.7 ~67s)
+
+documentation_check:
+  story_file_complete: PASS               # Dev Agent Record (Agent Model claude-opus-4-7, Debug Log, Completion Notes 8 itens, File List), Change Log v0.1/0.2/1.0, Tasks 1-6 [x], Task 6.1 [ ] intencional com rationale
+  decisions_documented: PASS              # desvio render-prop (owner-approved), polyfill matchMedia, 6-vs-7 consumidores (SF-1 PO), spacing (PO v0.2) — todos em Completion Notes + Change Log
+  inline_comments_appropriate: PASS       # lib/toast.ts: 2 comentários WHY (façade rationale + adapter §Drift) — mínimos, não over-commented; padrão do projeto respeitado
+
+top_issues: []
+
+informational_notes:
+  - id: 'INFO-001'
+    severity: low
+    finding: 'Build warning não-bloqueante "middleware → proxy deprecated" (Next 16); output mostra "ƒ Proxy (Middleware)". Herdado da Story 1.7 (não introduzido por 1.8 — esta story não toca middleware.ts). Sem ação requerida nesta story.'
+    suggested_action: 'Tracking já existe via gate 1.7 INFO-001 (story futura renomeia middleware.ts → proxy.ts quando convention estabilizar).'
+  - id: 'INFO-002'
+    severity: low
+    finding: 'Task 6.1 (smoke manual /signup: submit inválido → FormMessage; erro servidor → Toast via novo helper) deixada intencionalmente unchecked — handoff ao owner. Component+integration tests cobrem o invariante deterministicamente; smoke é confirmação E2E manual adicional. Consistente com pattern Stories 1.5/1.6/1.7.'
+    suggested_action: 'Owner roda smoke manual em /signup antes/durante merge do PR, confirmando que o Toast de erro aparece via @/lib/toast e some. Documentar no PR.'
+  - id: 'INFO-003'
+    severity: low
+    finding: 'CodeRabbit Integration desabilitada em core-config.yaml (sem coderabbit_integration; mcp.enabled:false). Per memory QA-001, @qa *review trava em macOS (CodeRabbit/WSL incompatibility); gate manual aplicado conforme docs/qa/known-issues.md. Scan automatizado de patterns/segurança não executado.'
+    suggested_action: 'Quando CodeRabbit for habilitado em epic futuro, revisitar diffs de lib/toast.ts + migração auth com scan automatizado. Sem ação imediata.'
+  - id: 'INFO-004'
+    severity: low
+    finding: 'next-env.d.ts aparece com diff de 1 linha (comentário de referência TS auto-regenerado por `next build`). Não é mudança intencional da story — artefato auto-gerenciado pelo Next.'
+    suggested_action: '@dev/@devops: evitar fazer stage de next-env.d.ts no commit da story (ruído auto-gerado), ou aceitar como inócuo gerenciado pelo Next. Não-bloqueante.'
+
+handoff_notes:
+  - to_agent: 'owner'
+    action: 'Smoke manual /signup (Task 6.1): submit inválido → ver FormMessage do Zod; submit com erro de servidor → ver Toast de erro via @/lib/toast; confirmar Toast aparece e some'
+    blocking: false
+    deadline: 'Antes/durante o merge do PR'
+  - to_agent: '@dev'
+    action: '*commit das mudanças desta story (lib/toast.ts + tests/components/ui/* + 4 snapshots + 6 consumidores + 2 test mocks + globals.css + docs/stories/1.8....md + docs/qa/gates/1.8-....yml); em seguida @devops *push + *create-pr'
+    blocking: false
+    deadline: 'Próximo passo imediato'
+  - to_agent: 'story de docs futura'
+    action: 'Erratum architecture.md §1075/§2558: `useToast` Radix → sonner/@/lib/toast (NH-1 §Drift, diferido — não desta story)'
+    blocking: false
+    deadline: 'Backlog docs'
+
+waiver: { active: false }
+
+next_action:
+  agent: '@dev'
+  command: '*commit'
+  description: 'Stage + commit das mudanças da Story 1.8; em seguida @devops *push + *create-pr; após PR merged, @po *close-story 1.8 (Ready for Review → Done).'
+  alternatives:
+    - agent: '@po'
+      command: '*close-story 1.8'
+      condition: 'Após PR merged e CI verde confirmar Done'

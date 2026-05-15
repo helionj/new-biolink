@@ -1,9 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { toast } from 'sonner';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ResetPasswordRequestForm } from '@/components/auth/ResetPasswordRequestForm';
+import { toast } from '@/lib/toast';
 import * as actions from '@/server/auth/actions';
 
 vi.mock('@/server/auth/actions', () => ({
@@ -15,7 +15,7 @@ vi.mock('@/server/auth/actions', () => ({
   signOut: vi.fn(),
 }));
 
-vi.mock('sonner', () => ({
+vi.mock('@/lib/toast', () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),

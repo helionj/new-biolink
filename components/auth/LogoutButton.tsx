@@ -1,9 +1,9 @@
 'use client';
 
 import { useTransition } from 'react';
-import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { toast } from '@/lib/toast';
 import { signOut } from '@/server/auth/actions';
 
 export function LogoutButton() {

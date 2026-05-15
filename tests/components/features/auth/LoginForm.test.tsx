@@ -1,9 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { toast } from 'sonner';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LoginForm } from '@/components/auth/LoginForm';
+import { toast } from '@/lib/toast';
 import * as actions from '@/server/auth/actions';
 
 let searchParamsString = '';
@@ -22,7 +22,7 @@ vi.mock('@/server/auth/actions', () => ({
   resendVerificationEmail: vi.fn(),
 }));
 
-vi.mock('sonner', () => ({
+vi.mock('@/lib/toast', () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),

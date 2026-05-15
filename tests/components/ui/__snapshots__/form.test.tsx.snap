@@ -1,0 +1,37 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`<Form> (react-hook-form + zodResolver) > renderiza o label associado ao input 1`] = `
+<div>
+  <form
+    novalidate=""
+  >
+    <div
+      class="grid gap-2"
+      data-slot="form-item"
+    >
+      <label
+        class="flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 data-[error=true]:text-destructive"
+        data-error="false"
+        data-slot="form-label"
+        for="_r_0_-form-item"
+      >
+        Nome
+      </label>
+      <input
+        aria-describedby="_r_0_-form-item-description"
+        aria-invalid="false"
+        class="h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm"
+        data-slot="input"
+        id="_r_0_-form-item"
+        name="name"
+        value=""
+      />
+    </div>
+    <button
+      type="submit"
+    >
+      Enviar
+    </button>
+  </form>
+</div>
+`;
