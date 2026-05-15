@@ -90,6 +90,14 @@
   --ring: #475569;
 }
 
+/* -------------------------------------------------------------------------- */
+/* Spacing — sem tokens --spacing-* custom (intencional).                      */
+/* Decisão PO (Story 1.8, Change Log v0.2): AC2 "spacing" usa a escala default */
+/* do Tailwind 4. Nenhum doc-fonte (PRD/arch) especifica tokens --spacing-*    */
+/* custom — inventá-los violaria Constitution Art. IV (No Invention). Escala   */
+/* custom, se necessária, é escopo Epic 3 (theming presets).                   */
+/* -------------------------------------------------------------------------- */
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
