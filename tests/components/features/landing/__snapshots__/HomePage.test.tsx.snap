@@ -1,0 +1,77 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`<Home> — landing pública (canary) > guest: CTA "Criar minha página" → /signup, com hero, 3 bullets e footer GitHub 1`] = `
+<div>
+  <main
+    class="flex flex-1 flex-col"
+  >
+    <section
+      class="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-24 text-center"
+    >
+      <h1
+        class="max-w-2xl text-4xl font-semibold tracking-tight text-foreground sm:text-5xl"
+      >
+        Sua presença digital em um único link
+      </h1>
+      <p
+        class="max-w-xl text-lg text-muted-foreground"
+      >
+        O BioLink reúne todos os seus links em uma página profissional — do cadastro à primeira publicação em apenas 2 cliques.
+      </p>
+      <a
+        class="group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 bg-primary text-primary-foreground [a]:hover:bg-primary/80 h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2"
+        href="/signup"
+      >
+        Criar minha página
+      </a>
+    </section>
+    <section
+      class="border-t border-border px-6 py-16"
+    >
+      <ul
+        class="mx-auto flex max-w-3xl flex-col gap-8 sm:flex-row"
+      >
+        <li
+          class="flex-1 text-center text-base text-foreground sm:text-left"
+        >
+          Do cadastro à primeira página publicada em apenas 2 cliques.
+        </li>
+        <li
+          class="flex-1 text-center text-base text-foreground sm:text-left"
+        >
+          Todos os seus links reunidos em um único endereço profissional.
+        </li>
+        <li
+          class="flex-1 text-center text-base text-foreground sm:text-left"
+        >
+          Acompanhe os acessos e descubra o que a sua audiência mais clica.
+        </li>
+      </ul>
+    </section>
+    <footer
+      class="border-t border-border px-6 py-8"
+    >
+      <div
+        class="mx-auto flex max-w-3xl flex-col items-center justify-between gap-2 sm:flex-row"
+      >
+        <a
+          class="text-sm text-muted-foreground underline-offset-4 hover:underline"
+          href="https://github.com/helionj/new-biolink"
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          GitHub
+        </a>
+        <p
+          class="text-xs text-muted-foreground"
+        >
+          Build 
+          dev
+           · 
+          local
+        </p>
+      </div>
+    </footer>
+  </main>
+</div>
+`;

@@ -1,65 +1,81 @@
-import Image from 'next/image';
+import type { Metadata } from 'next';
+import Link from 'next/link';
 
-export default function Home() {
+import { buttonVariants } from '@/components/ui/button';
+import { createClient } from '@/lib/supabase/server';
+
+const GITHUB_REPO_URL = 'https://github.com/helionj/new-biolink';
+
+const BENEFITS = [
+  'Do cadastro à primeira página publicada em apenas 2 cliques.',
+  'Todos os seus links reunidos em um único endereço profissional.',
+  'Acompanhe os acessos e descubra o que a sua audiência mais clica.',
+] as const;
+
+export const metadata: Metadata = {
+  title: 'BioLink — sua presença digital em um único link',
+  description:
+    'Crie uma página link-in-bio profissional em minutos: reúna todos os seus links, personalize e acompanhe os acessos — do cadastro à primeira publicação em 2 cliques.',
+  openGraph: {
+    title: 'BioLink — sua presença digital em um único link',
+    description:
+      'Crie uma página link-in-bio profissional em minutos. Do cadastro à primeira publicação em 2 cliques.',
+    images: [{ url: '/og-image.png' }],
+  },
+};
+
+export default async function Home() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const ctaHref = user ? '/dashboard' : '/signup';
+  const ctaLabel = user ? 'Ir para meu dashboard' : 'Criar minha página';
+
+  const buildTime = process.env.NEXT_PUBLIC_BUILD_TIME ?? 'dev';
+  const commitSha = process.env.NEXT_PUBLIC_COMMIT_SHA ?? 'local';
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{' '}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{' '}
-            or the{' '}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{' '}
-            center.
+    <main className="flex flex-1 flex-col">
+      <section className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-24 text-center">
+        <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+          Sua presença digital em um único link
+        </h1>
+        <p className="max-w-xl text-lg text-muted-foreground">
+          O BioLink reúne todos os seus links em uma página profissional — do cadastro à primeira
+          publicação em apenas 2 cliques.
+        </p>
+        <Link href={ctaHref} className={buttonVariants({ size: 'lg' })}>
+          {ctaLabel}
+        </Link>
+      </section>
+
+      <section className="border-t border-border px-6 py-16">
+        <ul className="mx-auto flex max-w-3xl flex-col gap-8 sm:flex-row">
+          {BENEFITS.map((benefit) => (
+            <li key={benefit} className="flex-1 text-center text-base text-foreground sm:text-left">
+              {benefit}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <footer className="border-t border-border px-6 py-8">
+        <div className="mx-auto flex max-w-3xl flex-col items-center justify-between gap-2 sm:flex-row">
+          <a
+            href={GITHUB_REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+          >
+            GitHub
+          </a>
+          <p className="text-xs text-muted-foreground">
+            Build {buildTime} · {commitSha}
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </footer>
+    </main>
   );
 }

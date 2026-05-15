@@ -176,3 +176,40 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm audit --audit-level critical
       - run: pnpm audit --json || true
+
+  # =========================================================================
+  # health-check — Story 1.9 (AC6 / DP-3, default aprovado pelo PO)
+  # =========================================================================
+  # Canary de produção: após o merge em `main`, a integração Vercel↔GitHub
+  # dispara o deploy de prod de forma ASSÍNCRONA (não é step do CI). Este job
+  # faz polling de https://new-biolink.vercel.app/ até obter HTTP 200 + o body
+  # conter o CTA esperado da landing pública (visitante não-autenticado vê
+  # "Criar minha página"), tolerando a janela de deploy. Verificação por
+  # curl + grep apenas — sem framework E2E (PRD §Requisitos de Testes).
+  # URL pública, sem secrets (NFR10). Só roda em push:main (≠ AC4/DP-1, que
+  # é evidência manual). Teto de ~5 min (30 tentativas × 10s).
+  health-check:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Poll production canary (HTTP 200 + CTA presente)
+        run: |
+          set -uo pipefail
+          URL="https://new-biolink.vercel.app/"
+          EXPECTED="Criar minha página"
+          MAX_ATTEMPTS=30
+          SLEEP_SECONDS=10
+          for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
+            HTTP_CODE=$(curl -sSL -o body.html -w '%{http_code}' --max-time 20 "$URL" || echo "000")
+            if [ "$HTTP_CODE" = "200" ] && grep -qF "$EXPECTED" body.html; then
+              echo "✅ Canary OK na tentativa ${attempt}: HTTP ${HTTP_CODE}, CTA presente."
+              exit 0
+            fi
+            echo "⏳ Tentativa ${attempt}/${MAX_ATTEMPTS}: HTTP ${HTTP_CODE}, CTA ainda ausente (deploy Vercel pode estar em progresso). Aguardando ${SLEEP_SECONDS}s..."
+            sleep "$SLEEP_SECONDS"
+          done
+          echo "❌ Canary FALHOU após ~$((MAX_ATTEMPTS * SLEEP_SECONDS))s: a URL de produção não retornou 200 com o CTA esperado."
+          echo "--- Últimos bytes do body recebido (debug) ---"
+          tail -c 2000 body.html || true
+          exit 1
