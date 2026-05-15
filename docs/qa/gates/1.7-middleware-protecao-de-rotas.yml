@@ -1,0 +1,113 @@
+schema: 1
+story: '1.7'
+gate: PASS
+status_reason: 'Refactor cirúrgico do middleware para o pattern canônico do arch §Routing Architecture (matcher amplo `/((?!_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)` + bypass early-return explícito). Todos os 7 ACs cobertos por código + 15 cenários de integration test (PROTECTED 4, AUTH_PAGES 5, bypass 6) cobrindo 100% das branches do handler. Quality gate 6/6 verde (typecheck/lint/build/test:unit/test:components/test:integration). Padrão oficial @supabase/ssr (setAll dupla propagação + redirectWithCookies helper) e exact-match em AUTH_PAGES preservados de 1.6. Bypass de `/auth/callback` (decisão arquitetural Story 1.7 PSN #1) elimina race condition latente entre middleware setAll e exchangeCodeForSession do Route Handler.'
+reviewer: 'Quinn'
+updated: '2026-05-14T22:55:00Z'
+
+acceptance_criteria_coverage:
+  AC1_matcher_amplo: PASS                # middleware.ts:107 — regex canônico arch §Routing linha 1227 (idêntico)
+  AC2_protected_redirect_with_next: PASS # middleware.ts:89-91 + tests linhas 53-90 (4 cenários PROTECTED; guest preserva pathname em ?next=)
+  AC3_auth_pages_exact_match: PASS       # middleware.ts:93-95 (AUTH_PAGES.includes) + tests linhas 95-141 (5 cenários, /reset-password/confirm corretamente neutro)
+  AC4_bypass_publicas: PASS              # middleware.ts:37-44 (early-return /  /@*  /api/track  /auth/callback) + tests linhas 147-198 (6 cenários assertam getUserMock.not.toHaveBeenCalled())
+  AC5_refresh_transparente: PASS         # middleware.ts:50-67 (let supabaseResponse + setAll dupla propagação) + middleware.ts:73-87 (redirectWithCookies helper copia cookies em redirect). Não-testável em integration per AC; padrão preservado de 1.6.
+  AC6_integration_test_suite: PASS       # tests/integration/middleware.test.ts (199 linhas) — 15 cenários (supera mínimo de ~10/13); pattern vi.mock(@supabase/ssr) + new NextRequest direto.
+  AC7_quality_gate_6_of_6: PASS          # typecheck ✓ | lint ✓ | build ✓ | test:unit 22 ✓ | test:components 22 ✓ | test:integration 33 + 1 skipped ✓
+
+security_checklist:
+  http_only_cookies: PASS                # @supabase/ssr setAll adapter (middleware.ts:58-63) preservado de 1.5/1.6
+  session_management_refresh: PASS       # pattern oficial: req.cookies.set + supabaseResponse rebuild + cookies.set no response (middleware.ts:59-64)
+  redirect_cookie_propagation: PASS      # redirectWithCookies (middleware.ts:74-87) copia supabaseResponse.cookies.getAll() para redirect — sem ele browser perde sessão entre redirects
+  service_role_isolation: PASS           # middleware usa createServerClient com anon key (env.NEXT_PUBLIC_SUPABASE_ANON_KEY); zero referência a admin client
+  env_via_zod: PASS                      # env.NEXT_PUBLIC_SUPABASE_URL/_ANON_KEY de @/lib/env (NÃO process.env direto); arch §Coding Standards linha 2396 enforçado
+  next_param_minimalism: PASS            # AC2 redirect preserva apenas pathname original (sem search params do request) — minimiza surface de open-redirect / data exfil
+  open_redirect_at_consumption: DEFERRED # Validação safeNext (startsWith('/') && !startsWith('//')) é responsabilidade da story que consumir o `next` em signIn pós-auth — não desta. Documentado em story §Security Considerations como handoff.
+  no_secrets_in_code: PASS               # gitleaks via CI continua verde; sem hardcoded secrets em middleware/test
+
+test_evidence:
+  typecheck: 'tsc --noEmit exit 0'
+  lint: 'eslint exit 0 (sem warnings)'
+  build: 'next build exit 0 (compile 67s + TS 74s); warning não-bloqueante "middleware → proxy deprecated" (Next 16) documentado em Completion Notes #5; output mostra "ƒ Proxy (Middleware)" + 8 rotas geradas corretamente'
+  unit_tests: '22/22 passed (vitest project=unit) — duration 5.54s'
+  component_tests: '22/22 passed (vitest project=components) — duration 59.75s'
+  integration_tests: '33/33 passed + 1 skipped (vitest project=integration) — duration 20.99s; inclui 15 novos cenários de middleware (PROTECTED 4 + AUTH_PAGES 5 + bypass 6) — runtime puro do middleware suite 265ms per dev notes'
+
+code_review_findings:
+  - id: 'CR-001'
+    severity: info
+    finding: 'Bypass `/auth/callback` é divergência consciente vs Story 1.6 (que incluía o path no matcher pra refresh proativo). Decisão arquitetural Story 1.7 PSN #1: Route Handler executa exchangeCodeForSession próprio que já refresca cookies; rodar middleware antes é redundante e em cenários adversariais (usuário com session antiga clicando no link de email em outra aba) cria race condition entre dois setAll. Trade-off aceitável.'
+    location: 'middleware.ts:31-44'
+    action_required: false
+  - id: 'CR-002'
+    severity: info
+    finding: 'AUTH_PAGES usa `.includes(path)` (exact match) em vez de `.some(startsWith)` do snippet do arch §Routing linha 1213. Divergência consciente (Story 1.6 PSN #3, re-documentada aqui): `/reset-password/confirm` precisa session válida (oposto do "se logado → /dashboard" das auth pages); `startsWith` engoliria o confirm para `/dashboard` redirect. Pattern correto pós-1.6 — snippet arch é didático/pré-1.6.'
+    location: 'middleware.ts:15-22, 93'
+    action_required: false
+  - id: 'CR-003'
+    severity: info
+    finding: 'Tests via import direto + mock de @supabase/ssr (não via Next.js Edge runtime). Trade-off: não cobrimos o glue real do matcher do `config` (em produção o regex filtra ANTES do handler; nos testes podemos chamar o handler com qualquer path, inclusive `/foo.svg`). Mitigação: matcher é validado em build-time (Next 16 valida regex malformado); função middleware é testada deterministicamente. Cobertura combinada adequada per arch §Testing Pyramid linha 2222 (sem E2E no MVP).'
+    location: 'tests/integration/middleware.test.ts:5-21'
+    action_required: false
+  - id: 'CR-004'
+    severity: info
+    finding: 'Bypass de tests adicionalmente assertam `getUserMock.not.toHaveBeenCalled()` (não está no AC6 obrigatório). Valida a otimização de latência declarada em Task 1.2 — early-return acontece ANTES de instanciar createServerClient. Vai além do mínimo da AC, fortalece o teste contra regressão futura (ex.: alguém mover o bypass para depois do client setup).'
+    location: 'tests/integration/middleware.test.ts:153,162,169,178,187,196'
+    action_required: false
+
+regression_check:
+  unit_tests_count_unchanged: PASS       # 22 (era 22 em 1.6) — sem mudança
+  component_tests_count_unchanged: PASS  # 22 (era 22 em 1.6) — sem mudança
+  integration_tests_count_delta: PASS    # 33 (era 18 em 1.6) + 1 skipped (era 1) → +15 novos do middleware, zero regressão nos 18 anteriores
+  files_changed_minimal: PASS            # git diff --stat main: middleware.ts (+47 -27); 1 file changed. Tests new file. Sem mudança em UI/Server Actions/DB/migrations/package.json
+  middleware_pattern_preserved: PASS     # let supabaseResponse + setAll dupla propagação + redirectWithCookies helper inalterados (apenas matcher + bypass list mudaram)
+
+performance_check:
+  bypass_avoids_unnecessary_get_user: PASS  # tests assertam getUserMock.not.toHaveBeenCalled() para /, /@*, /api/track, /auth/callback — early-return economiza chamada de auth + criação do createServerClient
+  test_runtime_within_budget: PASS          # 265ms para 15 cenários (limite AC7: ≤ 5s)
+  middleware_complexity_acceptable: PASS    # função middleware é ~50 linhas; helper redirectWithCookies isolado; matcher regex é o pattern canônico do arch
+
+documentation_check:
+  story_file_complete: PASS              # 7 ACs, 5 tasks, Dev Notes, PSN (10 itens), Change Log v0.1+1.0+0.2, Completion Notes (8 itens) — completíssimo
+  inline_comments_cross_ref_arch: PASS   # middleware.ts comentários cross-refam arch §Routing linhas 1183-1184/1227 e PSN #1
+  divergencias_documentadas: PASS        # 2 divergências vs snippet arch (exact-match AUTH_PAGES + bypass /auth/callback) explicadas em comentários inline E em Dev Notes/PSN
+
+top_issues: []
+
+informational_notes:
+  - id: 'INFO-001'
+    severity: low
+    finding: 'Build warning não-bloqueante "The middleware file convention is deprecated. Please use proxy instead." (Next 16). O arquivo `middleware.ts` continua funcionando; o output do build mostra "ƒ Proxy (Middleware)" indicando que Next 16 mapeia internamente. Migração `middleware.ts → proxy.ts` é deprecation notice apenas — não há ação requerida nesta story.'
+    suggested_action: 'Criar story dedicada (ex.: 1.X.1 ou parte de housekeeping de uma futura epic) para renomear `middleware.ts → proxy.ts` quando o convention `proxy` estiver estável no Next 16+. Cross-ref Completion Notes #5 da Story 1.7.'
+  - id: 'INFO-002'
+    severity: low
+    finding: 'Task 4 (smoke manual end-to-end) deixado intencionalmente unchecked — handoff para owner durante gate/merge review. Integration tests cobrem deterministicamente o invariante (AC2/3/4); smoke é confirmação adicional E2E manual. Consistente com pattern Stories 1.5/1.6.'
+    suggested_action: 'Owner roda smoke manual cobrindo: (a) guest /dashboard → /login?next=/dashboard; (b) guest /login passthrough; (c) auth /login → /dashboard (idem signup/reset-password); (d) auth /@anything → 404 sem redirect (Story 2.7 pendente); (e) auth /auth/callback?code=invalid → /login?error=auth_callback_failed. Documentar no PR antes de merge.'
+  - id: 'INFO-003'
+    severity: low
+    finding: 'Consumo do `next` query param em signIn (redirect pós-auth para `next` em vez de `/dashboard` hardcoded) NÃO está em escopo desta story — AC2 só requer que o middleware EMITA o `next=<path>`. Documentado em §Security Considerations e PSN #10 como handoff.'
+    suggested_action: 'Quando a story futura implementar consumo de `next` em signIn Server Action, DEVE validar `next.startsWith("/") && !next.startsWith("//")` antes do redirect (pattern safeNext do /auth/callback Route Handler de 1.6) para prevenir open-redirect. Sem ação imediata nesta story.'
+  - id: 'INFO-004'
+    severity: low
+    finding: 'CodeRabbit Integration desabilitada em core-config.yaml (igual 1.5/1.6) — validação automatizada de patterns/segurança não executada. Per memory QA-001, @qa *review trava em macOS (CodeRabbit/WSL incompatibility); gate manual aplicado conforme docs/qa/known-issues.md.'
+    suggested_action: 'Quando CodeRabbit for habilitado em epic futuro, revisitar diffs de middleware/auth com scan automatizado. Sem ação imediata.'
+
+handoff_notes:
+  - to_agent: 'owner'
+    action: 'Smoke manual end-to-end (Task 4) — 5 cenários: PROTECTED redirect, AUTH_PAGES passthrough (guest), AUTH_PAGES redirect (auth), bypass /@username, /auth/callback inválido'
+    blocking: false
+    deadline: 'Antes do merge do PR'
+  - to_agent: '@dev'
+    action: '*commit das mudanças (middleware.ts + tests/integration/middleware.test.ts + docs/stories/1.7....md + docs/qa/gates/1.7-....yml) e em seguida @devops *push + *create-pr'
+    blocking: false
+    deadline: 'Próximo passo imediato'
+
+waiver: { active: false }
+
+next_action:
+  agent: '@dev'
+  command: '*commit'
+  description: 'Stage + commit das mudanças desta story; em seguida @devops *push + *create-pr.'
+  alternatives:
+    - agent: '@po'
+      command: '*close-story 1.7'
+      condition: 'Após PR merged e workflow confirmar Done'

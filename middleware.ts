@@ -3,14 +3,46 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 import { env } from '@/lib/env';
 
-const PROTECTED_PATHS = ['/dashboard'];
-// Exact match (Story 1.6): comparar `path === p` em vez de `startsWith`.
-// Motivo: `/reset-password/confirm` precisa de session válida (oposto do
-// "se logado → /dashboard" das auth pages). `startsWith('/reset-password')`
-// quebraria esse comportamento. Story 1.7 redesenhará com regex mais sofisticado.
-const AUTH_PAGES_EXACT = ['/login', '/signup', '/reset-password'];
+// Story 1.7 implementou o matcher amplo + bypass list, materializando o
+// pattern canônico de docs/architecture.md §Routing Architecture > Protected
+// Route Pattern (linha 1227). O default agora é INTERCEPTAR; o bypass é
+// explícito em código (early-return abaixo). Stories 1.5/1.6 usavam uma
+// lista enumerada de paths — esta story fecha esse roadmap.
+//
+// Cross-ref: docs/architecture.md §Routing linhas 1183-1184 (terminologia
+// PROTECTED_PREFIXES + AUTH_PAGES) e linha 1227 (regex do matcher).
+const PROTECTED_PREFIXES = ['/dashboard'];
+// Exact match (Story 1.6, preservado em 1.7): comparar `path === p` em vez
+// de `startsWith`. Motivo: `/reset-password/confirm` precisa de session
+// válida (oposto do "se logado → /dashboard" das auth pages).
+// `startsWith('/reset-password')` engoliria `/reset-password/confirm` para
+// `/dashboard` redirect e perderia a página de nova senha. Divergência
+// consciente do snippet do arch §Routing (que usa `some(startsWith)`) —
+// o snippet é didático/pré-Story 1.6.
+const AUTH_PAGES = ['/login', '/signup', '/reset-password'];
 
 export async function middleware(req: NextRequest) {
+  const path = req.nextUrl.pathname;
+
+  // Bypass — rotas públicas que não precisam do pipeline de auth.
+  // Early-return ANTES de instanciar o createServerClient para economizar
+  // latência (sem `getUser()` desnecessário) e clareza semântica.
+  //
+  // `/auth/callback` está aqui (mudança vs Story 1.6) porque o Route
+  // Handler executa seu próprio `exchangeCodeForSession` que internamente
+  // faz setAll dos novos cookies; rodar middleware antes seria redundante
+  // e em cenários adversariais (usuário com session antiga clicando no
+  // link de email em outra aba) poderia criar race condition entre dois
+  // setAll. Story 1.7 PSN #1.
+  if (
+    path === '/' ||
+    path.startsWith('/@') ||
+    path.startsWith('/api/track') ||
+    path === '/auth/callback'
+  ) {
+    return NextResponse.next({ request: req });
+  }
+
   // Padrão oficial @supabase/ssr para Next middleware: a response deve ser
   // recriada quando o cliente Supabase refresh tokens (via setAll), e os
   // cookies precisam ser propagados para qualquer redirect — caso contrário
@@ -37,7 +69,6 @@ export async function middleware(req: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const path = req.nextUrl.pathname;
 
   // Helper: build a redirect response copiando cookies refreshed do supabaseResponse
   function redirectWithCookies(pathname: string, nextPath?: string) {
@@ -55,34 +86,23 @@ export async function middleware(req: NextRequest) {
     return redirectRes;
   }
 
-  if (PROTECTED_PATHS.some((p) => path.startsWith(p)) && !user) {
+  if (PROTECTED_PREFIXES.some((p) => path.startsWith(p)) && !user) {
     return redirectWithCookies('/login', path);
   }
 
-  if (AUTH_PAGES_EXACT.includes(path) && user) {
+  if (AUTH_PAGES.includes(path) && user) {
     return redirectWithCookies('/dashboard');
   }
 
   return supabaseResponse;
 }
 
-// Story 1.7 expandirá o matcher para `/((?!_next/static|...).*)` cobrindo todas
-// as rotas privadas. Aqui é deliberadamente reduzido às rotas conhecidas para
-// minimizar surface de bugs no MVP de auth UI. /dashboard listado explicitamente
-// além de /dashboard/:path* — defensivo contra mudança de path-to-regexp v8 no
-// Next 16 (`:path*` pode não cobrir o segmento vazio em todas as versões).
-//
-// `/auth/callback` está no matcher para que o middleware refresque cookies se
-// necessário antes do GET do Route Handler — porém NÃO está em AUTH_PAGES_EXACT
-// nem em PROTECTED_PATHS, então cai no `return supabaseResponse` neutro.
+// Matcher canônico do arch §Routing Architecture > Protected Route Pattern
+// (linha 1227). Intercepta TODAS as rotas exceto: assets estáticos
+// (`_next/static`, `_next/image`), favicon, e arquivos de imagem por
+// extensão. O bypass de auth (rotas públicas como `/`, `/@*`, `/api/track`,
+// `/auth/callback`) é feito em runtime via early-return no handler — não
+// no matcher — para manter a regex simples e a lógica explícita em código.
 export const config = {
-  matcher: [
-    '/signup',
-    '/login',
-    '/reset-password',
-    '/reset-password/confirm',
-    '/auth/callback',
-    '/dashboard',
-    '/dashboard/:path*',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 };
