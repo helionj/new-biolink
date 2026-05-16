@@ -1,0 +1,121 @@
+schema: 1
+story: '1.9'
+gate: PASS
+status_reason: 'Landing pública SSR + canary de produção, fechamento do Epic 1. Stub create-next-app de `app/page.tsx` removido 100% e reescrito como Server Component async: hero/3-benefícios/footer-GitHub + CTA condicional por sessão via `createClient()`+`auth.getUser()` (pattern de dashboard/layout.tsx — correto porque middleware bypassa `/`, Story 1.7). 5/6 ACs PASS direto (AC1/AC2/AC3/AC5/AC6); AC4 (Lighthouse) = handoff manual ao owner pós-deploy com `lighthouse.yml` DIFERIDO via decisão PO documentada (DP-1, Change Log v0.2) + backlog item rastreado [STORY-1.9-F1] + risco LOW — NÃO-bloqueante, consistente com o padrão de handoff validado 1.5–1.8. Quality gate 6/6 verde confirmado INDEPENDENTEMENTE pelo CI do PR #7 (run 25937802724: lint/typecheck/test-unit/test-components/test-integration/build/audit/gitleaks todos pass). Zero regressão, 0 deps NPM novas, 0 mudanças DB/Server Actions/migrations. CTA via `buttonVariants` (zero JS de cliente — protege AC4/Lighthouse); job `health-check` em ci.yml seguro (curl+grep -qF, URL pública, sem secrets, push:main only). Gate MANUAL aplicado per QA-001 (CodeRabbit disabled em core-config `mcp.enabled:false` + macOS/WSL incompatível; ver docs/qa/known-issues.md).'
+reviewer: 'Quinn'
+updated: '2026-05-15T15:52:00Z'
+
+acceptance_criteria_coverage:
+  AC1_landing_ssr_hero_beneficios_footer: PASS    # app/page.tsx reescrito de stub create-next-app → Server Component async. <main> com <section> hero (<h1> "Sua presença digital em um único link" + <p> tagline + CTA), <section> benefícios = <ul> com EXATAMENTE 3 <li> (BENEFITS as const), <footer> com link GitHub (https://github.com/helionj/new-biolink, rel="noopener noreferrer" target="_blank"). SSR confirmado (ƒ / no build output). Markup determinístico verificado no component test (h1 level 1, getAllByRole('listitem') length 3, link github href/rel/target).
+  AC2_cta_condicional_sessao: PASS                # `const supabase = await createClient(); const { data: { user } } = await supabase.auth.getUser();` (idêntico ao pattern canônico de app/dashboard/layout.tsx). Guest → ctaLabel "Criar minha página" / ctaHref "/signup"; autenticado → "Ir para meu dashboard" / "/dashboard". `/` é bypass explícito do middleware (Story 1.7) → a página chama getUser() ela mesma — consequentemente `/` é SSR DINÂMICA (ƒ /), esperado e correto per Dev Notes §Auth (NÃO defeito). Ambas as branches cobertas pelo component test (guest + autenticado, incl. queryByRole confirmando ausência do CTA guest no estado autenticado).
+  AC3_seo_meta_og_placeholder: PASS               # `export const metadata: Metadata` em page.tsx (title/description landing-oriented + openGraph com images:[{url:'/og-image.png'}]). public/og-image.png placeholder neutro 1200×630 (slate-300, 3.1 KB, zlib — sem identidade visual, correto: branding é escopo @ux-design-expert/Epic 3). Fix correto: `metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL)` no root layout (sem ele Next resolveria OG p/ localhost:3000) — reusa env validado de lib/env, WHY-comment apropriado, fonts/<Toaster/> intocados (boundary respeitado). lang="pt-BR" confirmado intocado.
+  AC4_lighthouse_90: CONCERNS                      # NÃO-BLOQUEANTE — handoff manual ao owner. `.github/workflows/lighthouse.yml` NÃO criado (compliance com DP-1: decisão PO documentada em Change Log v0.2 — automação Lighthouse DIFERIDA a story de CI dedicada, backlog item [STORY-1.9-F1] criado pelo PO com risk LOW + acceptance definidos). AC4 verbatim diz "na URL de produção", não "automatizado no CI" (≠ AC6 que exige "no CI") → evidência manual satisfaz o AC literal. Guards de UI aplicados e verificados no código p/ proteger o score: zero JS de cliente no CTA (`<Link className={buttonVariants({size:'lg'})}>`, sem 'use client', sem next/image), <h1> único, semântica <ul>/<li>, text-foreground/text-muted-foreground (contraste AA), foco/teclado nativos (<a>/<Link>). Scores reais (Performance/Accessibility/Best Practices/SEO) = handoff ao owner pós-deploy (branch ainda não merged/deployed; mesma natureza do smoke Task 7.1). Consistente com o padrão de handoff PASS de 1.5–1.8.
+  AC5_health_indicator_footer: PASS               # Footer renderiza `Build {buildTime} · {commitSha}` discreto (text-xs text-muted-foreground, somente footer, hero intocado). Injeção via next.config.ts `env: { NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(), NEXT_PUBLIC_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0,7) ?? 'local' }` (DP-2 default aprovado pelo PO). Fallback determinístico `?? 'dev'`/`?? 'local'` fora da Vercel (estável p/ snapshot). WHY-comment apropriado em next.config.ts.
+  AC6_health_check_ci: PASS                       # Job `health-check` em .github/workflows/ci.yml (DP-3 default aprovado PO): `needs: build`, `if: github.event_name == 'push' && github.ref == 'refs/heads/main'` (só pós-merge — no PR aparece corretamente como "skipping", ≠ falha). Polling curl (30 tentativas × 10s = ~5 min teto) tolerando o deploy assíncrono Vercel↔GitHub; sucesso = HTTP 200 + `grep -qF "Criar minha página"` (CTA guest, fixed-string seguro); falha = dump debug + exit 1. Sem framework E2E (PRD §Requisitos de Testes). Sem secrets, URL pública hardcoded (NFR10). `set -uo pipefail` (sem -e deliberado p/ não abortar no curl de tentativa falha — correto p/ retry loop).
+
+security_checklist:
+  no_injection_surface: PASS              # Nenhum dangerouslySetInnerHTML; todo conteúdo são constantes app-controladas (título/tagline/BENEFITS/labels) renderizadas como texto. `user` (getUser) usado apenas p/ branch booleano + href, NUNCA renderizado. Zero superfície XSS introduzida.
+  external_link_hardening: PASS           # Link GitHub e (no stub removido) externos: footer GitHub usa rel="noopener noreferrer" target="_blank" — verificado no código e asserido no component test. Reverse tabnabbing mitigado.
+  no_secrets_in_code: PASS                # Job health-check sem `env:`/secrets (URL pública hardcoded). next.config.ts injeta apenas build-time ISO + short SHA (não-sensível). gitleaks (CI run 25937802724) pass. metadataBase reusa NEXT_PUBLIC_SITE_URL (já validado em lib/env, público por design).
+  ci_no_shell_injection: PASS             # health-check usa `grep -qF "$EXPECTED"` (fixed-string, sem interpretação de regex/glob) e variáveis aspeadas; URL/EXPECTED são literais hardcoded no workflow (não input externo). curl --max-time 20 + -sSL. Sem `eval`, sem interpolação de input não-confiável.
+  no_authz_change: PASS                   # Nenhuma mudança de auth/authz/RLS/Server Actions. getUser() na landing é leitura defensiva (sem redirect — `/` é público por design, middleware bypassa). Defesa-em-profundidade alinhada a arch §Middleware/Guards.
+  no_new_env_or_config_risk: PASS         # 0 deps NPM novas; vars NEXT_PUBLIC_* são build-time não-sensíveis; tests/setup.ts intocado.
+
+test_evidence:
+  approach: 'Gate MANUAL per QA-001 (CodeRabbit disabled core-config mcp.enabled:false + macOS/WSL incompatível). Evidência = revisão de código independente (git diff main...HEAD) + CI do PR #7 como verificação INDEPENDENTE do ambiente local (CI roda em ubuntu-latest, não no macOS do dev/devops).'
+  ci_run: 'PR #7 — GitHub Actions run 25937802724 (todos os checks verdes)'
+  typecheck: 'CI job typecheck pass (19s) + pre-push hook tsc --noEmit exit 0'
+  lint: 'CI job lint pass (23s) — eslint sem violações (import/order limpo)'
+  build: 'CI job build pass (31s) + build local exit 0 (compiled 63s; 10/10 static pages; ƒ / dinâmica esperada; ƒ Proxy = INFO-001 herdado)'
+  unit_tests: 'CI job test-unit pass (16s)'
+  component_tests: 'CI job test-components pass (33s) — inclui novo HomePage.test.tsx (2 cenários guest/autenticado + 1 snapshot)'
+  integration_tests: 'CI job test-integration pass (33s) — 1 skip pré-existente mantido (sem regressão)'
+  full_suite_local: 'vitest run: 14 test files passed, 108 passed | 1 skipped (109) — duration 148s (component fileParallelism:false + testTimeout:15s herdados macOS, esperado)'
+  coverage: 'Projeto components 83.55% stmts / 75.29% branch / 93.33% funcs / 86.11% lines — ≫ NFR6 (≥50%)'
+  audit_gitleaks: 'CI audit pass (14s) + gitleaks pass (5s) — sem secrets, sem vuln crítica'
+  health_check_job: 'skipping no PR #7 (if push:main) — correto/esperado; primeira execução real será pós-merge em main'
+
+code_review_findings:
+  - id: 'CR-001'
+    severity: info
+    finding: 'CTA implementado como `<Link className={buttonVariants({ size: "lg" })}>` em vez de `<Button render={<Link/>}>`. Alternativa EXPLICITAMENTE sancionada pela story (buttonVariants cva confirmado exportado em components/ui/button.tsx). Escolha correta: zero JS de cliente na landing-canary (protege AC4/Lighthouse, Task 5 guard) + markup determinístico p/ o component test. Ainda é REUSE do design system (mesma fonte de estilo buttonVariants), NÃO variante inventada (Constitution Art. IV ok).'
+    location: 'app/page.tsx'
+    action_required: false
+  - id: 'CR-002'
+    severity: info
+    finding: 'metadataBase adicionado ao root app/layout.tsx (não a page.tsx). Correto: metadataBase é config de resolução de URL absoluta que pertence ao root metadata; sem ele o build avisa que /og-image.png resolveria p/ localhost:3000. Reusa env.NEXT_PUBLIC_SITE_URL (lib/env validado). Fonts/<Toaster/> intocados — boundary @dev respeitado (metadata do layout é editável; o que NÃO se deve tocar é fonts/Toaster, e não foi).'
+    location: 'app/layout.tsx'
+    action_required: false
+  - id: 'CR-003'
+    severity: info
+    finding: 'health-check usa `set -uo pipefail` (deliberadamente SEM `-e`): correto p/ um retry loop — `-e` abortaria o script no primeiro curl de tentativa falha, impedindo o polling. O tratamento de erro é explícito (HTTP_CODE=...||echo "000", exit 1 só após esgotar MAX_ATTEMPTS). Rationale documentado no comentário do job.'
+    location: '.github/workflows/ci.yml (job health-check)'
+    action_required: false
+  - id: 'CR-004'
+    severity: info
+    finding: 'Component test mocka `next/link` p/ um anchor determinístico — evita necessidade de AppRouter context em jsdom (DP-4 default usado, sem fallback de componente síncrono). Pattern mock-then-import espelha tests/components/features/auth/SignupForm.test.tsx (precedente do projeto). Cenário autenticado também asserta AUSÊNCIA do CTA guest (queryByRole ... not.toBeInTheDocument) — cobertura de branch robusta.'
+    location: 'tests/components/features/landing/HomePage.test.tsx'
+    action_required: false
+
+regression_check:
+  full_ci_suite_green: PASS               # PR #7 run 25937802724: test-unit/test-components/test-integration todos pass — zero regressão introduzida pela reescrita de app/page.tsx
+  layout_change_additive: PASS            # app/layout.tsx: única mudança = metadataBase + import @/lib/env (aditivo); title/description/fonts/<Toaster/>/lang="pt-BR" preservados
+  pre_existing_skip_maintained: PASS      # 1 integration skip pré-existente mantido (consistente histórico 1.7/1.8) — sem nova supressão
+  no_dep_or_schema_change: PASS           # 0 deps NPM novas; 0 mudanças DB/migrations/Server Actions; package.json inalterado
+  files_changed_scoped: PASS             # git diff main...HEAD: app/page.tsx (rewrite), app/layout.tsx (+metadataBase), next.config.ts (+env), .github/workflows/ci.yml (+job), docs/STORY-BACKLOG.md (+[STORY-1.9-F1]), docs/stories/1.9....md; novos: public/og-image.png, HomePage.test.tsx + snapshot — escopo coerente com File List
+
+performance_check:
+  zero_client_js_on_landing: PASS         # CTA = <Link className={buttonVariants()}> (não o client component @base-ui); sem 'use client'; sem next/image. Landing-canary serve markup SSR puro — protege LCP/Lighthouse (AC4 guard).
+  dynamic_ssr_expected: PASS              # `/` é ƒ (dinâmica) por causa do getUser() (AC2) — tradeoff aceito e DOCUMENTADO em Dev Notes §Auth (middleware bypassa `/`, página checa sessão ela mesma). Overhead = 1 chamada getUser leve; correto, não regressão de design.
+  build_time_normal: PASS                 # next build compiled 63s — dentro do padrão Next 16 do projeto (1.7 ~67s / 1.8 ~53s)
+  ci_health_check_bounded: PASS           # Polling com teto rígido ~5 min (30×10s) + curl --max-time 20 — não há risco de job pendurado indefinidamente
+
+documentation_check:
+  story_file_complete: PASS               # Dev Agent Record: Agent Model (claude-opus-4-7), Debug Log (6 evidências), Completion Notes (9 itens incl. decisão de impl sancionada), File List (7 arquivos). Change Log v0.1/0.3 (@sm/@dev) + v0.2 (@po). Tasks 1-4/6/7 [x]; Task 5 parcial + Task 7.1 [ ] intencional com rationale (handoff owner).
+  decisions_traceable: PASS               # DP-1 (Lighthouse diferido, PO + backlog [STORY-1.9-F1]), DP-2 (build indicator, PO-approved), DP-3 (health-check ci.yml, PO-approved), DP-4 (RSC test default) — todos documentados em Dev Notes §Decisões Pendentes + Completion Notes + Change Log. Zero invenção (Constitution Art. IV ok).
+  inline_comments_appropriate: PASS       # WHY-comments mínimos e corretos: metadataBase (porquê resolução absoluta), next.config env (DP-2 + consumo AC5), bloco health-check (canary/async Vercel/sem secrets). Não over-commented; padrão do projeto respeitado.
+
+top_issues: []
+
+informational_notes:
+  - id: 'INFO-001'
+    severity: low
+    finding: 'Build warning não-bloqueante "middleware → proxy deprecated" (Next 16); output mostra "ƒ Proxy (Middleware)". Herdado das Stories 1.7/1.8 (NÃO introduzido por 1.9 — esta story não toca middleware.ts). Sem ação requerida nesta story.'
+    suggested_action: 'Tracking já existe via gates 1.7/1.8 INFO-001 (story futura renomeia middleware.ts → proxy.ts quando a convention Next 16 estabilizar).'
+  - id: 'INFO-002'
+    severity: low
+    finding: 'CodeRabbit Integration desabilitada em core-config.yaml (sem coderabbit_integration; mcp.enabled:false). Per QA-001 (docs/qa/known-issues.md), @qa *review trava em macOS (CodeRabbit/WSL incompatibility) — gate MANUAL aplicado. Scan automatizado de patterns/segurança não executado; mitigado por revisão de código manual + CI independente (ubuntu).'
+    suggested_action: 'Quando CodeRabbit for habilitado em epic futuro, revisitar diffs de app/page.tsx + ci.yml com scan automatizado. Solução permanente QA-001 (guard no template L2 qa-review-story.md) ainda pendente. Sem ação imediata.'
+  - id: 'INFO-003'
+    severity: low
+    finding: 'AC4 (Lighthouse scores reais na URL de prod) + Task 7.1 (smoke manual guest/autenticado/footer) = handoff ao owner pós-deploy. NÃO-bloqueante p/ Done — consistente com o padrão validado 1.5–1.8 (component test + AC6 curl/grep cobrem o invariante deterministicamente; smoke/Lighthouse são confirmação E2E manual adicional pós-deploy real).'
+    suggested_action: 'Owner: após merge + deploy Vercel, rodar Lighthouse na URL de prod (4 scores ≥ 90) e smoke manual (guest → CTA /signup; autenticado → CTA /dashboard; footer GitHub + build indicator). Registrar no PR/handoff. Automação Lighthouse rastreada em [STORY-1.9-F1].'
+  - id: 'INFO-004'
+    severity: low
+    finding: 'health-check aparece como "skipping" no CI do PR #7 — correto e esperado (if: push && refs/heads/main). A primeira execução REAL do canary (AC6) será pós-merge em main, sujeita ao timing assíncrono do deploy Vercel (polling ~5 min projetado p/ isso). Não é uma falha do gate.'
+    suggested_action: 'Após merge: acompanhar a execução do job health-check em main. Se falhar por janela de deploy > 5 min, não é regressão da landing — avaliar aumentar MAX_ATTEMPTS (tracking via [STORY-1.9-F1] ou follow-up @devops).'
+
+handoff_notes:
+  - to_agent: 'owner'
+    action: 'Pós-merge + deploy Vercel: (1) Lighthouse na URL de prod (https://new-biolink.vercel.app/) — registrar Performance/Accessibility/Best Practices/SEO ≥ 90 (AC4); (2) smoke manual — `/` guest → CTA "Criar minha página"→/signup; logar e revisitar → CTA "Ir para meu dashboard"→/dashboard; footer com link GitHub + indicador Build {time}·{sha} (Task 7.1).'
+    blocking: false
+    deadline: 'Durante/após o merge do PR #7'
+  - to_agent: '@po'
+    action: '*close-story 1.9 (Ready for Review → Done) após PR #7 merged e CI verde em main confirmar (incl. primeira execução do job health-check).'
+    blocking: false
+    deadline: 'Próximo passo após merge'
+  - to_agent: '@devops'
+    action: 'Acompanhar job health-check na primeira execução pós-merge em main (canary real). Automação Lighthouse = backlog [STORY-1.9-F1] (story de CI dedicada).'
+    blocking: false
+    deadline: 'Pós-merge / backlog'
+
+waiver: { active: false }
+
+next_action:
+  agent: '@po'
+  command: '*close-story 1.9'
+  description: 'Após PR #7 merged + CI verde em main (incl. health-check canary): @po fecha a Story 1.9 (Ready for Review → Done). Lighthouse + smoke = handoff owner não-bloqueante (padrão 1.5–1.8). Automação Lighthouse rastreada em backlog [STORY-1.9-F1].'
+  alternatives:
+    - agent: '@devops'
+      command: 'monitorar health-check pós-merge'
+      condition: 'Logo após o merge do PR #7 em main'
