@@ -1,0 +1,171 @@
+schema: 1
+story: '2.2'
+gate: PASS
+status_reason: 'Todos os 5 ACs satisfeitos. Segundo DDL de domínio (pages + theme_preset + RLS + extensão zero-downtime do trigger on_auth_user_created) aplicado limpo em biolink-dev e validado por 10 cenários integration (RLS owner/non-owner/anon SELECT+UPDATE, INSERT direto bloqueado, trigger bootstrap) — supera AC5 (pede owner/non-owner/anon). Schema remoto verificado via Supabase MCP: pages.profile_id UNIQUE (AC4), FK pages_profile_id_fkey→profiles(id) ON DELETE CASCADE, theme_preset enum (light/dark/brand), RLS habilitado. Trigger estendido via CREATE OR REPLACE (não DROP — preserva auth_user_created), rollback companion em ordem reversa de dependências restaura corpo somente-profiles. CI #9 100% verde (10/10 jobs incl. test-integration + gitleaks). Espelha verbatim o template validado da Story 1.4 (sibling Database — Done). 0 blockers; 1 observação low não-bloqueante herdada de 1.4 (db:types prettier — já mitigada por Task 3.3).'
+reviewer: 'Manual gate per QA-001 (CodeRabbit self-healing loop indisponível em macOS sem WSL/CodeRabbit CLI — docs/qa/known-issues.md). @architect Aria validou os 6 quality_gate_tools (typecheck/lint/build/db:types/supabase-db-push/rls-tests) + 7 quality checks lendo o código real (0003_pages.sql, rollback companion, pages.test.ts, types.ts) + verificação direta do schema remoto biolink-dev via Supabase MCP (list_migrations + list_tables) + execução dos gates pelo @devops no *push (lint/typecheck/build/vitest 147/147 exit 0) + CI PR #9 100% verde.'
+updated: '2026-05-18T16:30:00Z'
+
+review_method: manual
+review_note: >-
+  Gate manual aplicado via workaround QA-001 (docs/qa/known-issues.md) —
+  ambiente macOS sem WSL/CodeRabbit; Seção 0 (CodeRabbit Self-Healing Loop)
+  da task qa-review-story.md travaria. Story de Database+Security: quality_gate
+  owner é @architect (per Executor Assignment da story, espelhando 1.4 Done).
+  Revisão dos 7 quality checks feita lendo o código real + verificação do
+  schema remoto biolink-dev (Supabase MCP) + CI PR #9 verde.
+
+top_issues:
+  - id: 'DX-001'
+    severity: low
+    category: 'maintainability'
+    finding: >-
+      pnpm db:types regen produz diff cosmético (Supabase CLI raw output:
+      double quotes + sem semicolons) vs versão commitada (Prettier-processed).
+      Tech-debt low herdado da Story 1.4 (mesma observação no gate 1.4).
+    suggested_action: >-
+      Não-bloqueante e JÁ mitigado nesta story: Task 3.3 aplica
+      `prettier --write lib/supabase/types.ts` após o regen. Fix permanente
+      sugerido (housekeeping): encadear no script package.json
+      `"db:types": "... > lib/supabase/types.ts && prettier --write lib/supabase/types.ts"`.
+
+waiver: { active: false }
+
+quality_checks:
+  code_review:
+    status: PASS
+    notes: |
+      0003_pages.sql segue DDL canônico de docs/architecture/schema-design.md
+      §4 #pages verbatim: CREATE TYPE theme_preset ANTES da tabela (ordem de
+      dependência), pages com id PK gen_random_uuid() independente, profile_id
+      NOT NULL UNIQUE FK profiles(id) ON DELETE CASCADE, theme theme_preset
+      DEFAULT 'light', is_published boolean DEFAULT true, timestamps, COMMENT
+      ON em todas as colunas (autodocumentação, estilo 0002). Trigger
+      trg_pages_set_updated_at REUSA set_updated_at() de 0002 (IDS REUSE — não
+      recriada). RLS: 2 policies SELECT permissivas separadas (pages_select_public
+      USING is_published=true + pages_select_own USING profile_id=auth.uid(),
+      OR-combinadas pelo Postgres) + pages_update_own USING + WITH CHECK
+      (impede reassign de profile_id) — naming casa verbatim com AC3, estilo
+      "1 policy por preocupação" de 0002. Sem policy INSERT (trigger-only via
+      SECURITY DEFINER) nem DELETE (cascade) — comentado explicitamente.
+      Extensão de on_auth_user_created() via CREATE OR REPLACE (NÃO DROP — o
+      trigger auth_user_created depende; substituição in-place = zero-downtime
+      per arch §10). ADAPT < 30%: omite `RETURNING id INTO v_profile_id` do
+      canônico porque profiles.id == auth.users.id == NEW.id (0002:65) —
+      simplificação correta, documentada nas linhas 126-129. Guard de username,
+      SET search_path=public,pg_catalog e lower() preservados verbatim.
+      Rollback companion em ordem reversa de dependências, todos DROP IF EXISTS
+      (idempotente), restaura on_auth_user_created() ao corpo somente-profiles
+      via CREATE OR REPLACE (não DROP FUNCTION — preserva 0002), NOT rolled
+      back: extensions+set_updated_at()+profiles (pertencem a 0002).
+  unit_tests:
+    status: N/A
+    notes: |
+      Story 2.2 é majoritariamente SQL (DDL + CREATE OR REPLACE da trigger
+      function + RLS policies). Não há lógica TS unitestável — toda validação
+      acontece em integration tests contra Postgres real (mesma situação da
+      sibling 1.4). project Vitest `unit` continua passWithNoTests:true.
+  acceptance_criteria:
+    status: PASS
+    notes: |
+      AC1 (migration pages: id, profile_id FK, theme enum default 'light',
+      is_published default true, timestamps): PASS — verificado via Supabase
+      MCP list_tables contra biolink-dev: todas as 6 colunas com tipos/defaults
+      exatos do DDL; theme_preset enum (light/dark/brand) presente.
+      AC2 (trigger cria pages row automaticamente ao criar profiles row): PASS
+      — on_auth_user_created() estendido com `INSERT INTO pages (profile_id)
+      VALUES (NEW.id)` após o INSERT em profiles; validado por cenário (j)
+      (admin.createUser → 1 pages row com theme=light/is_published=true) +
+      4 pages bootstrapadas em biolink-dev a partir dos profiles seed.
+      AC3 (RLS select_own + update_own + select_public where is_published=true):
+      PASS — pages_select_public USING (is_published=true), pages_select_own
+      USING (profile_id=auth.uid()), pages_update_own USING + WITH CHECK
+      auth.uid(). RLS habilitado (rls_enabled=true confirmado via MCP).
+      AC4 (1 página por profile no MVP — UNIQUE em profile_id): PASS —
+      profile_id com option "unique" confirmado via MCP; cobre AC4 e cria
+      índice automático (sem índice extra). Phase 2 multi-page removerá via
+      expand-contract (documentado).
+      AC5 (testes RLS owner/non-owner/anonymous rodando via CI): PASS — 10
+      cenários (a-j) em tests/integration/rls/pages.test.ts: owner read+update
+      (com updated_at refresh), non-owner read published / blocked unpublished /
+      update blocked, anon read published / blocked unpublished / update
+      blocked, authenticated direct INSERT blocked (no INSERT policy), trigger
+      bootstrap. Reusa test-users.ts sem modificar (IDS REUSE — trigger
+      estendido já bootstrapa pages p/ alice/bob no setupTestUsers). Verde em
+      CI PR #9 job test-integration + vitest local 147/147.
+  no_regressions:
+    status: PASS
+    notes: |
+      Stories 1.1-2.1 mantidas verdes: vitest 147/147 (18 arquivos, inclui
+      suítes anteriores) + CI PR #9 100% verde (install/lint/build/audit/
+      test-components/test-integration/gitleaks/Vercel). profiles (0002)
+      intocada — set_updated_at() REUSADA não recriada, extensions citext/
+      pgcrypto preservadas. on_auth_user_created() estendida via CREATE OR
+      REPLACE (auth_user_created continua apontando p/ a mesma função, INSERT
+      em profiles preservado verbatim — zero regressão no fluxo signup 1.5).
+      Rollback de 0003 não toca artefatos de 0002.
+  performance:
+    status: PASS
+    notes: |
+      UNIQUE em profile_id cria índice automático — sem índice extra (zero
+      overhead adicional). RLS sem custo notável: pages_select_public filtra
+      por is_published (boolean, indexável se necessário em Phase 2),
+      pages_select_own/update_own fazem lookup auth.uid() STABLE cacheable
+      por statement. Trigger estendido adiciona 1 INSERT simples (pages)
+      ao path de signup já existente — custo marginal. Migration aplica em
+      <2s contra biolink-dev. Sem N+1, sem full table scan.
+  security:
+    status: PASS
+    notes: |
+      Defense-in-depth: (1) RLS habilitada (ALTER TABLE ENABLE ROW LEVEL
+      SECURITY, confirmado via MCP rls_enabled=true); (2) sem policy INSERT —
+      pages só nasce via trigger SECURITY DEFINER on_auth_user_created (bypassa
+      RLS por design, com SET search_path=public,pg_catalog hardening contra
+      search_path injection); (3) sem policy DELETE — remoção só via CASCADE
+      de profiles→auth.users; (4) pages_update_own com WITH CHECK
+      (profile_id=auth.uid()) impede mass-assignment / reassign de profile_id
+      para outro user; (5) anon/non-owner só leem pages publicadas
+      (is_published=true) — unpublished invisível (cenários d/g validam 0
+      rows); (6) authenticated direct INSERT bloqueado (cenário i valida
+      42501/RLS). gitleaks CI pass (sem secrets). Sem service-role no código
+      de app.
+  documentation:
+    status: PASS
+    notes: |
+      Header da migration 0003 abrangente (Story/Author/Date/Refs com linhas
+      de schema-design.md/Scope/Naming/Rollback). Comentários inline explicam
+      cada decisão (ordem de dependência, ADAPT do trigger, ausência de policy
+      INSERT/DELETE, re-emissão opcional do trigger). Rollback documenta
+      pré-condições destrutivas + ordem de execução vs 0002 + bloco de
+      verificação pós-rollback. COMMENT ON TABLE/COLUMN/FUNCTION ativos.
+      docs/architecture/schema-design.md atualizado. Story 2.2 com Dev Notes
+      citando fontes reais (Constitution Art. IV — No Invention) + Tasks/
+      Subtasks 100% marcadas.
+
+deviations_reviewed:
+  - description: 'Migration naming `0003_pages.sql` (NNNN_descritivo) vs schema-design.md §10 timestamp YYYYMMDDHHMMSS (Supabase CLI default)'
+    resolution: 'APPROVED — mantém convenção do repo (0001_init de Story 1.2 inaugurou NNNN; rollback de 0002 linhas 41-43 já nomeia 0003_pages.sql explicitamente). Mesma deviation low aprovada no gate 1.4. Padronizar para timestamp via story de housekeeping (não-MVP).'
+    severity: 'low'
+  - description: 'CREATE TYPE theme_preset sem IF NOT EXISTS/DROP guard na migration up (assimétrico vs CREATE TABLE IF NOT EXISTS)'
+    resolution: 'APPROVED — intencional e documentado (linhas 37-38): idempotência de re-aplicação garantida pelo rollback companion (DROP TYPE); re-run via `supabase db reset`. Mesmo padrão validado em 1.4 (CREATE TYPE não suporta IF NOT EXISTS nativamente em Postgres < 15 sem DO block; opção consciente de simplicidade).'
+    severity: 'low'
+  - description: 'Trigger ADAPT: omite `RETURNING id INTO v_profile_id` do canônico schema-design.md §4 Auth Trigger'
+    resolution: 'APPROVED — simplificação correta: profiles.id == auth.users.id == NEW.id (0002:65), logo `INSERT INTO pages (profile_id) VALUES (NEW.id)` é equivalente e mais simples que o canônico (que assumia profile.id != auth.users.id). ADAPT < 30%, não quebra consumidores, documentado nas linhas 126-129.'
+    severity: 'low'
+  - description: 'Duas policies SELECT separadas (pages_select_public + pages_select_own) vs predicado único combinado `is_published OR profile_id=auth.uid()` (schema-design.md §8 L940)'
+    resolution: 'APPROVED — funcionalmente equivalente (Postgres OR-combina policies permissivas); naming casa verbatim com AC3 ("select_own + select_public") e espelha o estilo "1 policy por preocupação" de 0002. Trade-off de legibilidade/rastreabilidade favorável.'
+    severity: 'low'
+  - description: 'Re-emissão de DROP TRIGGER/CREATE TRIGGER auth_user_created após CREATE OR REPLACE FUNCTION (tecnicamente redundante)'
+    resolution: 'APPROVED — explicitamente opcional e documentado (linhas 154-156): CREATE OR REPLACE já substituiu a função in-place; re-emissão é para explicitude/auditoria, idempotente, espelha padrão de 0002. Sem efeito colateral.'
+    severity: 'low'
+
+handoff:
+  next_agent: '@po'
+  next_command: '*close-story 2.2'
+  condition: |
+    Verdict PASS sem blockers. PR #9 já aberto por @devops contra main com CI
+    100% verde (10/10 jobs). Story pode transicionar Ready for Review → Done.
+    @po *close-story 2.2 atualiza Status + Change Log + QA Results na story;
+    @devops faz merge do PR #9. 1 observação low (DX-001 db:types prettier)
+    registrada como tech-debt não-bloqueante — já mitigada nesta story por
+    Task 3.3, fix permanente sugerido como housekeeping. Próxima story
+    sugerida: Story 2.3 (Epic 2 — links CRUD, primeiro consumer de pages).
