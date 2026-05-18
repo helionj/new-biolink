@@ -1,0 +1,56 @@
+schema: 1
+story: '2.1'
+gate: PASS
+status_reason: 'Todos os 5 ACs atendidos com unicidade transacional TOCTOU-safe (UNIQUE citext + 23505), auth via getUser + RLS, e 137 testes verdes; apenas observações low não-bloqueantes.'
+reviewer: 'Quinn'
+updated: '2026-05-18T07:45:00Z'
+
+review_method: manual
+review_note: >-
+  Gate manual aplicado via workaround QA-001 (docs/qa/known-issues.md) —
+  ambiente macOS sem WSL/CodeRabbit; Seção 0 (CodeRabbit Self-Healing Loop) da
+  task qa-review-story.md travaria. Revisão dos 7 quality checks feita lendo o
+  código real + execução dos quality gates pelo @devops (lint/typecheck/build/
+  test 137/137 exit 0) no *push.
+
+quality_checks:
+  code_review: PASS        # Padrões reusados (signUp 23505, guard dashboard, ActionResult); DP-3 ADAPT limpo
+  unit_tests: PASS         # 34 unit + 64 components + 39 integration = 137/137; NFR6 components 87.06% stmts
+  acceptance_criteria: PASS # AC1-AC5 todos atendidos e rastreados
+  no_regressions: PASS     # SignUpInput compõe usernameSchema; suíte auth/signup verde (zero regressão)
+  performance: PASS        # Debounce 300ms; SELECT id .maybeSingle() em índice UNIQUE; UPDATE por PK
+  security: PASS           # Zod boundary; getUser (JWT server-side) + RLS profiles_update_own; sem service-role; TOCTOU-safe; sem mass-assignment
+  documentation: PASS      # Dev Agent Record / File List / Change Log / decisões DP-3/DP-4 + drift documentados
+
+top_issues:
+  - id: 'SEC-001'
+    severity: low
+    finding: >-
+      checkUsernameAvailability é Server Action não-autenticada sem rate
+      limiting server-side — permite enumeração de usernames e carga de DB
+      sob abuso.
+    suggested_action: >-
+      Não-bloqueante: usernames são públicos por design
+      (profiles_select_public USING true, páginas públicas /@username) e a
+      exposição é mínima (apenas id). Avaliar rate limiting como tech-debt de
+      follow-up se abuso for observado (sem AC/NFR exigindo nesta story).
+  - id: 'TEST-001'
+    severity: low
+    finding: >-
+      Comentário em tests/integration/server-actions/profile.test.ts:119-122
+      afirma testar case-insensitive citext no DB, mas a assertion (linha 123)
+      valida a rejeição do schema para uppercase (regex a-z) antes do DB.
+    suggested_action: >-
+      Cosmético — o comportamento testado está correto. Ajustar o comentário
+      para refletir que valida a barreira do schema, ou adicionar caso real de
+      colisão case-insensitive no DB com valor lowercase distinto.
+
+waiver: { active: false }
+
+handoff:
+  next_agent: '@devops'
+  next_command: '*push'
+  note: >-
+    PR #8 já aberto. Verdict PASS → @devops faz merge do PR e @po executa
+    *close-story 2.1 (Ready for Review → Done). Smoke manual (Task 6.1)
+    permanece handoff ao owner (padrão 1.5–1.9, não bloqueia Done).
