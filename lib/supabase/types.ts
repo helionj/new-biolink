@@ -8,6 +8,41 @@ export type Database = {
   };
   public: {
     Tables: {
+      pages: {
+        Row: {
+          created_at: string;
+          id: string;
+          is_published: boolean;
+          profile_id: string;
+          theme: Database['public']['Enums']['theme_preset'];
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          is_published?: boolean;
+          profile_id: string;
+          theme?: Database['public']['Enums']['theme_preset'];
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          is_published?: boolean;
+          profile_id?: string;
+          theme?: Database['public']['Enums']['theme_preset'];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'pages_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: true;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       profiles: {
         Row: {
           avatar_url: string | null;
@@ -46,7 +81,7 @@ export type Database = {
       [_ in never]: never;
     };
     Enums: {
-      [_ in never]: never;
+      theme_preset: 'light' | 'dark' | 'brand';
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -171,6 +206,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      theme_preset: ['light', 'dark', 'brand'],
+    },
   },
 } as const;
