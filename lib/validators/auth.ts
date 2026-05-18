@@ -1,16 +1,13 @@
 import { z } from 'zod';
 
-import { isReservedUsername } from '@/lib/reserved-usernames';
+import { usernameSchema } from '@/lib/validators/profile';
 
 export const SignUpInput = z
   .object({
     email: z.string().email('Informe um email válido'),
     password: z.string().min(8, 'A senha precisa ter no mínimo 8 caracteres'),
     confirmPassword: z.string(),
-    username: z
-      .string()
-      .regex(/^[a-z0-9-]{3,30}$/, 'Use 3 a 30 caracteres entre a-z, 0-9 e hífen')
-      .refine((v) => !isReservedUsername(v), 'Este username é reservado'),
+    username: usernameSchema,
     acceptTerms: z.literal(true, { message: 'Aceite os termos para continuar' }),
   })
   .refine((data) => data.password === data.confirmPassword, {
