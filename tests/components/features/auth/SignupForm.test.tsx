@@ -1,6 +1,6 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockedPush = vi.fn();
 
@@ -17,14 +17,28 @@ vi.mock('@/server/auth/actions', () => ({
   resendVerificationEmail: vi.fn(),
 }));
 
+vi.mock('@/server/profile/actions', () => ({
+  checkUsernameAvailability: vi.fn(),
+  updateUsername: vi.fn(),
+}));
+
 import { SignupForm } from '@/components/auth/SignupForm';
 import * as actions from '@/server/auth/actions';
+import * as profileActions from '@/server/profile/actions';
 
 const mockedSignUp = vi.mocked(actions.signUp);
+const mockedCheck = vi.mocked(profileActions.checkUsernameAvailability);
+
+beforeEach(() => {
+  // Default seguro para os testes que não exercitam disponibilidade
+  // (o hook só chama isto após o debounce + schema válido).
+  mockedCheck.mockResolvedValue({ ok: true, data: { available: true } });
+});
 
 afterEach(() => {
   mockedSignUp.mockReset();
   mockedPush.mockReset();
+  mockedCheck.mockReset();
 });
 
 async function fillValidForm() {
@@ -133,5 +147,99 @@ describe('<SignupForm>', () => {
     await waitFor(() => {
       expect(mockedPush).toHaveBeenCalledWith('/login?message=verify_email');
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC1 — validação live: debounce 300ms + indicador de disponibilidade
+// Fake timers para determinismo do debounce (story §Testing). Usamos
+// fireEvent (não userEvent): userEvent.type + fake timers + resolver async
+// do RHF deadlocka em jsdom (timeout). O hook usa usernameSchema.safeParse
+// (síncrono), independente da validação async do RHF.
+// ---------------------------------------------------------------------------
+describe('<SignupForm> — validação live de username (AC1)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function typeUsername(value: string) {
+    fireEvent.change(screen.getByLabelText(/^username$/i), { target: { value } });
+  }
+
+  it('não chama checkUsernameAvailability antes dos 300ms (debounce)', async () => {
+    render(<SignupForm />);
+    typeUsername('novo-user');
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(200);
+    });
+    expect(mockedCheck).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(100);
+    });
+    expect(mockedCheck).toHaveBeenCalledWith({ username: 'novo-user' });
+  });
+
+  it('coalesce mudanças rápidas — uma única chamada após o settle', async () => {
+    render(<SignupForm />);
+    typeUsername('abc');
+    typeUsername('abcd');
+    typeUsername('abcdef');
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    expect(mockedCheck).toHaveBeenCalledTimes(1);
+    expect(mockedCheck).toHaveBeenCalledWith({ username: 'abcdef' });
+  });
+
+  it('mostra "Verificando disponibilidade..." enquanto aguarda e "Username disponível" no resultado', async () => {
+    mockedCheck.mockResolvedValue({ ok: true, data: { available: true } });
+    render(<SignupForm />);
+    typeUsername('livre-user');
+
+    // Antes de resolver: estado "checking"
+    expect(screen.getByText('Verificando disponibilidade...')).toBeInTheDocument();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    expect(screen.getByText('Username disponível')).toBeInTheDocument();
+  });
+
+  it('mostra "Este username já está em uso" quando indisponível', async () => {
+    mockedCheck.mockResolvedValue({ ok: true, data: { available: false } });
+    render(<SignupForm />);
+    typeUsername('ocupado-user');
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    expect(screen.getByText('Este username já está em uso')).toBeInTheDocument();
+  });
+
+  it('não dispara a checagem para formato inválido (schema gate)', async () => {
+    render(<SignupForm />);
+    typeUsername('ab');
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+    expect(mockedCheck).not.toHaveBeenCalled();
+  });
+
+  it('não dispara a checagem para username reservado (schema gate)', async () => {
+    render(<SignupForm />);
+    typeUsername('dashboard');
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+    expect(mockedCheck).not.toHaveBeenCalled();
   });
 });

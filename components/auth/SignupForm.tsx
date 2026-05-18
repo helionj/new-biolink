@@ -4,8 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 
+import { UsernameAvailabilityHint } from '@/components/profile/UsernameAvailabilityHint';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -16,6 +17,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { useUsernameAvailability } from '@/lib/hooks/use-username-availability';
 import { toast } from '@/lib/toast';
 import { SignUpInput } from '@/lib/validators/auth';
 import { signUp } from '@/server/auth/actions';
@@ -28,6 +30,7 @@ export function SignupForm() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(SignUpInput),
+    mode: 'onChange',
     defaultValues: {
       email: '',
       password: '',
@@ -36,6 +39,9 @@ export function SignupForm() {
       acceptTerms: false as unknown as true,
     },
   });
+
+  const usernameValue = useWatch({ control: form.control, name: 'username' });
+  const usernameAvailability = useUsernameAvailability(usernameValue);
 
   async function onSubmit(values: FormValues) {
     const res = await signUp(values);
@@ -84,6 +90,7 @@ export function SignupForm() {
                 Seu @ público (3-30 caracteres, a-z, 0-9 e hífen).
               </p>
               <FormMessage />
+              <UsernameAvailabilityHint status={usernameAvailability} />
             </FormItem>
           )}
         />
