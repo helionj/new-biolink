@@ -1,0 +1,209 @@
+schema: 1
+story: '2.4'
+gate: PASS
+status_reason: 'Todos os 5 ACs satisfeitos. Dashboard Shell frontend (layout RSC com guard + fetch profile; Sidebar desktop fixa; MobileDrawer via shadcn Sheet/Base UI Dialog com focus trap/ESC/role=dialog nativos; UserMenu avatar+dropdown com copiar-URL-pública e logout; nav-items.ts fonte única dos 5 itens + isActive() match-exato-/dashboard) implementado e coberto por 12 testes novos em 3 suites (Sidebar/MobileDrawer/UserMenu) cobrindo AC1-AC5 com interações reais Base UI (não-mockadas). quality_gate_tools re-executados INDEPENDENTEMENTE pelo @qa: typecheck/lint/build exit 0, pnpm test 170/170 (22 arquivos — unit/components/integration; +12 vs feat/2.3 158, regressão zero em auth/landing/ui/profile/middleware/pages/links/server-actions). Build: ƒ /dashboard + ƒ /dashboard/profile gerados; ƒ Proxy (Middleware) = INFO-001 esperado/herdado (1.7+); rotas theme/analytics/account ausentes = DEV-4 esperado (404 até stories futuras — shell precede conteúdo das abas). Padrões do projeto verificados no código real: Server-First (só Sidebar/MobileDrawer/UserMenu levam use client justificado), Env via Zod (env só no layout RSC; siteUrl por prop ao Client), feature-folder sem barrel, tokens --sidebar* sem novos tokens, @/lib/toast facade (não sonner direto), sem import de lib/supabase/admin em components (ESLint restricted-imports + lint exit 0), labels AC2 verbatim. 0 blockers; 1 observação low não-bloqueante (A11Y-001: aria-label duplicado nos 2 nav landmarks — raramente coexistem visíveis). DEV-1..DEV-6 + ajuste profile/page.tsx + polyfills tests/setup.ts + Base UI-vs-Radix todas APPROVED (precedente sancionado 1.5/1.8/1.9/2.3 + rastreáveis a AC5/arch — não invenção; já validadas pelo gate @po v0.2).'
+reviewer: 'Manual gate per QA-001 (CodeRabbit self-healing loop indisponível em macOS sem WSL/CodeRabbit CLI — docs/qa/known-issues.md). @qa Quinn validou os 6 quality_gate_tools (typecheck/lint/build/test:unit/test:components/test:integration) + 7 quality checks lendo o código real (nav-items.ts, Sidebar/MobileDrawer/UserMenu.tsx, layout/page/profile-page.tsx, 3 test suites, tests/setup.ts) + re-execução INDEPENDENTE dos gates locais (typecheck/lint/build exit 0; pnpm test 170/170 em 22 arquivos). Branch feat/2.4-dashboard-layout-nav rebaseada sobre main (ee649b8, Story 2.3 #10) — limpa, 1 commit (09fc252). Sem PR/CI nesta fase — push + PR + CI são downstream de @devops (exclusivo @github-devops).'
+updated: '2026-05-19T03:40:00Z'
+
+review_method: manual
+review_note: >-
+  Gate manual aplicado via workaround QA-001 (docs/qa/known-issues.md) —
+  ambiente macOS sem WSL/CodeRabbit; Seção 0 (CodeRabbit Self-Healing Loop)
+  da task qa-review-story.md travaria. Story de Frontend/implementação de
+  componentes: quality_gate owner é @qa (per Executor Assignment / DEV-1,
+  espelhando o precedente sancionado e Done das Stories 1.5/1.8/1.9). Revisão
+  dos 7 quality checks feita lendo o código real committed (09fc252) + AC
+  traceability (matriz Given-When-Then) + re-execução INDEPENDENTE dos gates
+  locais para suprir a ausência de CI nesta fase (push/PR/CI são downstream
+  de @devops, como em 2.3). Deviations já validadas pelo gate @po v0.2 não
+  re-litigadas (convenção 2.3: não rever o que já é precedente sancionado).
+
+top_issues:
+  - id: 'A11Y-001'
+    severity: low
+    category: 'accessibility'
+    finding: >-
+      Sidebar e MobileDrawer expõem ambos um <nav aria-label="Navegação
+      principal">. Quando dois landmarks de mesmo tipo coexistem na árvore de
+      acessibilidade, a recomendação WCAG/ARIA é rótulos distintos para
+      desambiguação por leitor de tela.
+    suggested_action: >-
+      Não-bloqueante — na prática raramente coexistem visíveis: Sidebar é
+      `hidden md:flex` (display:none → fora da árvore a11y no mobile) e o
+      MobileDrawer (Base UI Dialog) só monta o conteúdo on-open e tem trigger
+      `md:hidden` (desktop não renderiza). Polish sugerido (futuro/2.x): rótulos
+      distintos, ex. Sidebar "Navegação principal" / MobileDrawer "Navegação
+      (menu)". Consulta opcional a @ux-design-expert para revisão a11y WCAG 2.1
+      AA permanece recomendada (a própria story DEV-1 já a sinaliza como
+      não-bloqueante).
+
+waiver: { active: false }
+
+quality_checks:
+  code_review:
+    status: PASS
+    notes: |
+      nav-items.ts: fonte única tipada (NavItem{label,href,icon:LucideIcon}),
+      5 itens com labels AC2 verbatim (Links/Profile/Theme/Analytics/Account)
+      e hrefs canônicos (arch §Routing). isActive() correto: match EXATO para
+      '/dashboard' (não acende "Links" em sub-rotas) + prefixo com guard '/'
+      (`startsWith(`${href}/`)` evita falso-positivo /dashboard/profile-x).
+      Sidebar.tsx: 'use client' justificado (usePathname/AC3); <aside hidden
+      md:flex> + <nav aria-label> semântico; aria-current="page" no ativo;
+      tokens --sidebar* (bg-sidebar-accent/text-sidebar-foreground/
+      focus-visible:ring-sidebar-ring — não remove outline); next/link → <a>
+      nativo (Tab/Enter AC5); ícones aria-hidden. MobileDrawer.tsx: shadcn
+      Sheet (Base UI Dialog) controlado (open/onOpenChange); SheetTitle
+      sr-only nomeia o dialog (a11y); trigger Button via render-prop com
+      aria-label + md:hidden + ícone Menu aria-hidden; reusa nav-items
+      (sem duplicar lista); fecha ao navegar (onClick setOpen(false)).
+      UserMenu.tsx: getInitials robusto (vazio→'?', 1 token→2 chars, multi→
+      iniciais; non-null asserts guardados pelos length-checks); handleCopyUrl
+      try/catch (clipboard pode rejeitar) → toast.success/error; handleSignOut
+      reusa pattern LogoutButton (useTransition + signOut + toast.error se
+      !res.ok); trigger aria-label descritivo + focus-visible:ring;
+      AvatarImage alt="" decorativo (botão já rotulado). layout.tsx: guard RSC
+      preservado + fetch profiles(username,display_name,avatar_url) (mesmo
+      pattern profile/page.tsx, RLS select_own); env só no RSC, siteUrl por
+      prop ao Client (coding standard); landmarks header/main/nav/aside;
+      <main> único. Sem import de lib/supabase/admin (ESLint restricted +
+      lint exit 0). Código limpo, legível, manutenível. 0 CRITICAL/HIGH.
+  unit_tests:
+    status: PASS
+    notes: |
+      Sem unit puro novo (única lógica pura — isActive() — é coberta
+      comportamentalmente pelos testes do Sidebar: aria-current em
+      /dashboard vs /dashboard/profile). Padrão idêntico às stories de UI
+      Done 1.5/1.8/1.9 (componentes testados via project Vitest
+      `components`, não `unit`). project `unit` segue passWithNoTests:true.
+      12 testes novos de componente cobrem AC1-AC5 (ver acceptance_criteria).
+  acceptance_criteria:
+    status: PASS
+    notes: |
+      AC1 (layout app/dashboard/layout.tsx com sidebar fixa desktop ou drawer
+      mobile): PASS — Sidebar `hidden md:flex md:w-60` (fixa desktop);
+      MobileDrawer Sheet com trigger `md:hidden`; layout.tsx compõe flex
+      Sidebar + coluna(header+main). Teste MobileDrawer "trigger abre o
+      drawer".
+      AC2 (itens: Links, Profile, Theme, Analytics, Account): PASS —
+      nav-items.ts labels verbatim; Sidebar.test "renderiza os 5 itens com
+      hrefs canônicos"; MobileDrawer.test "5 itens de navegação".
+      AC3 (rota ativa destacada visualmente): PASS — isActive() +
+      aria-current="page" + classes token de destaque; Sidebar.test "marca
+      o item da rota ativa com aria-current" e "na raiz /dashboard apenas
+      Links fica ativo" (valida match exato — sub-rota não acende Links).
+      AC4 (header com avatar + dropdown logout/copy public URL): PASS —
+      UserMenu Avatar+DropdownMenu; UserMenu.test iniciais (displayName
+      "Maria Silva"→MS; username fallback "joao-silva"→JO), "Copiar URL
+      pública" → clipboard.writeText(`${siteUrl}/@${username}`) +
+      toast.success, "Sair" → signOut. layout monta UserMenu no header.
+      AC5 (a11y: navegação por teclado completa, ARIA roles, focus trap no
+      drawer mobile): PASS — links nativos <a> (Tab/Enter); nav landmarks
+      nomeados; aria-current; Base UI Dialog entrega focus trap + ESC-to-
+      close + role="dialog" NATIVOS (sem implementação manual). MobileDrawer.
+      test valida role="dialog", "ESC fecha o drawer", "navegar fecha";
+      Sidebar.test valida landmark nomeado. Observação A11Y-001 (rótulo nav
+      duplicado) é low não-bloqueante.
+  no_regressions:
+    status: PASS
+    notes: |
+      pnpm test 170/170 em 22 arquivos, re-rodado INDEPENDENTEMENTE pelo @qa
+      (196s). +12 testes vs feat/2.3 (158) = exatamente as 3 suites novas
+      dashboard; zero regressão em tests/components/** (auth/landing/ui/
+      profile) e tests/integration/** (middleware/profiles/pages/links/
+      server-actions). app/dashboard/page.tsx (header inline + banner
+      removidos — migraram p/ shell, DEV-5) e profile/page.tsx (<main>→<div>
+      p/ single-<main> AC5) validados via suíte completa (UsernameForm.test
+      continua verde — testa o form, não o wrapper). tests/setup.ts: polyfills
+      jsdom GUARDADOS (if !...) → suites pré-existentes inalteradas.
+  performance:
+    status: PASS
+    notes: |
+      layout.tsx RSC: 1 query profiles por render (.eq('id',user.id).single()
+      — id é PK, lookup O(1) indexado; mesmo pattern já em produção em
+      profile/page.tsx). Client Components mínimos e justificados (Sidebar/
+      MobileDrawer = usePathname; UserMenu = interatividade/clipboard/
+      transition). Sem novas dependências (package.json/pnpm-lock intactos —
+      shadcn add reusou @base-ui/react já instalado). Sem N+1, sem fetch em
+      Client. Build compila em ~71s, bundle dashboard normal. MobileDrawer
+      Sheet monta conteúdo só on-open (lazy). Sem regressão de performance.
+  security:
+    status: PASS
+    notes: |
+      OWASP basics: (1) sem secrets/credenciais no código; (2) sem import de
+      lib/supabase/admin em components/ (service-role isolado — ESLint
+      no-restricted-imports + runtime guard; lint exit 0); (3) Env via Zod —
+      Client Components NÃO importam lib/env; siteUrl chega por prop do RSC
+      (coding standard cumprido); (4) clipboard text `${siteUrl}/@${username}`
+      não-injetável: siteUrl de env validado (z.string().url()), username
+      DB-side validado pelo regex de signup (^[a-z0-9-]{3,30}$, Stories
+      2.1/2.2); (5) AvatarImage src=avatarUrl alt="" — decorativo, sem XSS
+      (React escapa atributos; é <img src>, não dangerouslySetInnerHTML);
+      (6) links de nav são internos next/link (sem target=_blank/sem
+      noopener-concern aqui); (7) layout lê profiles sob RLS select_own
+      existente (sem nova superfície DB; logout reusa signOut já testado em
+      integration). Sem novo Server Action/endpoint. gitleaks roda no push
+      @devops (downstream).
+  documentation:
+    status: PASS
+    notes: |
+      Dev Agent Record completo: Agent Model, Debug Log (3 entradas — shadcn
+      prompt-hang, clipboard-mock-vs-userEvent, lint import/order nos
+      primitives gerados), Completion Notes (AC1-5, DEV-1..6 aplicados,
+      desvio profile/page.tsx rastreável a AC5, polyfills setup.ts, gate),
+      File List (criados/modificados + nota dos artefatos NÃO-2.4). Story
+      Dev Notes self-contained citando fontes reais (Constitution Art. IV).
+      Tasks/Subtasks 100% [x]. Comentários inline curtos e úteis (use client
+      justificado, isActive rationale, polyfills guardados). Change Log v0.1
+      (sm) + v0.2 (po GO) + v0.3 (dev). Sem docs externos a atualizar (story
+      de implementação frontend, sem mudança de schema/API).
+
+deviations_reviewed:
+  - description: 'DEV-1 (FLAGGED p/ @po, confirmado @qa): executor @dev / quality_gate @qa vs template v2 "Design/UI → @ux-design-expert / gate @dev"'
+    resolution: 'APPROVED — precedente verbatim sancionado e Done das Stories de implementação frontend 1.5/1.8/1.9 (executor @dev/gate @qa/quality_gate_tools idênticos). Story 1.8 §Executor é a justificativa canônica (código/teste, primitives já existem — não design visual novo). Já validado pelo gate @po v0.2 (IDS G3 soft-block, override com razão). Constitution Art. IV compliant (precedente, não invenção). Não re-litigado per convenção 2.3.'
+    severity: 'low'
+  - description: 'DEV-2: gate de qualidade via QA-001 manual (macOS sem WSL/CodeRabbit) — revisão independente + re-execução de gates em vez do CodeRabbit Self-Healing Loop'
+    resolution: 'APPROVED — workaround documentado (docs/qa/known-issues.md QA-001), precedente sancionado 1.1/1.5-1.9/2.3. @qa re-executou os 6 quality_gate_tools independentemente (typecheck/lint/build exit 0; pnpm test 170/170) para suprir ausência de CI nesta fase. Não-bloqueante.'
+    severity: 'low'
+  - description: 'DEV-3: primitives via `pnpm dlx shadcn add avatar dropdown-menu sheet` (não `init`); style base-nova → Base UI (@base-ui/react), não Radix'
+    resolution: 'APPROVED — pattern sancionado (Story 1.5 add button/input/label/form/sonner; Story 1.8 Task 1 "não re-rodar init"). Existentes intactos (git diff vazio), package.json/lock não alterados (@base-ui/react já era dep). Base UI Dialog/Menu entregam roles/focus/keyboard equivalentes a Radix — textos do draft que dizem "Radix" referem-se ao primitive abstrato; equivalência funcional verificada nos testes (role=dialog, ESC, focus trap, menuitem). Não invenção.'
+    severity: 'low'
+  - description: 'DEV-4 (FLAGGED p/ @po): itens de nav apontam p/ rotas canônicas theme/analytics/account ainda inexistentes (404 até stories futuras)'
+    resolution: 'APPROVED — arch §Routing L1160-1166 lista as 5 como estrutura canônica final; §Components #4 escopa só o shell ("shell precede conteúdo das abas"). Renderizar os 5 itens com href canônico é correto; stubar páginas placeholder seria inventar conteúdo fora de escopo. 404 esperado/aceitável p/ story de shell. Já validado gate @po v0.2.'
+    severity: 'low'
+  - description: 'DEV-5: header inline + EmailVerificationBanner migram de page.tsx p/ layout.tsx; page.tsx vira placeholder aba Links'
+    resolution: 'APPROVED — sancionado verbatim pelo comentário inline pré-existente em app/dashboard/page.tsx ("substituído em Stories 2.x/3.x Dashboard Shell"); 2.4 É o Dashboard Shell (arch §Components #4). Guard mantido como defense-in-depth (precedente profile/page.tsx). Não invenção.'
+    severity: 'low'
+  - description: 'Desvio fora da letra da Task 7 (rastreável a AC5 + Task 6): app/dashboard/profile/page.tsx <main> → <div>'
+    resolution: 'APPROVED — consequência DIRETA e necessária de AC5 + Task 6 ("um único <main> no shell"): com o shell passando a ser dono do <main>, manter o <main> próprio da profile/page geraria 2 landmarks main em /dashboard/profile (violação ARIA). Conteúdo idêntico, só o wrapper. Rastreável a AC5 — não invenção. UsernameForm.test continua verde (testa o form). Documentado nas Completion Notes.'
+    severity: 'low'
+  - description: 'DEV-6: URL pública = `${env.NEXT_PUBLIC_SITE_URL}/@${username}` via env (RSC) + prop ao Client'
+    resolution: 'APPROVED — arch §Routing L1167-1168 (página pública app/@[username]); NEXT_PUBLIC_SITE_URL é env validado já usado em app/layout.tsx (metadataBase). Client não importa lib/env (coding standard "Env via Zod só em lib/env"); siteUrl por prop. Não invenção.'
+    severity: 'low'
+  - description: 'Infra de teste: tests/setup.ts estendido com polyfills jsdom (ResizeObserver/matchMedia/pointer-capture/scrollIntoView)'
+    resolution: 'APPROVED — necessários p/ overlays Base UI (Sheet/Menu) em jsdom 29; guardas `if (!...)` tornam aditivos (suites pré-existentes inalteradas); afeta só o project `components` (setupFiles). Zero regressão confirmada (170/170, demais suites verdes). Documentado nas Completion Notes.'
+    severity: 'low'
+
+handoff:
+  next_agent: '@po'
+  next_command: '*close-story 2.4'
+  condition: |
+    Verdict PASS sem blockers. 5 ACs satisfeitos (matriz traceability
+    Given-When-Then completa), 7 quality checks PASS (unit PASS — lógica
+    pura isActive coberta via Sidebar tests; sem unit isolado, padrão
+    1.5/1.8/1.9), 6 quality_gate_tools re-executados INDEPENDENTEMENTE pelo
+    @qa (typecheck/lint/build exit 0; pnpm test 170/170 em 22 arquivos —
+    zero regressão). 1 observação low não-bloqueante (A11Y-001: aria-label
+    duplicado nos 2 nav landmarks — raramente coexistem visíveis; polish
+    futuro + consulta @ux-design-expert opcional). Todas as deviations
+    (DEV-1..6 + profile/page.tsx + polyfills setup.ts + Base UI) APPROVED
+    (precedente sancionado 1.5/1.8/1.9/2.3 + rastreáveis a AC5/arch — não
+    invenção; já validadas pelo gate @po v0.2, não re-litigadas). Story pode
+    transicionar Ready for Review → Done. @po *close-story 2.4 atualiza
+    Status + Change Log + QA Results na story. ATENÇÃO downstream: branch
+    feat/2.4-dashboard-layout-nav rebaseada sobre main (09fc252) AINDA NÃO
+    foi pushed (sem PR/CI nesta fase). Após @po close, @devops deve *push +
+    *create-pr (exclusivo @github-devops, .claude/rules/agent-authority.md)
+    — CI rodará os 9 required checks. Próxima story sugerida: Story 2.5
+    (CRUD de Links — UI + Server Actions, primeiro consumer real de
+    links/RLS da 2.3).
