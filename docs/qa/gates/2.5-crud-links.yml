@@ -1,0 +1,241 @@
+schema: 1
+story: '2.5'
+gate: PASS
+status_reason: 'Todos os 8 ACs satisfeitos. CRUD de links (Frontend primário + 4 Server Actions secundárias) implementado e coberto por 5 novas suítes. AC1 lista RSC ordenada por position; AC2 AddLinkModal (Dialog Base UI + RHF/zodResolver, title/url/icon-select); AC3 edição inline title (click) + url (botão pencil) com Enter/blur/Escape; AC4 Switch is_visible com persistência otimista (useState+rollback, arch §1141); AC5 delete com AlertDialog de confirmação dupla (modal + botão destrutivo "Excluir" ≠ "Cancelar", DEV-6); AC6 toast em todas as ops; AC7 4 Server Actions input:unknown+Zod alinhado VERBATIM ao CHECK de 0004_links.sql (title 1-100, url ^https?:// bloqueia javascript:, icon ^[a-z0-9-]{1,40}$, id uuid v4) + mapLinkError por código Postgres (PGRST116/42501/23514/23505) sem vazar error.message; AC8 EmptyState (ícone lucide + CTA). quality_gate_tools re-executados INDEPENDENTEMENTE pelo @qa no commit f41fcbb: typecheck/lint/build exit 0, pnpm test 203/203 (27 arquivos — unit/components/integration; +33 testes / +5 arquivos vs feat/2.4 170/22, regressão ZERO em auth/landing/ui/profile/middleware/pages/links-rls/server-actions). Build: ƒ /dashboard dynamic correto; ƒ Proxy (Middleware) = INFO-001 esperado/herdado; warning middleware→proxy pré-existente. Bug CRÍTICO typegen↔runtime (embed reverso profiles.pages 1:1 tipado como array mas PostgREST retorna objeto único) foi DETECTADO e CORRIGIDO pelo @dev via teste de integração real — fix type-safe (2 queries diretas em createLink + dashboard/page.tsx, sem casts); valida o valor da suíte de integração. Segurança OWASP: input:unknown+Zod (sem as any), guard getUser ×4, RLS ownership (insert WITH CHECK + update/delete via JOIN pages.profile_id=auth.uid()), pageId derivado do auth user (sem IDOR), URL display-only text (sem XSS/javascript: nav), sem admin import em components, sem secrets. 0 blockers; 3 observações low/info não-bloqueantes (UX-001 flash breve no inline-edit; revalidate degrada graciosamente; nextPos não-atômico — single-user MVP, reorder atômico é 2.6 por design arch Q1). DEV-1..DEV-8 + EmptyState-extract + IDS G3 todas APPROVED (arch canônico / precedente sancionado 2.1/2.3/2.4 — não invenção; já validadas pelo gate @po v0.2).'
+reviewer: 'Manual gate per QA-001 (CodeRabbit self-healing loop indisponível em macOS sem WSL/CodeRabbit CLI — docs/qa/known-issues.md). @qa Quinn auditou o código real (server/links/actions.ts, lib/validators/link.ts, lib/cache.ts, lib/link-icons.ts, components/links/{LinkRow,AddLinkModal,LinkList,EmptyState}.tsx, app/dashboard/page.tsx, 5 suítes de teste) + matriz de rastreabilidade AC↔teste Given-When-Then + re-execução INDEPENDENTE dos gates locais no commit f41fcbb (typecheck/lint/build exit 0; pnpm test 203/203 em 27 arquivos) para suprir ausência de CI nesta fase. Branch feat/2.5-crud-links, 1 commit (f41fcbb) stacked sobre main (ee41021, Story 2.4 #11). Sem PR/CI nesta fase — push + PR + CI são downstream de @devops (exclusivo @github-devops).'
+updated: '2026-05-19T15:00:00Z'
+
+review_method: manual
+review_note: >-
+  Gate manual aplicado via workaround QA-001 (docs/qa/known-issues.md) —
+  ambiente macOS sem WSL/CodeRabbit; Seção 0 (CodeRabbit Self-Healing Loop)
+  da task qa-review-story.md travaria. Story Frontend+Server-Action:
+  quality_gate owner é @qa (per Executor Assignment / precedente sancionado
+  e Done das Stories 2.1/Epic 1 1.5-1.9/2.3/2.4). Revisão dos 7 quality
+  checks lendo o código real committed (f41fcbb) + AC traceability +
+  re-execução INDEPENDENTE dos gates locais (typecheck/lint/build exit 0;
+  pnpm test 203/203 em 27 arquivos) para suprir a ausência de CI nesta fase
+  (push/PR/CI são downstream de @devops, como em 2.3/2.4). Deviations já
+  validadas pelo gate @po v0.2 não re-litigadas (convenção 2.3).
+
+top_issues:
+  - id: 'UX-001'
+    severity: low
+    category: 'usability'
+    finding: >-
+      LinkRow.commitTitle/commitUrl chamam setEditing(false) ANTES de aguardar
+      updateLink, então o input desmonta imediatamente e o título/URL estático
+      mostra o valor ANTIGO até a Server Action resolver (setTitle/setUrl com
+      res.data). Janela de inconsistência visual sub-segundo durante o
+      round-trip.
+    suggested_action: >-
+      Não-bloqueante — consistência eventual, sem erro de correção de dados
+      (o valor correto aparece ao resolver; router.refresh re-sincroniza).
+      Polish futuro: manter o input visível/disabled (pending) até a action
+      resolver, então sair do modo edição. Sem impacto em AC3.
+  - id: 'OBS-002'
+    severity: low
+    category: 'reliability'
+    finding: >-
+      updateLink/deleteLink/toggleLinkVisibility fazem uma 2ª query
+      profiles.select('username') pós-mutation só para revalidate; se essa
+      query falhar, revalidateUserSurface(null) pula a revalidação da página
+      pública.
+    suggested_action: >-
+      Não-bloqueante — degradação graciosa: /dashboard ainda revalida; a rota
+      /@username só existe a partir da Story 2.7 (revalidar path inexistente
+      já é no-op). Aceitável p/ MVP; revisitar quando a página pública existir.
+  - id: 'OBS-003'
+    severity: low
+    category: 'concurrency'
+    finding: >-
+      createLink calcula nextPos = max(position)+1 via SELECT separado seguido
+      de INSERT (não atômico). Dois createLink concorrentes na mesma page
+      podem colidir na constraint UNIQUE(page_id, position) → 23505.
+    suggested_action: >-
+      Não-bloqueante e POR DESIGN — mapeado defensivamente p/ 'Conflito de
+      ordenação' (mapLinkError 23505). Dashboard é single-user (baixa
+      concorrência); o reorder atômico via constraint DEFERRABLE é escopo
+      explícito da Story 2.6 (arch §7 Q1 RESOLVED). Comportamento alinhado ao
+      design arquitetural fechado.
+
+waiver: { active: false }
+
+quality_checks:
+  code_review:
+    status: PASS
+    notes: |
+      server/links/actions.ts: 4 actions espelham server/profile/actions.ts —
+      'use server', input:unknown + Zod safeParse (DEV-3, sem `as any`),
+      flattenFieldErrors local verbatim (não acopla módulos server/), guard
+      getUser ×4 → SESSION_EXPIRED, mapLinkError(code) → PT-BR (PGRST116→
+      "Link não encontrado", 42501→"Operação não permitida", 23514→"Dados do
+      link inválidos", 23505→"Conflito de ordenação", fallback genérico) SEM
+      vazar error.message cru. createLink: resolve username + pageId via 2
+      queries diretas type-safe (fix do bug typegen↔runtime), nextPos=max+1
+      (gaps OK — Q1), insert+select+single. updateLink: patch só com campos
+      presentes (guard empty), RLS update_own. deleteLink: .delete().select('id')
+      detecta não-owner (0 rows ⇒ ok:false). toggleLinkVisibility: update+
+      single. lib/validators/link.ts: Zod 4 PascalCase+Input, alinhado
+      VERBATIM ao CHECK de 0004 (trim/min1/max100; regex ^https?:// i;
+      ^[a-z0-9-]{1,40}$ opcional; uuid). lib/cache.ts: revalidateUserSurface
+      conforme arch §1278-1298 (único módulo a importar revalidatePath).
+      lib/link-icons.ts: catálogo curado de slugs lucide GENÉRICOS (marca
+      removida do lucide@1.14 — verificado), todos casam o CHECK, getLinkIcon
+      fallback Link. LinkRow.tsx: inline edit (Enter/blur commit, Escape
+      cancela), Switch otimista+rollback, AlertDialog confirmação dupla,
+      createElement p/ ícone (lint-stable). AddLinkModal.tsx: Dialog
+      controlado + RHF/zodResolver, select nativo (icon ''→undefined p/ não
+      quebrar o opcional Zod; SEM primitivo select extra — escopo DEV-4),
+      trigger via prop p/ reuso. page.tsx RSC: guard + query direta pages
+      (fix typegen) + links order position asc. Código limpo, legível,
+      manutenível. 0 CRITICAL/HIGH.
+  unit_tests:
+    status: PASS
+    notes: |
+      tests/unit/validators/link-input.test.ts: cobre Create/Update/Delete/
+      ToggleLinkVisibility — válidos + inválidos por campo (title vazio/
+      >100/trim, url sem http(s)/javascript:/ftp, icon maiúscula/espaço/>40/
+      vazio, id não-uuid). Fixture usa UUID v4 RFC válido (links.id é
+      gen_random_uuid v4). project `unit` verde (parte dos 203/203).
+  acceptance_criteria:
+    status: PASS
+    notes: |
+      AC1 (lista /dashboard ordenada por position): PASS — page.tsx
+      .order('position',asc); LinkList ordem recebida; LinkList.test
+      "renderiza N rows na ordem recebida" (Alpha/Beta/Gamma);
+      integração (c)(d) position 0→1, (h) [0,2].
+      AC2 (botão "Adicionar link" → modal title+url+icon select): PASS —
+      AddLinkModal Dialog; page header button + EmptyState CTA;
+      AddLinkModal.test "abre modal", campos title/url/icon.
+      AC3 (edição inline title click + url botão edit): PASS — LinkRow inline;
+      LinkRow.test "edição inline de título chama updateLink", "edição de URL
+      via botão de edit chama updateLink".
+      AC4 (Switch is_visible otimista): PASS — LinkRow Switch+rollback;
+      LinkRow.test "toggle chama toggleLinkVisibility {id,is_visible}+toast",
+      "rollback em falha"; integração (g) alterna is_visible.
+      AC5 (delete + modal confirmação dupla): PASS — AlertDialog (DEV-6:
+      modal + botão destrutivo "Excluir" ≠ "Cancelar", validado @po v0.2
+      suficiente p/ MVP); LinkRow.test "só chama deleteLink após confirmar",
+      "cancelar não chama", "erro toast".
+      AC6 (toast sucesso/erro todas ops): PASS — create/update/toggle/delete
+      via @/lib/toast; coberto LinkRow.test + AddLinkModal.test.
+      AC7 (Server Actions Zod + RLS errors): PASS — validators↔CHECK;
+      mapLinkError; integração links.test a-h incl. cross-user RLS (f)
+      ok:false, input inválido sem insert (b); unit validators.
+      AC8 (empty state ilustração + CTA): PASS — EmptyState (Link2 + texto +
+      CTA "Adicione seu primeiro link"); LinkList.test "<EmptyState>".
+  no_regressions:
+    status: PASS
+    notes: |
+      pnpm test 203/203 em 27 arquivos, re-rodado INDEPENDENTEMENTE pelo @qa
+      no commit f41fcbb (~377s). +33 testes / +5 arquivos vs feat/2.4
+      (170/22) = exatamente as 5 suítes novas 2.5 (link-input unit;
+      LinkRow/AddLinkModal/LinkList component; links integration). Zero
+      regressão em tests/components/** (auth/landing/ui/profile/dashboard) e
+      tests/integration/** (auth/profile/middleware/profiles/pages/links-rls).
+      app/dashboard/page.tsx (placeholder→RSC) não quebra suites existentes.
+      "Not implemented: navigation" no jsdom = log benigno (não falha).
+  performance:
+    status: PASS
+    notes: |
+      Server Actions: queries em PK/FK indexados (profiles.id PK,
+      pages.profile_id FK, links.page_id FK idx_links_page_id de 0004,
+      links.id PK). createLink = 4 queries leves (username, page, maxPos,
+      insert) — sem N+1, sem JOIN pesado (o fix typegen trocou 1 embed
+      quebrado por 2 lookups O(1) indexados; custo desprezível). RSC page:
+      2 queries (page id + links por page_id ordenado, usa
+      idx_links_page_id_position_visible parcial de 0004). Client Components
+      mínimos e justificados (LinkRow/AddLinkModal = interatividade). Sem
+      novas deps (package.json/lock intactos — shadcn add reusou
+      @base-ui/react). Switch otimista evita round-trip bloqueante na UI.
+      Build ~OK; sem regressão de performance.
+  security:
+    status: PASS
+    notes: |
+      OWASP basics: (1) input:unknown + Zod safeParse em TODAS as 4 actions
+      (sem `as any`/`any` em entradas externas — DEV-3, Coding Standards
+      §2392/2397); (2) guard supabase.auth.getUser() ×4 → SESSION_EXPIRED
+      (defense-in-depth, RSC page também guarda); (3) ownership 100% via RLS
+      de 0004 (links_insert_own WITH CHECK page∈auth.uid(); links_update_own/
+      delete_own via EXISTS JOIN pages.profile_id=auth.uid()) — actions NÃO
+      reimplementam authz, confiam no DB; (4) sem IDOR: createLink resolve
+      pageId de pages.eq('profile_id', user.id) — usuário não consegue
+      injetar page_id de terceiro; update/delete/toggle por id mas RLS filtra
+      não-owner (0 rows ⇒ "Link não encontrado", validado integração (f));
+      (5) mapLinkError NUNCA vaza error.message cru (mapeia por código →
+      PT-BR tratado); (6) Zod url regex ^https?:// rejeita javascript:/data:/
+      ftp: (unit test cobre) — anti-XSS no boundary; URL renderizada como
+      TEXTO (não href) no LinkRow → sem navegação maliciosa no dashboard
+      (anchors públicos são escopo 2.7); (7) sem import lib/supabase/admin em
+      components/ (service-role isolado); (8) sem secrets/credenciais no
+      código. gitleaks rodou no commit (no leaks found). Sem nova superfície
+      de risco não-mitigada.
+  documentation:
+    status: PASS
+    notes: |
+      Dev Agent Record completo: Agent Model (claude-opus-4-7), Debug Log
+      (2 entradas — uuid v4 fixture, bug typegen↔runtime), Completion Notes
+      (Task 1-10 + BUG CRÍTICO documentado com causa/fix/decisão), File List
+      (criados/modificados, incl. EmptyState justificado). Story Dev Notes
+      self-contained (Constitution Art. IV). Tasks/Subtasks 100% [x] (10.2
+      smoke manual deixado [ ] por design — handoff owner, não bloqueia,
+      padrão 1.5-2.4). Comentários inline curtos e úteis (fix typegen
+      explicado, optimistic arch §1141, RLS rationale). Change Log v0.1 (sm)
+      + v0.2 (po GO) + v0.3 (dev). Sem docs externos a atualizar (story de
+      implementação; schema/RLS já de 2.3).
+
+deviations_reviewed:
+  - description: 'DEV-1: CREATE lib/cache.ts (revalidateUserSurface) verbatim arch §1278-1298'
+    resolution: 'APPROVED — arch canônico §1278-1298 + §2398 (helper obrigatório ao fim de toda action que muta links); arquivo inexistente, 2.5 é a 1ª story com mutations de links. Regra ESLint no-restricted-imports de next/cache é escopo Story 1.1 (corretamente NÃO adicionada aqui). Já validado @po v0.2.'
+    severity: 'low'
+  - description: 'DEV-2/DEV-3: Zod alinhado ao CHECK do DB (não ao snippet ilustrativo arch §1310-1317) + input:unknown/flattenFieldErrors (não `as any` §1327)'
+    resolution: 'APPROVED — anti-hallucination correto (Constitution Art. IV): snippet arch tem defeitos (.url() deprecado, icon max(50)≠CHECK, as any); alinhar ao CHECK real de 0004 + precedente 2.1 Done é fonte+precedente, não invenção. Já validado @po v0.2.'
+    severity: 'low'
+  - description: 'DEV-correlato (anti-hallucination, descoberto na Task 9): embed profiles.pages!inner(id) (arch §1338-1342) tipado como array pelos tipos gerados mas PostgREST retorna objeto único (FK 1:1) — quebrava createLink + dashboard/page.tsx em runtime'
+    resolution: 'APPROVED — mesma classe DEV-2: realidade runtime/typegen > snippet ilustrativo arch. Substituído por 2 queries diretas type-safe (sem casts). Bug não pego por typecheck/lint/component-tests, EXPOSTO pelo teste de integração real — valida a estratégia de testes da story. Fix correto e mínimo. NÃO invenção (FK/queries triviais alinhadas ao schema 0004 real).'
+    severity: 'low'
+  - description: 'DEV-4: primitivos shadcn dialog/switch/alert-dialog via add (sem init); button.tsx/package.json/lock intactos'
+    resolution: 'APPROVED — pattern sancionado 2.4 (add só faltantes, Base UI-backed). Verificado: md5 package.json/lock idêntico antes/depois, button.tsx overwrite recusado. Não invenção. Já validado @po v0.2.'
+    severity: 'low'
+  - description: 'DEV-5: lib/link-icons.ts catálogo curado — lucide@1.14 sem ícones de marca (Instagram/Github/etc removidos por trademark, verificado por introspecção); usa genéricos por propósito'
+    resolution: 'APPROVED — DEV-5 tem latitude sancionada (@po v0.2: default aceitável, ajustável sem refactor). Todos os slugs casam o CHECK ^[a-z0-9-]{1,40}$ e resolvem p/ componente existente (verificado). Decisão alinhada à realidade do pacote instalado, não invenção.'
+    severity: 'low'
+  - description: 'DEV-6: "modal de confirmação dupla" (AC5) = AlertDialog destrutivo + botão "Excluir" explícito ≠ "Cancelar"'
+    resolution: 'APPROVED — arch §2401 exige "sempre modal" em destrutivos; interpretação confirmada suficiente p/ MVP pelo gate @po v0.2 (type-to-confirm seria over-engineering p/ delete de link). AC mantida verbatim. Não invenção.'
+    severity: 'low'
+  - description: 'DEV-7/DEV-8: reorder/drag-drop OUT-OF-SCOPE (Story 2.6, sem @dnd-kit); empty state Tailwind sem primitivo Card'
+    resolution: 'APPROVED — DEV-7 rastreável a PRD §Story 2.6 + arch Q1 (position só lido/escrito por createLink; gap on delete sancionado, validado integração (h)). DEV-8 alinhado ao padrão visual pré-existente (rounded-md border bg-card p-6); Card no design system é trabalho futuro. Não invenção.'
+    severity: 'low'
+  - description: 'EmptyState extraído p/ components/links/EmptyState.tsx (não na lista "Criar" original da story)'
+    resolution: 'APPROVED — decomposição de TESTABILIDADE justificada: a page é RSC async+supabase, não renderizável em jsdom; extrair o EmptyState permite honrar a asserção de empty state da Task 8.4 (AC8). Mantém DEV-8 (Tailwind, sem Card). Conteúdo idêntico, só movido. Documentado em Completion Notes. Rastreável a AC8 + Task 8.4 — não invenção.'
+    severity: 'low'
+  - description: 'IDS G3: executor @dev / quality_gate @qa (override vs type-map template Frontend→@ux-design-expert)'
+    resolution: 'APPROVED — precedente verbatim sancionado e Done 2.1/Epic 1 (1.5-1.9)/2.3/2.4 (mesma classe Frontend+Server-Action). Já aceito pelo gate @po v0.2 (IDS G3 soft-block, override com razão). Constitution Art. IV compliant. Não re-litigado per convenção 2.3.'
+    severity: 'low'
+
+handoff:
+  next_agent: '@po'
+  next_command: '*close-story 2.5'
+  condition: |
+    Verdict PASS sem blockers. 8/8 ACs satisfeitos (matriz traceability
+    Given-When-Then completa), 7 quality checks PASS, 6 quality_gate_tools
+    re-executados INDEPENDENTEMENTE pelo @qa no commit f41fcbb
+    (typecheck/lint/build exit 0; pnpm test 203/203 em 27 arquivos — zero
+    regressão). 3 observações low/info não-bloqueantes (UX-001 flash inline-
+    edit; OBS-002 revalidate degrada graciosamente; OBS-003 nextPos não-
+    atômico — single-user MVP, reorder atômico é 2.6 por design arch Q1).
+    Bug crítico typegen↔runtime detectado+corrigido pelo @dev via integração
+    (fix type-safe, sem casts). Todas as deviations (DEV-1..8 + DEV-correlato
+    typegen + EmptyState-extract + IDS G3) APPROVED (arch canônico /
+    precedente sancionado 2.1/2.3/2.4 — não invenção; já validadas @po v0.2,
+    não re-litigadas). Story pode transicionar Ready for Review → Done.
+    @po *close-story 2.5 atualiza Status + Change Log + QA Results na story.
+    ATENÇÃO downstream: branch feat/2.5-crud-links (1 commit f41fcbb, stacked
+    sobre main ee41021 Story 2.4 #11) AINDA NÃO foi pushed (sem PR/CI nesta
+    fase). Após @po close, @devops deve *push + *create-pr (exclusivo
+    @github-devops, .claude/rules/agent-authority.md) — CI rodará os required
+    checks. Task 10.2 (smoke manual no browser) permanece [ ] por design —
+    handoff owner, não bloqueia Done (padrão 1.5-2.4). Próxima story do Epic
+    2: Story 2.6 (reorder/drag-drop de links — consumidor da constraint
+    DEFERRABLE de 2.3).
