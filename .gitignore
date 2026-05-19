@@ -32,6 +32,7 @@ Thumbs.db
 .aiox/environment-report.json
 .aiox/project-status.yaml
 .aiox/handoffs/
+.claude/scheduled_tasks.lock
 
 # Supabase CLI local state
 .supabase/
