@@ -8,6 +8,50 @@ export type Database = {
   };
   public: {
     Tables: {
+      links: {
+        Row: {
+          created_at: string;
+          icon: string | null;
+          id: string;
+          is_visible: boolean;
+          page_id: string;
+          position: number;
+          title: string;
+          updated_at: string;
+          url: string;
+        };
+        Insert: {
+          created_at?: string;
+          icon?: string | null;
+          id?: string;
+          is_visible?: boolean;
+          page_id: string;
+          position: number;
+          title: string;
+          updated_at?: string;
+          url: string;
+        };
+        Update: {
+          created_at?: string;
+          icon?: string | null;
+          id?: string;
+          is_visible?: boolean;
+          page_id?: string;
+          position?: number;
+          title?: string;
+          updated_at?: string;
+          url?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'links_page_id_fkey';
+            columns: ['page_id'];
+            isOneToOne: false;
+            referencedRelation: 'pages';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       pages: {
         Row: {
           created_at: string;
