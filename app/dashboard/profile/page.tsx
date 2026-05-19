@@ -21,7 +21,7 @@ export default async function ProfilePage() {
     .single();
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6">
       <header className="space-y-1">
         <h1 className="text-xl font-semibold tracking-tight">Seu perfil</h1>
         <p className="text-sm text-muted-foreground">
@@ -29,6 +29,6 @@ export default async function ProfilePage() {
         </p>
       </header>
       <UsernameForm currentUsername={profile?.username ?? ''} />
-    </main>
+    </div>
   );
 }
