@@ -25,6 +25,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { PublicPage } from '@/components/public/PublicPage';
+import { parseUsername } from '@/lib/parse-username';
 import { getPublicPage } from '@/server/page/queries';
 
 // ISR (arch §Performance L2181-2184). `revalidateUserSurface` (lib/cache.ts,
@@ -39,12 +40,6 @@ const NOT_FOUND_METADATA = {
   title: 'Página não encontrada — BioLink',
   robots: { index: false },
 } satisfies Metadata;
-
-/** `/@foo` → `'foo'` (lowercase). Retorna `null` se não há prefixo `@`. */
-function parseUsername(raw: string): string | null {
-  if (!raw.startsWith('@')) return null;
-  return raw.slice(1).toLowerCase();
-}
 
 export async function generateMetadata({
   params,
