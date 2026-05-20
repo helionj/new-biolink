@@ -7,6 +7,7 @@ import type { Tables } from '@/lib/supabase/types';
 import {
   CreateLinkInput,
   DeleteLinkInput,
+  ReorderLinksInput,
   ToggleLinkVisibilityInput,
   UpdateLinkInput,
 } from '@/lib/validators/link';
@@ -236,4 +237,49 @@ export async function toggleLinkVisibility(input: unknown): Promise<ActionResult
 
   revalidateUserSurface(profile?.username ?? null);
   return { ok: true, data: link };
+}
+
+// Story 2.6 — reorder atômico via RPC `reorder_links` (migration 0005).
+// 1 chamada RPC = 1 transação Postgres; a constraint
+// uniq_links_page_position DEFERRABLE INITIALLY DEFERRED (de 0004) só é
+// avaliada no COMMIT da função → swap sem coluna temporária. Ver schema-
+// design.md §7 Q1 RESOLVED + comentário no 0005_reorder_links_fn.sql para o
+// porquê de uma RPC ser obrigatória (supabase-js não expõe TX multi-statement
+// no cliente).
+export async function reorderLinks(input: unknown): Promise<ActionResult<void>> {
+  const parsed = ReorderLinksInput.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: 'Entrada inválida', fieldErrors: flattenFieldErrors(parsed.error) };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false, error: SESSION_EXPIRED };
+  }
+
+  // SECURITY INVOKER da função + RLS links_update_own (composite JOIN pages):
+  // ids fora da page do usuário não casam o WHERE da função (no-op) →
+  // operação cross-user silenciosa, sem erro de constraint nem leak de
+  // existence. Conflito de unicidade só ocorreria com payload duplicado
+  // (mesmo id mais de uma vez) — cai no branch 23505 de mapLinkError.
+  const { error } = await supabase.rpc('reorder_links', {
+    p_ordered_ids: parsed.data.orderedIds,
+  });
+
+  if (error) {
+    return { ok: false, error: mapLinkError(error) };
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', user.id)
+    .single();
+
+  revalidateUserSurface(profile?.username ?? null);
+  return { ok: true, data: undefined };
 }

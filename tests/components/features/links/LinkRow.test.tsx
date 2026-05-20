@@ -175,4 +175,35 @@ describe('<LinkRow>', () => {
       expect(mockedToastError).toHaveBeenCalledWith('Link não encontrado');
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Story 2.6 — handle de drag + botões ↑/↓
+  // ---------------------------------------------------------------------------
+
+  it('expõe handle de drag com aria-label="Reordenar link" (AC1)', () => {
+    render(<LinkRow link={makeLink()} />);
+    expect(screen.getByRole('button', { name: 'Reordenar link' })).toBeInTheDocument();
+  });
+
+  it('isolated render sem onMove: botões ↑/↓ ficam disabled (no-op default, sem crash)', () => {
+    render(<LinkRow link={makeLink()} />);
+    expect(screen.getByRole('button', { name: 'Mover para cima' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Mover para baixo' })).toBeDisabled();
+  });
+
+  it('com onMove provido e isFirst=false → ↑ chama onMove(id,"up") (AC4)', async () => {
+    const onMove = vi.fn();
+    const user = userEvent.setup();
+    render(<LinkRow link={makeLink()} onMove={onMove} isFirst={false} isLast={false} />);
+
+    await user.click(screen.getByRole('button', { name: 'Mover para cima' }));
+    expect(onMove).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111', 'up');
+  });
+
+  it('com onMove provido e isLast=true → ↓ fica disabled (AC1 boundary)', () => {
+    const onMove = vi.fn();
+    render(<LinkRow link={makeLink()} onMove={onMove} isFirst={false} isLast={true} />);
+    expect(screen.getByRole('button', { name: 'Mover para baixo' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Mover para cima' })).not.toBeDisabled();
+  });
 });

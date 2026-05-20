@@ -57,7 +57,7 @@ vi.mock('@/lib/cache', () => ({
   revalidateUserSurface: vi.fn(),
 }));
 
-const { createLink, updateLink, deleteLink, toggleLinkVisibility } =
+const { createLink, updateLink, deleteLink, toggleLinkVisibility, reorderLinks } =
   await import('@/server/links/actions');
 const { createClient } = await import('@/lib/supabase/server');
 
@@ -295,4 +295,192 @@ describe('Links Server Actions (Story 2.5)', () => {
     expect(l3.ok).toBe(true);
     if (l3.ok) expect(l3.data.position).toBe(3);
   }, 60_000);
+});
+
+// =============================================================================
+// Story 2.6 — reorderLinks (RPC `reorder_links` da migration 0005)
+// =============================================================================
+// Substrate: mesmo `biolink-dev`. Fixtures novos, prefixo `cifx-reorder-` +
+// UUID range …1043/1044 (distinto de auth …1011-1022, profile …1031/1032,
+// rls …1001/1002/1099, links-2.5 …1041/1042). AC5 prova reorder de 5 links
+// em 1 TX sem violação de unicidade (DEFERRABLE constraint avaliada no
+// COMMIT da função).
+// -----------------------------------------------------------------------------
+
+const USER_C = {
+  id: '00000000-0000-0000-0000-000000001043',
+  email: 'cifx-reorder-c@biolink.dev',
+  username: 'cifx-reorder-c',
+  password: TEST_USER_PASSWORD,
+};
+const USER_D = {
+  id: '00000000-0000-0000-0000-000000001044',
+  email: 'cifx-reorder-d@biolink.dev',
+  username: 'cifx-reorder-d',
+  password: TEST_USER_PASSWORD,
+};
+
+describe('reorderLinks (Story 2.6)', () => {
+  let pageC: string;
+  let pageD: string;
+
+  async function reorderCleanup() {
+    await admin.auth.admin.deleteUser(USER_C.id).catch(() => {});
+    await admin.auth.admin.deleteUser(USER_D.id).catch(() => {});
+  }
+
+  async function createReorderUser(u: typeof USER_C) {
+    const { error } = await admin.auth.admin.createUser({
+      id: u.id,
+      email: u.email,
+      password: u.password,
+      email_confirm: true,
+      user_metadata: { username: u.username },
+    });
+    expect(error).toBeNull();
+  }
+
+  async function signInReorderUser(u: typeof USER_C) {
+    cookieStore = new Map();
+    const sb = await createClient();
+    const { error } = await sb.auth.signInWithPassword({ email: u.email, password: u.password });
+    expect(error).toBeNull();
+  }
+
+  beforeAll(async () => {
+    await reorderCleanup();
+    await createReorderUser(USER_C);
+    await createReorderUser(USER_D);
+    pageC = await resolvePage(USER_C.id);
+    pageD = await resolvePage(USER_D.id);
+  }, 60_000);
+
+  afterAll(async () => {
+    await admin.from('links').delete().eq('page_id', pageC);
+    await admin.from('links').delete().eq('page_id', pageD);
+    await reorderCleanup();
+  }, 60_000);
+
+  beforeEach(async () => {
+    cookieStore = new Map();
+    await admin.from('links').delete().eq('page_id', pageC);
+    await admin.from('links').delete().eq('page_id', pageD);
+  });
+
+  it('(a) sem session → { ok:false, error: sessão expirada }', async () => {
+    const res = await reorderLinks({
+      orderedIds: ['00000000-0000-4000-8000-000000000001'],
+    });
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.error).toMatch(/sessão expirada/i);
+    }
+  }, 30_000);
+
+  it('(b) input inválido (vazio / não-uuid) → { ok:false, fieldErrors } sem mutação', async () => {
+    await signInReorderUser(USER_C);
+
+    // Seed 2 links para garantir que NADA é mutado em caso de erro de input.
+    const a = await createLink({ title: 'A', url: 'https://a.com' });
+    const b = await createLink({ title: 'B', url: 'https://b.com' });
+    expect(a.ok && b.ok).toBe(true);
+
+    const empty = await reorderLinks({ orderedIds: [] });
+    expect(empty.ok).toBe(false);
+    if (!empty.ok) {
+      expect(empty.error).toBe('Entrada inválida');
+      expect(empty.fieldErrors?.orderedIds).toBe('Lista vazia');
+    }
+
+    const bad = await reorderLinks({ orderedIds: ['not-a-uuid'] });
+    expect(bad.ok).toBe(false);
+
+    // Nenhuma mutação ocorreu — positions permanecem 0,1.
+    const rows = await admin
+      .from('links')
+      .select('position')
+      .eq('page_id', pageC)
+      .order('position', { ascending: true });
+    expect(rows.error).toBeNull();
+    expect(rows.data?.map((r) => r.position)).toEqual([0, 1]);
+  }, 60_000);
+
+  it('(c) reorder de 5 links [id5,id1,id2,id3,id4] → { ok:true }, positions 1..5 sem violação de unicidade (AC5)', async () => {
+    await signInReorderUser(USER_C);
+
+    const created = [];
+    for (let i = 0; i < 5; i++) {
+      const r = await createLink({ title: `L${i}`, url: `https://l${i}.com` });
+      expect(r.ok).toBe(true);
+      if (r.ok) created.push(r.data);
+    }
+    expect(created).toHaveLength(5);
+
+    // Nova ordem: 5º vai pra frente, demais empurrados.
+    const ids = created.map((l) => l.id);
+    const newOrder = [ids[4], ids[0], ids[1], ids[2], ids[3]];
+
+    const res = await reorderLinks({ orderedIds: newOrder });
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.data).toBeUndefined();
+
+    // Re-fetch via admin (bypass RLS) e prova:
+    //   1) os 5 ids estão presentes (nenhum perdido);
+    //   2) positions atribuídas são 1,2,3,4,5 (1-based via WITH ORDINALITY);
+    //   3) a ordem por position match a newOrder (swap atômico);
+    //   4) unicidade preservada (DEFERRABLE constraint avaliada no COMMIT).
+    const after = await admin
+      .from('links')
+      .select('id, position')
+      .eq('page_id', pageC)
+      .order('position', { ascending: true });
+    expect(after.error).toBeNull();
+    expect(after.data).toHaveLength(5);
+
+    const positions = after.data!.map((r) => r.position);
+    expect(positions).toEqual([1, 2, 3, 4, 5]);
+    expect(new Set(positions).size).toBe(5); // sem duplicatas (uniqueness)
+    expect(after.data!.map((r) => r.id)).toEqual(newOrder);
+  }, 90_000);
+
+  it('(d) orderedIds contendo id de link de OUTRO usuário → no-op cross-user (SECURITY INVOKER + RLS)', async () => {
+    // USER_D cria link próprio (alvo do ataque cross-user).
+    await signInReorderUser(USER_D);
+    const dLink = await createLink({ title: 'do D', url: 'https://do-d.com' });
+    expect(dLink.ok).toBe(true);
+    if (!dLink.ok) return;
+    const dLinkId = dLink.data.id;
+    const dPositionBefore = dLink.data.position;
+
+    // USER_C cria seus próprios links.
+    await signInReorderUser(USER_C);
+    const cA = await createLink({ title: 'C A', url: 'https://c-a.com' });
+    const cB = await createLink({ title: 'C B', url: 'https://c-b.com' });
+    expect(cA.ok && cB.ok).toBe(true);
+    if (!cA.ok || !cB.ok) return;
+
+    // USER_C tenta colar o link de D no meio da própria lista.
+    const malicious = [cB.data.id, dLinkId, cA.data.id];
+    const res = await reorderLinks({ orderedIds: malicious });
+
+    // A função `reorder_links` é SECURITY INVOKER + restringe `WHERE page_id =
+    // v_page_id` (page do auth.uid()) → o id de D simplesmente não casa, no-op
+    // silencioso para essa row. Operação OK sob a ótica do USER_C; row de D
+    // intacta.
+    expect(res.ok).toBe(true);
+
+    const stillD = await admin.from('links').select('position, page_id').eq('id', dLinkId).single();
+    expect(stillD.error).toBeNull();
+    expect(stillD.data?.page_id).toBe(pageD); // mesmo dono
+    expect(stillD.data?.position).toBe(dPositionBefore); // posição inalterada
+
+    // Os 2 links do USER_C devem ter trocado de posição: cB primeiro, cA depois.
+    const cAfter = await admin
+      .from('links')
+      .select('id, position')
+      .eq('page_id', pageC)
+      .order('position', { ascending: true });
+    expect(cAfter.error).toBeNull();
+    expect(cAfter.data?.map((r) => r.id)).toEqual([cB.data.id, cA.data.id]);
+  }, 90_000);
 });
