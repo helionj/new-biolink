@@ -102,7 +102,7 @@ describe('<LinkList> — Story 2.6 reorder', () => {
     const upButtons = screen.getAllByRole('button', { name: 'Mover para cima' });
     // Item 0 (Alpha) → ↑ disabled; Item 1 (Beta) → habilitado.
     expect(upButtons[0]).toBeDisabled();
-    await user.click(upButtons[1]);
+    await user.click(upButtons[1]!);
 
     await waitFor(() => {
       expect(mockedReorder).toHaveBeenCalledWith({ orderedIds: [ID_B, ID_A, ID_C] });
@@ -119,7 +119,7 @@ describe('<LinkList> — Story 2.6 reorder', () => {
     const downButtons = screen.getAllByRole('button', { name: 'Mover para baixo' });
     // Item 2 (Gamma) → ↓ disabled (último).
     expect(downButtons[2]).toBeDisabled();
-    await user.click(downButtons[1]);
+    await user.click(downButtons[1]!);
 
     await waitFor(() => {
       expect(mockedReorder).toHaveBeenCalledWith({ orderedIds: [ID_A, ID_C, ID_B] });
@@ -132,7 +132,7 @@ describe('<LinkList> — Story 2.6 reorder', () => {
     render(<LinkList links={threeLinks()} />);
 
     const downButtons = screen.getAllByRole('button', { name: 'Mover para baixo' });
-    await user.click(downButtons[0]); // tenta mover Alpha para baixo
+    await user.click(downButtons[0]!); // tenta mover Alpha para baixo
 
     await waitFor(() => {
       expect(mockedReorder).toHaveBeenCalled();
