@@ -1,0 +1,227 @@
+schema: 1
+story: '3.1'
+gate: PASS
+status_reason: >-
+  Todos os 4 ACs cumpridos no working tree auditado (commits pendentes —
+  branch feat/2.7-pagina-publica-ssr +1 commit ahead com hotfix isolado
+  f3c8ba1 lib/supabase/server.ts try/catch silencioso no setAll cookies; fix
+  fora do escopo de Story 3.1, validado pelo @qa como SAFE pattern oficial
+  Supabase Next App Router). Story 3.1 é puramente estrutura/vocabulário de
+  tokens: app/globals.css refatorado com seletor composto :root,[data-theme=
+  "light"] + [data-theme="dark"],.dark (DEV-1 — sai de 5 tokens duplicados
+  para 27 canônicos, reconcilia .dark exigida pelo @custom-variant dark sem
+  drift de valores) + [data-theme="brand"] expandido com placeholders
+  provisórios + @media (prefers-color-scheme: dark) ampliado para 27 tokens
+  com :not([data-theme]):not(.dark) preservando override SSR. Helper
+  lib/theme.ts (29 linhas) com Theme derivado do enum DB
+  Database["public"]["Enums"]["theme_preset"] (NÃO duplicado — IDS REUSE +
+  Constitution Art. IV) + THEMES (as const satisfies readonly Theme[]) +
+  DEFAULT_THEME + isTheme/resolveTheme puros. app/layout.tsx renderiza
+  <html data-theme={DEFAULT_THEME}> via Server Component (sem
+  suppressHydrationWarning — SSR determinístico). app/dev/themes/page.tsx
+  Server Component com guard notFound() em prod + metadata.robots.index=false
+  + itera THEMES gerando 3 sections (color × 19 swatches, radius × 5,
+  typography sans/mono). DEV-2 (sem --space-* custom) e DEV-3 (zero alteração
+  em PublicPage.tsx / dashboard) honrados verbatim. quality_gate_tools
+  re-executados INDEPENDENTEMENTE pelo @qa: typecheck/lint/build exit 0
+  (/dev/themes prerendered como ○ Static); pnpm test 271/271 em 32 arquivos
+  (delta +33 / +2 vs baseline 2.7 238/238 — unit +15 theme.test.ts,
+  components +18 ThemeTokens.test.tsx + smoke RootLayoutDataTheme não criado
+  conforme opcionalidade Task 5.4; zero regressão). Decisões DEV-1..DEV-3
+  documentadas inline no código + Dev Agent Record. Story end-to-end
+  frontend sem DDL/RLS — Executor Assignment @dev/@qa validado pelo gate
+  @po v0.2 (GO 9/10) e por precedente sancionado 2.1/2.3/2.4/2.5/2.6/2.7.
+reviewer: 'Manual gate per QA-001 (CodeRabbit self-healing loop indisponível em macOS sem WSL/CodeRabbit CLI — docs/qa/known-issues.md). @qa Quinn auditou o working tree (modificados não commitados: app/globals.css, app/layout.tsx; novos: lib/theme.ts, app/dev/themes/page.tsx, tests/unit/theme.test.ts, tests/components/features/theme/ThemeTokens.test.tsx) + matriz de rastreabilidade AC↔teste Given-When-Then + re-execução INDEPENDENTE dos quality_gate_tools (pnpm typecheck exit 0; pnpm lint exit 0; pnpm build success com /dev/themes ○ Static prerendered; pnpm test 271/271 em 32 arquivos). Hotfix isolado f3c8ba1 (lib/supabase/server.ts try/catch silencioso no setAll de cookies) validado como pattern oficial Supabase Next App Router (https://supabase.com/docs/guides/auth/server-side/nextjs#supabase-server-client) — middleware.ts já refresh-a sessão a cada navegação, catch silencia apenas chamadas durante render de Server Component (contexto onde cookies().set() lança por contrato Next 16). Hotfix fora do escopo da Story 3.1 mas validado nesta sessão por convergir no mesmo branch. Sem PR/CI nesta fase — push + PR + CI são downstream de @devops (exclusivo @github-devops, agent-authority.md).'
+updated: '2026-05-20T15:15:00Z'
+
+review_method: manual
+review_note: >-
+  Gate manual aplicado via workaround QA-001 (docs/qa/known-issues.md) —
+  ambiente macOS sem WSL/CodeRabbit; Seção 0 (CodeRabbit Self-Healing Loop)
+  da task qa-review-story.md travaria. Story end-to-end CSS/TS/RSC sem DDL,
+  sem RLS, sem Server Actions, sem Supabase queries novas — quality_gate
+  owner é @qa (per Executor Assignment + gate @po v0.2 GO 9/10 — não
+  re-litigado; precedente sancionado e Done de 2.1/2.3/2.4/2.5/2.6/2.7).
+  Revisão dos 7 quality checks lendo o código real (working tree pendente
+  de commit) + AC traceability + re-execução INDEPENDENTE dos gates locais
+  (typecheck/lint/build exit 0; pnpm test 271/271 em 32 arquivos —
+  unit 77, components 120, integration 74). Deviations já validadas pelo
+  gate @po v0.2 (DEV-1 seletor composto .dark↔[data-theme="dark"]; DEV-2
+  sem --space-* custom; DEV-3 escopo per-story 3.1 vs 3.2/3.3/3.4/3.5)
+  honradas verbatim na implementação — não re-litigadas (convenção 2.3+).
+
+ac_traceability:
+  - ac: 'AC1: app/globals.css define tokens (cor, spacing, radius, font) via CSS variables sob seletores [data-theme="light"], [data-theme="dark"], [data-theme="brand"]'
+    given: 'Working tree app/globals.css com 3 seletores estruturais materializados (DEV-1 reconcilia .dark via seletor composto)'
+    when: 'tests/components/features/theme/ThemeTokens.test.tsx executa regex no source CSS + sentinelas de tokens-base'
+    then: 'Assertions PASS: /:root,\s*\[data-theme=light\]/, /\[data-theme=dark\],\s*\.dark/, /\[data-theme=brand\]/, tokens --background/--foreground/--primary/--muted/--border/--radius declarados, @theme inline preservado, fallback @media (prefers-color-scheme: dark) restrito a :root:not([data-theme]):not(.dark)'
+    verdict: PASS
+    coverage: 'tests/components/features/theme/ThemeTokens.test.tsx (10 cases) + revisão manual do source confirmando 3 blocos seletores + @theme inline + @media fallback'
+    notes: 'Estratégia regex no source escolhida vs getComputedStyle em jsdom — pragmática e documentada no header do test file. jsdom 29 + Tailwind 4 @theme inline não resolve CSS vars de stylesheets externas confiavelmente. Compromise aceitável para um story estrutural (paletas reais em 3.2). Decisão DEV-2 honrada (sem --space-* custom — spacing usa escala default Tailwind 4 per Story 1.8 v0.2 + endosso PO 3.1 v0.2). Decisão DEV-1 honrada (seletor composto [data-theme="dark"],.dark sai de 5 tokens duplicados para 27 canônicos — elimina drift risk para Story 3.2 quando paletas reais entrarem).'
+
+  - ac: 'AC2: Tema aplicado em <html data-theme="..."> via Server Component (sem flash de tema)'
+    given: 'app/layout.tsx é Server Component (sem `use client`); import { DEFAULT_THEME } from @/lib/theme'
+    when: 'pnpm build executa SSR de todas as rotas'
+    then: 'Build success exit 0; rotas estáticas (○) e dinâmicas (ƒ) renderizam <html data-theme="light" ...> determinístico no HTML inicial → zero flash. Ausência de suppressHydrationWarning é correta (SSR determinístico não precisa)'
+    verdict: PASS
+    coverage: 'Build success (pnpm build exit 0) + revisão manual de app/layout.tsx (L34-39 confirmando data-theme={DEFAULT_THEME} no <html>). Teste isolado RootLayout em jsdom não criado conforme opcionalidade Task 5.3 (next/font/google + RSC isoladamente não rodam em jsdom sem boilerplate caro; build success cumpre o smoke). Decisão DEV-3 honrada (data-theme fixo no root layout; aplicação por contexto fica para 3.2/3.3).'
+    notes: 'Não foi criado tests/components/features/theme/RootLayoutDataTheme.test.tsx (opcional per Task 5.3) — cobertura via build success é precedente sancionado das Stories 2.5/2.6/2.7. OBS não-bloqueante.'
+
+  - ac: 'AC3: Helper lib/theme.ts com tipo Theme = "light" | "dark" | "brand"'
+    given: 'lib/theme.ts (29 linhas) exporta Theme (derivado do enum DB Database["public"]["Enums"]["theme_preset"]), THEMES (as const satisfies readonly Theme[]), DEFAULT_THEME (Theme = "light"), isTheme (type-guard), resolveTheme (normalizer)'
+    when: 'tests/unit/theme.test.ts executa 15 cases sobre helpers + sentinelas'
+    then: 'PASS — 15/15: THEMES === ["light","dark","brand"] (sentinela DB↔TS), DEFAULT_THEME === "light" (sentinela default), isTheme positivo para os 3 + isTheme negativo para "Light"/"DARK"/"sepia"/"invalid"/""/null/undefined/42/{}, resolveTheme retorna input válido ou DEFAULT_THEME para inválidos/null/undefined'
+    verdict: PASS
+    coverage: '100% das branches do helper (isTheme: typeof check + includes; resolveTheme: ternário). Sentinelas garantem coerência DB↔TS (Constitution Art. IV — No Invention: Theme NÃO duplicado como literal independente, derivado verbatim do enum gerado por npm run db:types). Pattern as const satisfies readonly Theme[] em THEMES é defensivo: força que qualquer drift entre DB enum e array literal vire erro de compilação.'
+    notes: 'IDS REUSE: Theme derivado, NÃO duplicado — alinhado com pattern Story 2.5 (Link importado de lib/supabase/types). Helper puro (zero side-effects, sem `use client`, sem Supabase client) — mutação de pages.theme/profiles.theme reservada à Story 3.3 conforme DEV-3.'
+
+  - ac: 'AC4: Storybook-like page em /dev/themes (apenas em dev) demonstra todos os tokens'
+    given: 'app/dev/themes/page.tsx Server Component com guard notFound() quando NODE_ENV === "production" + metadata.robots.index=false + itera THEMES para 3 sections (color × 19 tokens, radius × 5, typography sans/mono)'
+    when: 'pnpm build executa + revisão manual do código + smoke implícito via build success'
+    then: 'Build success: /dev/themes aparece como ○ (Static) prerendered. Em produção, guard NODE_ENV → notFound() invoca app/not-found.tsx global (Story 2.7). Em dev, page renderiza 3 sections side-by-side com swatches/radius/font. Sem dependência de components/ui/* (defesa contra circularidade quando Story 3.4 introduzir Card/Modal/Avatar usando tokens).'
+    verdict: PASS
+    coverage: 'Build success (○ Static prerendered) + revisão manual do código (notFound guard L50, metadata robots L46, iteração THEMES.map L69-71, swatches via style={{ background: var(--<token>) }}). Smoke manual em prod (pnpm build && pnpm start → /dev/themes deve dar 404) não foi automatizado — precedente sancionado de Stories 2.5/2.6/2.7 (smoke manual = handoff owner, não bloqueia Done).'
+    notes: 'Aria-labels presentes em swatches/radius previews (a11y mínima dev-only). Sem dependência de components/ui/* é INTENCIONAL e correto: previne dependência circular quando Story 3.4 criar Card/Avatar/Modal consumindo os tokens — o showcase precisa renderizar abaixo dos primitives na cadeia de design system. metadata.robots.index=false é defesa em profundidade contra leak por preview Vercel.'
+
+top_issues:
+  - id: 'OBS-001'
+    severity: low
+    category: 'testing'
+    finding: >-
+      AC2 não tem teste isolado dedicado (tests/components/features/theme/
+      RootLayoutDataTheme.test.tsx era opcional per Task 5.3). Cobertura atual
+      via pnpm build success — build prerendera todas as rotas estaticamente
+      sem hidratação warning, smoke implícito de que <html data-theme="light">
+      é renderizado server-side. Não é regressão; é cobertura de teste
+      complementar opcional.
+    suggested_action: >-
+      Não-bloqueante per precedente sancionado das Stories 2.5/2.6/2.7
+      (build success cumpre smoke para layout root em SSR puro). Se Story 3.3
+      adicionar dinâmica de theme via cookie/Server Action, o test isolado
+      passa a fazer mais sentido — quando RootLayout deixar de ser
+      determinístico. Registrar como backlog STORY-3.1-F2 se @po quiser.
+
+  - id: 'OBS-002'
+    severity: low
+    category: 'testing'
+    finding: >-
+      AC4 smoke manual em produção (pnpm build && pnpm start → /dev/themes →
+      esperado HTTP 404 via notFound()) não foi automatizado. Cobertura atual
+      via revisão manual do guard (L50 process.env.NODE_ENV === "production"
+      → notFound()) + build success indicando ○ Static prerendered. Em build
+      Vercel preview, /dev/themes é tecnicamente acessível (preview != prod);
+      defesa secundária via metadata.robots.index=false.
+    suggested_action: >-
+      Não-bloqueante per precedente sancionado das Stories 2.5/2.6/2.7
+      (smoke manual = handoff owner). User pode validar antes de @po
+      *close-story 3.1 OU aceitar como tech debt. Quando Story 3.4 adicionar
+      Card/Avatar/Modal à showcase, pode ser bom adicionar 1 teste mockando
+      process.env.NODE_ENV='production' para assertar notFound chamado.
+
+  - id: 'OBS-003'
+    severity: low
+    category: 'code'
+    finding: >-
+      Existe um follow-up arquitetural reconhecido em DEV-1 (Dev Notes da
+      story): redefinir @custom-variant dark (&:is([data-theme="dark"] *))
+      para eliminar a classe .dark completamente. Hoje o seletor composto
+      [data-theme="dark"],.dark resolve o problema imediato sem drift, mas
+      mantém a dualidade. Tech-debt explícito documentado.
+    suggested_action: >-
+      Registrar como STORY-BACKLOG.md item (ex.: STORY-3.x-F1: refactor
+      @custom-variant dark para data-theme). Impacto: todos os primitives
+      shadcn (button, card, input, dialog, dropdown-menu, etc.) — risk/value
+      desfavorável agora. Pode entrar em Story 3.4 ou 3.5 quando o time já
+      tiver mais confiança nos tokens. Pax registrar em *close-story 3.1
+      conforme acordado em v0.2 endosso PO.
+
+  - id: 'HOTFIX-001'
+    severity: low
+    category: 'code'
+    finding: >-
+      Commit f3c8ba1 (lib/supabase/server.ts try/catch silencioso no setAll
+      de cookies) foi aplicado nesta sessão FORA do escopo da Story 3.1.
+      Bug pré-existente desde Story 1.2 (commit b26be8f) — cookieStore.set()
+      lança "Cookies can only be modified in a Server Action or Route
+      Handler" quando @supabase/ssr tenta refresh durante render de Server
+      Component em Next 16. Fix é pattern oficial Supabase Next App Router
+      (https://supabase.com/docs/guides/auth/server-side/nextjs).
+    suggested_action: >-
+      Validado pelo @qa nesta sessão como SAFE — middleware.ts já refresh-a
+      sessão a cada navegação (catch silencia apenas chamadas durante render
+      de RSC; Server Actions/Route Handlers continuam com set funcional).
+      Integration tests 74/74 verde pós-fix confirmam zero regressão no
+      auth/RLS flow. Hotfix é commit standalone reversível independente da
+      Story 3.1. Não é AC desta story, mas convergiu no mesmo branch —
+      @github-devops faz push de ambos juntos (Story 3.1 commit pendente +
+      f3c8ba1) ou separadamente conforme preferência.
+
+nfr_validation:
+  performance:
+    status: PASS
+    notes: 'Story estrutural CSS-only + 1 atributo HTML + 1 helper puro + 1 rota dev-only. Zero impacto runtime em rotas de produção. Build success em ~110s (próximo da baseline Story 2.7).'
+  security:
+    status: PASS
+    notes: '/dev/themes tem defesa em profundidade: (1) guard process.env.NODE_ENV === "production" → notFound(); (2) metadata.robots.index=false, follow=false. Nenhum input externo no helper lib/theme.ts (puro). Hotfix Supabase cookies elimina vetor de auth race em RSC. Sem novos secrets, sem novos endpoints públicos.'
+  reliability:
+    status: PASS
+    notes: 'Determinístico em SSR (data-theme fixo). Helper puro sem side-effects. Sentinelas em theme.test.ts pegam drift DB↔TS se migration mudar enum sem rerun de npm run db:types.'
+  maintainability:
+    status: PASS
+    notes: 'Theme derivado do enum DB (NÃO duplicado) — refactor-friendly. Seletor composto .dark↔[data-theme="dark"] elimina dívida de drift identificada em DEV-1 (sai de 5 tokens duplicados para 27 canônicos em um único bloco). Comentários inline explicam o "why" das decisões (DEV-1/2/3) sem rotting risk.'
+
+quality_checks:
+  code_review:
+    verdict: PASS
+    notes: 'Padrões consistentes com IDS REUSE (Theme derivado do enum DB), Constitution Art. IV (zero invenção — paletas placeholders mantidos para Story 3.2), Coding Standards (Absolute Imports via @/lib/theme). Readability alta; comentários inline justificam decisões DEV-1/2/3. JSDoc no módulo lib/theme.ts explica fonte única + escopo per-story.'
+  unit_tests:
+    verdict: PASS
+    notes: 'tests/unit/theme.test.ts (15 cases) cobre 100% das branches do helper + sentinelas DB↔TS. tests/components/features/theme/ThemeTokens.test.tsx (10 cases) valida AC1 via regex no source + smoke da superfície pública AC3.'
+  acceptance_criteria:
+    verdict: PASS
+    notes: 'AC1-AC4 verificadas via traceability matrix acima. AC2 cobertura via build success (precedente sancionado); AC4 smoke prod manual (precedente sancionado).'
+  no_regressions:
+    verdict: PASS
+    notes: 'Baseline pós-2.7: 238/238 em 30 arquivos. Atual: 271/271 em 32 arquivos. Delta: +33 tests / +2 files. Zero failure em unit (77), components (120), integration (74). Integration tests 74/74 também confirmam zero regressão pós hotfix f3c8ba1 (auth/RLS via Supabase server client).'
+  performance:
+    verdict: PASS
+    notes: 'CSS-only changes + 1 attribute HTML + helper puro + 1 rota dev-only. Build success em ~110s (próximo da baseline). Zero impacto runtime em rotas de produção.'
+  security:
+    verdict: PASS
+    notes: '/dev/themes guard prod + robots noindex. Helper sem inputs externos. Hotfix Supabase cookies elimina vetor de auth race em RSC (pattern oficial).'
+  documentation:
+    verdict: PASS
+    notes: 'JSDoc em lib/theme.ts (módulo explica fonte única + escopo per-story). Comentário-bloco atualizado em globals.css (header refletindo estado pós-3.1, comentário explicando DEV-1 + fallback @media). Comentário-bloco em /dev/themes/page.tsx (rota dev-only + guard + propósito + evolução Story 3.4). Dev Agent Record completo na story.'
+
+evidence:
+  - id: 'EV-1'
+    label: 'typecheck independente'
+    command: 'pnpm typecheck'
+    result: 'exit 0 (zero erros TS strict + noUncheckedIndexedAccess)'
+  - id: 'EV-2'
+    label: 'lint independente'
+    command: 'pnpm lint'
+    result: 'exit 0 (zero warnings/errors ESLint)'
+  - id: 'EV-3'
+    label: 'build independente'
+    command: 'pnpm build'
+    result: 'success em ~110s; /dev/themes prerendered como ○ (Static); 12/12 páginas geradas; zero warning de hidratação'
+  - id: 'EV-4'
+    label: 'test suite independente'
+    command: 'pnpm test'
+    result: '271/271 em 32 files (unit 77, components 120, integration 74); duração 485s; zero failure'
+  - id: 'EV-5'
+    label: 'hotfix Supabase cookies integration smoke'
+    command: 'pnpm vitest run --project=integration'
+    result: '74/74 em 8 files; auth/RLS verde pós try/catch em setAll'
+  - id: 'EV-6'
+    label: 'AC1 regex no source CSS'
+    command: 'grep -nE "\\[data-theme=|\\.dark \\{|\\.dark," app/globals.css'
+    result: ':root,[data-theme="light"] (L15) + [data-theme="dark"],.dark (L63-64 — composto DEV-1) + [data-theme="brand"] (L107) confirmados'
+
+approved_by: 'Quinn (@qa) — 2026-05-20'
+next_steps:
+  - 'Branch feat/2.7-pagina-publica-ssr tem 1 commit ahead (f3c8ba1 hotfix). Story 3.1 ainda staged-out (arquivos modificados + untracked).'
+  - '@dev (Dex) cria commit atômico da Story 3.1 (`feat: arquitetura tokens e tema [Story 3.1]`) com File List completo.'
+  - '@po (Pax) executa *close-story 3.1 (transição Ready for Review → Done; opcionalmente registra STORY-3.x-F1 follow-up refactor @custom-variant dark em STORY-BACKLOG.md).'
+  - '@devops (Gage) executa *push do branch feat/2.7-pagina-publica-ssr (ou cria/atualiza PR — exclusivo @github-devops per agent-authority.md).'

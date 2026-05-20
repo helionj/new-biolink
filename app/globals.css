@@ -4,14 +4,15 @@
 @custom-variant dark (&:is(.dark *));
 
 /* -------------------------------------------------------------------------- */
-/* Design Tokens — placeholders                                              */
-/* Real values land in Story 3.1+ (theme presets).                            */
-/* shadcn primitives (Story 1.5) require additional tokens (card, popover,    */
-/* destructive, ring, input, chart-*, sidebar-*) — adicionados abaixo sem    */
-/* sobrescrever os 6 placeholders originais do projeto.                       */
+/* Design Tokens — vocabulário estrutural por preset.                          */
+/* Story 3.1 materializa os seletores [data-theme="light|dark|brand"].         */
+/* Paletas reais (cores finais com contraste WCAG AA) são definidas em         */
+/* Story 3.2 (3 Presets de Tema) com @ux-design-expert.                        */
+/* shadcn primitives (Story 1.5) consomem os tokens via @theme inline (L100+). */
 /* -------------------------------------------------------------------------- */
 
-:root {
+:root,
+[data-theme='light'] {
   /* Project placeholders (mantidos da configuração original) */
   --background: #ffffff;
   --foreground: #171717;
@@ -50,24 +51,16 @@
   --sidebar-ring: #94a3b8;
 }
 
-[data-theme='dark'] {
-  --background: #0a0a0a;
-  --foreground: #ededed;
-  --primary: #f8fafc;
-  --muted: #1e293b;
-  --border: #334155;
-}
-
-[data-theme='brand'] {
-  /* Placeholder — branded values overridden in Story 3.2 */
-  --background: #ffffff;
-  --foreground: #0f172a;
-  --primary: #6366f1;
-  --muted: #ede9fe;
-  --border: #c7d2fe;
-}
-
-/* shadcn dark mode class — coexiste com [data-theme='dark']; Story 3.1+ reconcilia */
+/*
+ * Dark preset — seletor composto reconcilia [data-theme="dark"] com a classe
+ * .dark exigida pelo @custom-variant dark (L4). Story 3.1 DEV-1: manter ambos
+ * os ativadores apontando para o MESMO bloco evita duplicação e drift quando
+ * Story 3.2 trocar as paletas finais. Refactor futuro (eliminar .dark e
+ * redefinir o @custom-variant para [data-theme="dark"]) é tech-debt explícito
+ * — fora de escopo desta story por afetar todos os primitives shadcn.
+ * Radius mantido igual ao light (theme não altera radius — design decision).
+ */
+[data-theme='dark'],
 .dark {
   --background: #0a0a0a;
   --foreground: #ededed;
@@ -76,6 +69,7 @@
   --muted: #1e293b;
   --muted-foreground: #94a3b8;
   --border: #334155;
+  --radius: 0.5rem;
   --card: #0a0a0a;
   --card-foreground: #ededed;
   --popover: #0a0a0a;
@@ -88,14 +82,69 @@
   --destructive-foreground: #0a0a0a;
   --input: #334155;
   --ring: #475569;
+  --chart-1: #1e293b;
+  --chart-2: #334155;
+  --chart-3: #475569;
+  --chart-4: #64748b;
+  --chart-5: #94a3b8;
+  --sidebar: #0a0a0a;
+  --sidebar-foreground: #ededed;
+  --sidebar-primary: #f8fafc;
+  --sidebar-primary-foreground: #0f172a;
+  --sidebar-accent: #1e293b;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: #334155;
+  --sidebar-ring: #475569;
+}
+
+/*
+ * Brand preset — paleta provisória; cores finais em Story 3.2 com
+ * @ux-design-expert. Os 3 tokens custom (primary/muted/border) preservam os
+ * valores herdados da v0.2 (seed roxo #6366f1); os demais tokens replicam o
+ * light por enquanto para que componentes shadcn renderizem sem buracos.
+ * Story 3.2 reescreverá os valores finais (seed brand #7C3AED per PRD).
+ */
+[data-theme='brand'] {
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --primary: #6366f1;
+  --primary-foreground: #f8fafc;
+  --muted: #ede9fe;
+  --muted-foreground: #64748b;
+  --border: #c7d2fe;
+  --radius: 0.5rem;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --accent: #f1f5f9;
+  --accent-foreground: #0f172a;
+  --destructive: #ef4444;
+  --destructive-foreground: #f8fafc;
+  --input: #e2e8f0;
+  --ring: #94a3b8;
+  --chart-1: #e2e8f0;
+  --chart-2: #64748b;
+  --chart-3: #475569;
+  --chart-4: #334155;
+  --chart-5: #1e293b;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #6366f1;
+  --sidebar-primary-foreground: #f8fafc;
+  --sidebar-accent: #ede9fe;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #c7d2fe;
+  --sidebar-ring: #94a3b8;
 }
 
 /* -------------------------------------------------------------------------- */
 /* Spacing — sem tokens --spacing-* custom (intencional).                      */
-/* Decisão PO (Story 1.8, Change Log v0.2): AC2 "spacing" usa a escala default */
-/* do Tailwind 4. Nenhum doc-fonte (PRD/arch) especifica tokens --spacing-*    */
-/* custom — inventá-los violaria Constitution Art. IV (No Invention). Escala   */
-/* custom, se necessária, é escopo Epic 3 (theming presets).                   */
+/* Decisão PO (Story 1.8 Change Log v0.2 + Story 3.1 DEV-2): AC "spacing" usa  */
+/* a escala default do Tailwind 4. Nenhum doc-fonte (PRD/arch) especifica      */
+/* tokens --spacing-* custom — inventá-los violaria Constitution Art. IV.     */
 /* -------------------------------------------------------------------------- */
 
 @theme inline {
@@ -140,13 +189,45 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/*
+ * Fallback OS-level: só aplica quando NENHUM data-theme nem .dark explícito
+ * está no <html>. O :not(...) duplo garante que a escolha SSR (Story 3.1
+ * Task 3 — data-theme={DEFAULT_THEME}) vence o prefers-color-scheme.
+ */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]):not(.dark) {
     --background: #0a0a0a;
     --foreground: #ededed;
     --primary: #f8fafc;
+    --primary-foreground: #0f172a;
     --muted: #1e293b;
+    --muted-foreground: #94a3b8;
     --border: #334155;
+    --card: #0a0a0a;
+    --card-foreground: #ededed;
+    --popover: #0a0a0a;
+    --popover-foreground: #ededed;
+    --secondary: #1e293b;
+    --secondary-foreground: #f8fafc;
+    --accent: #1e293b;
+    --accent-foreground: #f8fafc;
+    --destructive: #f87171;
+    --destructive-foreground: #0a0a0a;
+    --input: #334155;
+    --ring: #475569;
+    --chart-1: #1e293b;
+    --chart-2: #334155;
+    --chart-3: #475569;
+    --chart-4: #64748b;
+    --chart-5: #94a3b8;
+    --sidebar: #0a0a0a;
+    --sidebar-foreground: #ededed;
+    --sidebar-primary: #f8fafc;
+    --sidebar-primary-foreground: #0f172a;
+    --sidebar-accent: #1e293b;
+    --sidebar-accent-foreground: #f8fafc;
+    --sidebar-border: #334155;
+    --sidebar-ring: #475569;
   }
 }
 
