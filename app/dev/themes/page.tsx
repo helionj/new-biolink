@@ -55,7 +55,7 @@ export default function ThemesShowcasePage() {
         <h1 className="text-3xl font-bold">Theme Tokens — DEV Showcase</h1>
         <p className="text-sm text-[color:var(--muted-foreground)]">
           Referência visual dos 3 presets (light, dark, brand). Rota dev-only — retorna 404 em
-          produção. Paletas finais em Story 3.2.
+          produção. Paletas finais (Story 3.2). Validação WCAG AA: <code>pnpm check:contrast</code>.
         </p>
       </header>
 

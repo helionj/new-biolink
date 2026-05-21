@@ -3,7 +3,7 @@ title: Story Backlog
 description: Follow-up tasks, technical debt e oportunidades de otimização identificadas durante stories, dev e QA
 owner: '@po (Pax)'
 created: 2026-05-15
-last_updated: 2026-05-20
+last_updated: 2026-05-21
 ---
 
 # Story Backlog
@@ -64,24 +64,43 @@ _Nenhum item._
 - **Risk if not done**: LOW — dualidade `.dark` ↔ `[data-theme="dark"]` é cosmética; ambos os ativadores apontam para o mesmo bloco de tokens (zero drift). Apenas implementação fica mais elegante e reduz superfície cognitiva para novos contribuidores.
 - **Acceptance**: Primitives shadcn renderizam idênticos pré-pós refactor em ambos os temas; `.dark` removida da codebase (apenas `[data-theme="dark"]` aciona dark mode).
 
+#### [STORY-3.2-F1] Refactor `scripts/check-contrast.mjs` para parser CSS automatizado
+
+- **Source**: @sm DEV-3 da Story 3.2 + execução @dev YOLO Story 3.2 — 2026-05-21
+- **Priority**: 🟢 LOW
+- **Effort**: ~0.5 story de tech-debt (complexity S — script Node + deps `postcss` ou parser manual)
+- **Status**: 📋 TODO
+- **Assignee**: @dev — gate @qa (regressão do script)
+- **Sprint**: _A definir (`*backlog-schedule`)_ — não prioritário enquanto as 3 paletas forem estáveis
+- **Description**: O script `scripts/check-contrast.mjs` (Story 3.2 Task 3) duplica manualmente os hex de `app/globals.css` no objeto `PALETTES`. Qualquer mudança de paleta exige atualização em **dois lugares** — risco de drift silencioso (o gate pode passar com valores stale). Mitigação atual: comentário de header explícito ("MANTER EM SINCRONIA com `app/globals.css`"). Refactor: parser CSS que lê os blocos `[data-theme="..."]` de `globals.css` diretamente e extrai os tokens (`background`, `foreground`, etc.), eliminando duplicação.
+- **Success Criteria**:
+  - [ ] Script consulta `app/globals.css` (via `postcss` ou parser manual ~150 LOC) em vez de objeto hard-coded
+  - [ ] Mantém suporte aos 3 presets sem regressão (27/27 PASS contra a paleta atual)
+  - [ ] Detecta automaticamente tokens novos/removidos (não silenciosamente ignora)
+  - [ ] `pnpm check:contrast` continua exit 0 quando tudo passa, exit 1 em qualquer FAIL
+  - [ ] Comentário de "MANTER EM SINCRONIA" removido do header do script
+- **Risk if not done**: LOW — drift entre `globals.css` e `PALETTES` do script é detectável manualmente em code review (diff de PR mostra ambos os arquivos). Risco real só materializa se um PR alterar apenas um dos dois lados sem revisão atenta.
+- **Acceptance**: Script lê paletas diretamente do CSS-fonte; mudar uma cor em `globals.css` propaga automaticamente para o gate WCAG sem edit duplicado.
+
 ---
 
 ## 📊 Statistics
 
 | Métrica                  | Valor      |
 | ------------------------ | ---------- |
-| Total de itens ativos    | 2          |
+| Total de itens ativos    | 3          |
 | 🔴 HIGH                  | 0          |
 | 🟡 MEDIUM                | 1          |
-| 🟢 LOW                   | 1          |
+| 🟢 LOW                   | 2          |
 | ✅ DONE (não arquivados) | 0          |
-| Última atualização       | 2026-05-20 |
+| Última atualização       | 2026-05-21 |
 
 ---
 
 ## 📜 Change Log
 
-| Date       | Action | Item                                                                                     | Author   |
-| ---------- | ------ | ---------------------------------------------------------------------------------------- | -------- |
-| 2026-05-15 | ADD    | `[STORY-1.9-F1]` Lighthouse CI automatizado (diferido de Story 1.9 DP-1)                 | Pax (po) |
-| 2026-05-20 | ADD    | `[STORY-3.1-F1]` Refactor `@custom-variant dark` para eliminar `.dark` (DEV-1 Story 3.1) | Pax (po) |
+| Date       | Action | Item                                                                                                          | Author    |
+| ---------- | ------ | ------------------------------------------------------------------------------------------------------------- | --------- |
+| 2026-05-15 | ADD    | `[STORY-1.9-F1]` Lighthouse CI automatizado (diferido de Story 1.9 DP-1)                                      | Pax (po)  |
+| 2026-05-20 | ADD    | `[STORY-3.1-F1]` Refactor `@custom-variant dark` para eliminar `.dark` (DEV-1 Story 3.1)                      | Pax (po)  |
+| 2026-05-21 | ADD    | `[STORY-3.2-F1]` Refactor `scripts/check-contrast.mjs` para parser CSS automatizado (DEV-3 + DEV-5 Story 3.2) | Dex (dev) |

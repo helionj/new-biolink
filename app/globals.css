@@ -4,140 +4,155 @@
 @custom-variant dark (&:is(.dark *));
 
 /* -------------------------------------------------------------------------- */
-/* Design Tokens — vocabulário estrutural por preset.                          */
-/* Story 3.1 materializa os seletores [data-theme="light|dark|brand"].         */
-/* Paletas reais (cores finais com contraste WCAG AA) são definidas em         */
-/* Story 3.2 (3 Presets de Tema) com @ux-design-expert.                        */
-/* shadcn primitives (Story 1.5) consomem os tokens via @theme inline (L100+). */
+/* Design Tokens — paletas finais validadas WCAG AA (Story 3.2).               */
+/* Story 3.1 materializou os seletores [data-theme="light|dark|brand"];        */
+/* Story 3.2 preencheu paletas derivadas de Tailwind 4 default + brand seed    */
+/* #7C3AED do PRD §UX/Branding L127 (zero hex inventado — Constitution Art.IV).*/
+/* Validação programática: `pnpm check:contrast` (scripts/check-contrast.mjs). */
+/*   - light  : slate neutros + brand #7C3AED como --primary.                  */
+/*   - dark   : zinc neutros + brand-light #A78BFA primary (contraste OK       */
+/*              contra zinc-950).                                              */
+/*   - brand  : violet-dominant (background violet-50, primary violet-600).    */
+/* shadcn primitives (Story 1.5) consomem os tokens via @theme inline (L150+). */
 /* -------------------------------------------------------------------------- */
 
 :root,
 [data-theme='light'] {
-  /* Project placeholders (mantidos da configuração original) */
+  /* Story 3.2 — paleta final light: slate neutros + brand #7C3AED primary. */
   --background: #ffffff;
-  --foreground: #171717;
-  --primary: #0f172a;
-  --primary-foreground: #f8fafc;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --border: #e2e8f0;
-  --radius: 0.5rem;
-
-  /* Tokens adicionais necessários por shadcn primitives */
-  --card: #ffffff;
-  --card-foreground: #171717;
-  --popover: #ffffff;
-  --popover-foreground: #171717;
+  --foreground: #0f172a;
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
   --secondary: #f1f5f9;
   --secondary-foreground: #0f172a;
-  --accent: #f1f5f9;
-  --accent-foreground: #0f172a;
-  --destructive: #ef4444;
-  --destructive-foreground: #f8fafc;
+  --muted: #f1f5f9;
+  --muted-foreground: #475569;
+  --accent: #ede9fe;
+  --accent-foreground: #4c1d95;
+  --border: #e2e8f0;
   --input: #e2e8f0;
-  --ring: #94a3b8;
+  --ring: #7c3aed;
+  --radius: 0.5rem;
+
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  /* Chart scale — slate (mantida da 3.1; Epic 4 reavalia com consumidor real). */
   --chart-1: #e2e8f0;
   --chart-2: #64748b;
   --chart-3: #475569;
   --chart-4: #334155;
   --chart-5: #1e293b;
+
   --sidebar: #ffffff;
-  --sidebar-foreground: #171717;
-  --sidebar-primary: #0f172a;
-  --sidebar-primary-foreground: #f8fafc;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #7c3aed;
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #f1f5f9;
   --sidebar-accent-foreground: #0f172a;
   --sidebar-border: #e2e8f0;
-  --sidebar-ring: #94a3b8;
+  --sidebar-ring: #7c3aed;
 }
 
 /*
- * Dark preset — seletor composto reconcilia [data-theme="dark"] com a classe
- * .dark exigida pelo @custom-variant dark (L4). Story 3.1 DEV-1: manter ambos
- * os ativadores apontando para o MESMO bloco evita duplicação e drift quando
- * Story 3.2 trocar as paletas finais. Refactor futuro (eliminar .dark e
- * redefinir o @custom-variant para [data-theme="dark"]) é tech-debt explícito
- * — fora de escopo desta story por afetar todos os primitives shadcn.
+ * Story 3.2 — paleta final dark: zinc neutros (#09090b background, #27272a
+ * surfaces) + brand-light #A78BFA primary (violet-400, contraste WCAG AA
+ * contra zinc-950). Seletor composto reconcilia [data-theme="dark"] com
+ * .dark (DEV-1 da 3.1) — o @custom-variant dark (L4) alimenta o `dark:`
+ * Tailwind variant a partir da classe .dark, e primitives shadcn dependem
+ * disso. Refactor para eliminar .dark é [STORY-3.1-F1] (LOW priority).
  * Radius mantido igual ao light (theme não altera radius — design decision).
  */
 [data-theme='dark'],
 .dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
-  --primary: #f8fafc;
-  --primary-foreground: #0f172a;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --border: #334155;
+  --background: #09090b;
+  --foreground: #fafafa;
+  --primary: #a78bfa;
+  --primary-foreground: #1e1b4b;
+  --secondary: #27272a;
+  --secondary-foreground: #fafafa;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --accent: #1e1b4b;
+  --accent-foreground: #ede9fe;
+  --border: #27272a;
+  --input: #27272a;
+  --ring: #a78bfa;
   --radius: 0.5rem;
-  --card: #0a0a0a;
-  --card-foreground: #ededed;
-  --popover: #0a0a0a;
-  --popover-foreground: #ededed;
-  --secondary: #1e293b;
-  --secondary-foreground: #f8fafc;
-  --accent: #1e293b;
-  --accent-foreground: #f8fafc;
-  --destructive: #f87171;
-  --destructive-foreground: #0a0a0a;
-  --input: #334155;
-  --ring: #475569;
+
+  --card: #09090b;
+  --card-foreground: #fafafa;
+  --popover: #09090b;
+  --popover-foreground: #fafafa;
+  --destructive: #b91c1c;
+  --destructive-foreground: #fafafa;
+
+  /* Chart scale — slate ramping (mantida da 3.1). */
   --chart-1: #1e293b;
   --chart-2: #334155;
   --chart-3: #475569;
   --chart-4: #64748b;
   --chart-5: #94a3b8;
-  --sidebar: #0a0a0a;
-  --sidebar-foreground: #ededed;
-  --sidebar-primary: #f8fafc;
-  --sidebar-primary-foreground: #0f172a;
-  --sidebar-accent: #1e293b;
-  --sidebar-accent-foreground: #f8fafc;
-  --sidebar-border: #334155;
-  --sidebar-ring: #475569;
+
+  --sidebar: #09090b;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #a78bfa;
+  --sidebar-primary-foreground: #1e1b4b;
+  --sidebar-accent: #27272a;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #27272a;
+  --sidebar-ring: #a78bfa;
 }
 
 /*
- * Brand preset — paleta provisória; cores finais em Story 3.2 com
- * @ux-design-expert. Os 3 tokens custom (primary/muted/border) preservam os
- * valores herdados da v0.2 (seed roxo #6366f1); os demais tokens replicam o
- * light por enquanto para que componentes shadcn renderizem sem buracos.
- * Story 3.2 reescreverá os valores finais (seed brand #7C3AED per PRD).
+ * Story 3.2 — paleta final brand: violet-dominant. Background violet-50
+ * (#faf5ff — suave, não branco puro, para diferenciar visualmente do light);
+ * primary violet-600 #7C3AED (seed exato do PRD §UX/Branding L127);
+ * foreground violet-950 #2e1065 (contraste ≥ 12:1 contra background).
+ * Cards mantêm branco puro para destaque sutil sobre fundo lilás.
  */
 [data-theme='brand'] {
-  --background: #ffffff;
-  --foreground: #0f172a;
-  --primary: #6366f1;
-  --primary-foreground: #f8fafc;
+  --background: #faf5ff;
+  --foreground: #2e1065;
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
+  --secondary: #ede9fe;
+  --secondary-foreground: #2e1065;
   --muted: #ede9fe;
-  --muted-foreground: #64748b;
-  --border: #c7d2fe;
+  --muted-foreground: #5b21b6;
+  --accent: #ddd6fe;
+  --accent-foreground: #2e1065;
+  --border: #c4b5fd;
+  --input: #c4b5fd;
+  --ring: #7c3aed;
   --radius: 0.5rem;
+
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #2e1065;
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
-  --accent: #f1f5f9;
-  --accent-foreground: #0f172a;
-  --destructive: #ef4444;
-  --destructive-foreground: #f8fafc;
-  --input: #e2e8f0;
-  --ring: #94a3b8;
+  --popover-foreground: #2e1065;
+  --destructive: #b91c1c;
+  --destructive-foreground: #ffffff;
+
+  /* Chart scale — slate (mantida; Epic 4 reavalia paleta violet). */
   --chart-1: #e2e8f0;
   --chart-2: #64748b;
   --chart-3: #475569;
   --chart-4: #334155;
   --chart-5: #1e293b;
+
   --sidebar: #ffffff;
-  --sidebar-foreground: #0f172a;
-  --sidebar-primary: #6366f1;
-  --sidebar-primary-foreground: #f8fafc;
+  --sidebar-foreground: #2e1065;
+  --sidebar-primary: #7c3aed;
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #ede9fe;
-  --sidebar-accent-foreground: #0f172a;
-  --sidebar-border: #c7d2fe;
-  --sidebar-ring: #94a3b8;
+  --sidebar-accent-foreground: #2e1065;
+  --sidebar-border: #c4b5fd;
+  --sidebar-ring: #7c3aed;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -196,38 +211,39 @@
  */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]):not(.dark) {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --primary: #f8fafc;
-    --primary-foreground: #0f172a;
-    --muted: #1e293b;
-    --muted-foreground: #94a3b8;
-    --border: #334155;
-    --card: #0a0a0a;
-    --card-foreground: #ededed;
-    --popover: #0a0a0a;
-    --popover-foreground: #ededed;
-    --secondary: #1e293b;
-    --secondary-foreground: #f8fafc;
-    --accent: #1e293b;
-    --accent-foreground: #f8fafc;
-    --destructive: #f87171;
-    --destructive-foreground: #0a0a0a;
-    --input: #334155;
-    --ring: #475569;
+    /* Story 3.2 — mantido em sincronia com o bloco [data-theme="dark"] (L64+). */
+    --background: #09090b;
+    --foreground: #fafafa;
+    --primary: #a78bfa;
+    --primary-foreground: #1e1b4b;
+    --secondary: #27272a;
+    --secondary-foreground: #fafafa;
+    --muted: #27272a;
+    --muted-foreground: #a1a1aa;
+    --accent: #1e1b4b;
+    --accent-foreground: #ede9fe;
+    --border: #27272a;
+    --input: #27272a;
+    --ring: #a78bfa;
+    --card: #09090b;
+    --card-foreground: #fafafa;
+    --popover: #09090b;
+    --popover-foreground: #fafafa;
+    --destructive: #b91c1c;
+    --destructive-foreground: #fafafa;
     --chart-1: #1e293b;
     --chart-2: #334155;
     --chart-3: #475569;
     --chart-4: #64748b;
     --chart-5: #94a3b8;
-    --sidebar: #0a0a0a;
-    --sidebar-foreground: #ededed;
-    --sidebar-primary: #f8fafc;
-    --sidebar-primary-foreground: #0f172a;
-    --sidebar-accent: #1e293b;
-    --sidebar-accent-foreground: #f8fafc;
-    --sidebar-border: #334155;
-    --sidebar-ring: #475569;
+    --sidebar: #09090b;
+    --sidebar-foreground: #fafafa;
+    --sidebar-primary: #a78bfa;
+    --sidebar-primary-foreground: #1e1b4b;
+    --sidebar-accent: #27272a;
+    --sidebar-accent-foreground: #fafafa;
+    --sidebar-border: #27272a;
+    --sidebar-ring: #a78bfa;
   }
 }
 
