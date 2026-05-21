@@ -3,7 +3,7 @@ title: Story Backlog
 description: Follow-up tasks, technical debt e oportunidades de otimização identificadas durante stories, dev e QA
 owner: '@po (Pax)'
 created: 2026-05-15
-last_updated: 2026-05-15
+last_updated: 2026-05-20
 ---
 
 # Story Backlog
@@ -46,7 +46,23 @@ _Nenhum item._
 
 ## 🟢 LOW Priority
 
-_Nenhum item._
+#### [STORY-3.1-F1] Refactor `@custom-variant dark` para eliminar a classe `.dark`
+
+- **Source**: @sm DEV-1 da Story 3.1 + endosso PO v0.2 + QA gate PASS Story 3.1 (OBS-003) — 2026-05-20
+- **Priority**: 🟢 LOW
+- **Effort**: ~1 story de tech-debt (complexity M — toca todos os primitives shadcn)
+- **Status**: 📋 TODO
+- **Assignee**: @dev — gate @architect (decisão de design system) + @qa (regressão de primitives)
+- **Sprint**: _A definir (`*backlog-schedule`)_ — não prioritário até primitives shadcn estabilizarem (post Story 3.4)
+- **Description**: Hoje a Story 3.1 reconciliou `[data-theme="dark"]` e `.dark` via seletor composto `[data-theme="dark"], .dark { … }` em `app/globals.css:63-64`. Funciona sem drift de valores (DEV-1), mas mantém a dualidade — duas formas de ativar dark mode coexistindo. Razão pragmática: o `@custom-variant dark (&:is(.dark *))` em `app/globals.css:4` alimenta o `dark:` variant do Tailwind 4 a partir da **classe `.dark`**, e os primitives shadcn copiados em Story 1.5 (`button.tsx`, `input.tsx`, `card.tsx`, `dialog.tsx`, `dropdown-menu.tsx`, etc.) podem usar `dark:` variants internamente. Redefinir o `@custom-variant dark (&:is([data-theme="dark"] *))` elimina a classe `.dark` completamente, mas requer regressão em todos os primitives.
+- **Success Criteria**:
+  - [ ] `@custom-variant dark` redefinido para `(&:is([data-theme="dark"] *))` em `app/globals.css`
+  - [ ] Bloco `.dark` removido do seletor composto (`[data-theme="dark"], .dark` → `[data-theme="dark"]`)
+  - [ ] Regressão visual em todos os primitives shadcn em ambos os temas (light/dark) — Card, Button, Input, Dialog, DropdownMenu, Tooltip, Sheet, etc.
+  - [ ] `pnpm test` mantém baseline (zero regressão em components/integration)
+  - [ ] `pnpm build` success; `/dev/themes` continua renderizando os 3 presets
+- **Risk if not done**: LOW — dualidade `.dark` ↔ `[data-theme="dark"]` é cosmética; ambos os ativadores apontam para o mesmo bloco de tokens (zero drift). Apenas implementação fica mais elegante e reduz superfície cognitiva para novos contribuidores.
+- **Acceptance**: Primitives shadcn renderizam idênticos pré-pós refactor em ambos os temas; `.dark` removida da codebase (apenas `[data-theme="dark"]` aciona dark mode).
 
 ---
 
@@ -54,17 +70,18 @@ _Nenhum item._
 
 | Métrica                  | Valor      |
 | ------------------------ | ---------- |
-| Total de itens ativos    | 1          |
+| Total de itens ativos    | 2          |
 | 🔴 HIGH                  | 0          |
 | 🟡 MEDIUM                | 1          |
-| 🟢 LOW                   | 0          |
+| 🟢 LOW                   | 1          |
 | ✅ DONE (não arquivados) | 0          |
-| Última atualização       | 2026-05-15 |
+| Última atualização       | 2026-05-20 |
 
 ---
 
 ## 📜 Change Log
 
-| Date       | Action | Item                                                                     | Author   |
-| ---------- | ------ | ------------------------------------------------------------------------ | -------- |
-| 2026-05-15 | ADD    | `[STORY-1.9-F1]` Lighthouse CI automatizado (diferido de Story 1.9 DP-1) | Pax (po) |
+| Date       | Action | Item                                                                                     | Author   |
+| ---------- | ------ | ---------------------------------------------------------------------------------------- | -------- |
+| 2026-05-15 | ADD    | `[STORY-1.9-F1]` Lighthouse CI automatizado (diferido de Story 1.9 DP-1)                 | Pax (po) |
+| 2026-05-20 | ADD    | `[STORY-3.1-F1]` Refactor `@custom-variant dark` para eliminar `.dark` (DEV-1 Story 3.1) | Pax (po) |
