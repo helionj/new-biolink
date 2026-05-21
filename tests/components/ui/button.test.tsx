@@ -51,9 +51,14 @@ describe('<Button>', () => {
   });
 
   it('renderiza como <a> via render prop (polimorfismo base-ui)', () => {
-    render(<Button render={<a href="/x" />}>Link</Button>);
+    // URL absoluta proposital: a partir da Story 2.7 (`app/[username]/page.tsx`),
+    // o segmento dinâmico captura qualquer single-segment path, fazendo a regra
+    // `@next/next/no-html-link-for-pages` disparar para `<a href="/x">` interno.
+    // Usar URL externa preserva a intenção do teste (provar o polimorfismo do
+    // Button para `<a>`) sem trigger da regra.
+    render(<Button render={<a href="https://example.com/x" />}>Link</Button>);
     const link = screen.getByRole('link', { name: 'Link' });
-    expect(link).toHaveAttribute('href', '/x');
+    expect(link).toHaveAttribute('href', 'https://example.com/x');
     expect(link).toHaveAttribute('data-slot', 'button');
     expect(link.className).toBe(cn(buttonVariants({ variant: 'default', size: 'default' })));
   });

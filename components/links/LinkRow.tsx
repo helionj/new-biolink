@@ -1,6 +1,8 @@
 'use client';
 
-import { Pencil, Trash2 } from 'lucide-react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { ChevronDown, ChevronUp, GripVertical, Pencil, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { createElement, useState } from 'react';
 
@@ -25,8 +27,30 @@ import { deleteLink, toggleLinkVisibility, updateLink } from '@/server/links/act
 
 type Link = Tables<'links'>;
 
-export function LinkRow({ link }: { link: Link }) {
+// Props novas opcionais (default no-op) preservam compatibilidade dos testes
+// existentes que renderizam <LinkRow> isolado (sem DndContext / sem LinkList).
+interface LinkRowProps {
+  link: Link;
+  onMove?: (linkId: string, dir: 'up' | 'down') => void;
+  isFirst?: boolean;
+  isLast?: boolean;
+}
+
+export function LinkRow({ link, onMove, isFirst = false, isLast = false }: LinkRowProps) {
   const router = useRouter();
+
+  // useSortable funciona dentro de um SortableContext (LinkList) — fora dele,
+  // os hooks degradam para um no-op (sem transform/listeners ativos), o que
+  // permite o uso isolado em testes/storybook.
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: link.id,
+  });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : undefined,
+  };
 
   const [title, setTitle] = useState(link.title);
   const [url, setUrl] = useState(link.url);
@@ -109,7 +133,24 @@ export function LinkRow({ link }: { link: Link }) {
   }
 
   return (
-    <li className="flex items-center gap-3 rounded-md border border-border bg-card p-3">
+    <li
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-3 rounded-md border border-border bg-card p-3"
+    >
+      {/* AC1 — handle de drag dedicado (NÃO o <li> inteiro) p/ não interceptar
+          cliques de edit/toggle/delete. `touch-none` previne scroll-vs-drag em
+          mobile. Ícone GripVertical = glyph ⋮⋮ (lucide, sem marca). */}
+      <button
+        type="button"
+        aria-label="Reordenar link"
+        className="-ml-1 touch-none cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-50"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical aria-hidden className="size-4" />
+      </button>
+
       {createElement(getLinkIcon(link.icon), {
         'aria-hidden': true,
         className: 'size-5 shrink-0 text-muted-foreground',
@@ -184,6 +225,32 @@ export function LinkRow({ link }: { link: Link }) {
             </Button>
           </div>
         )}
+      </div>
+
+      {/* AC4 — botões ↑/↓ como alternativa explícita de teclado. Coexistem com
+          o KeyboardSensor nativo do dnd-kit (DEV-4). `disabled` nos boundaries
+          (DEV-3). `onMove` é opcional; isolated render sem LinkList → no-op. */}
+      <div className="flex items-center">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          aria-label="Mover para cima"
+          disabled={isFirst || !onMove}
+          onClick={() => onMove?.(link.id, 'up')}
+        >
+          <ChevronUp className="size-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          aria-label="Mover para baixo"
+          disabled={isLast || !onMove}
+          onClick={() => onMove?.(link.id, 'down')}
+        >
+          <ChevronDown className="size-4" />
+        </Button>
       </div>
 
       <Switch

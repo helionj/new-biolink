@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CreateLinkInput,
   DeleteLinkInput,
+  ReorderLinksInput,
   ToggleLinkVisibilityInput,
   UpdateLinkInput,
 } from '@/lib/validators/link';
@@ -136,5 +137,50 @@ describe('ToggleLinkVisibilityInput', () => {
     expect(ToggleLinkVisibilityInput.safeParse({ id: VALID_UUID, is_visible: 'yes' }).success).toBe(
       false,
     );
+  });
+});
+
+describe('ReorderLinksInput', () => {
+  // 5 UUIDs v4 reais (RFC 9562 — versão `4` no 13º char + variant `8/9/a/b` no 17º).
+  // Espelham o que `gen_random_uuid()` gera em runtime para `links.id`.
+  const UUIDS_V4 = [
+    'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
+    'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e',
+    'c3d4e5f6-a7b8-4c9d-8e1f-2a3b4c5d6e7f',
+    'd4e5f6a7-b8c9-4d8e-9f2a-3b4c5d6e7f80',
+    'e5f6a7b8-c9d0-4e9f-8a3b-4c5d6e7f8091',
+  ];
+
+  it('aceita array de 5 uuids v4 válidos', () => {
+    const r = ReorderLinksInput.safeParse({ orderedIds: UUIDS_V4 });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.orderedIds).toHaveLength(5);
+  });
+
+  it('aceita array com 1 uuid (mínimo)', () => {
+    expect(ReorderLinksInput.safeParse({ orderedIds: [UUIDS_V4[0]] }).success).toBe(true);
+  });
+
+  it('rejeita array vazio com mensagem "Lista vazia"', () => {
+    const r = ReorderLinksInput.safeParse({ orderedIds: [] });
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      const issue = r.error.issues.find((i) => i.path.join('.') === 'orderedIds');
+      expect(issue?.message).toBe('Lista vazia');
+    }
+  });
+
+  it('rejeita array contendo não-uuid', () => {
+    const r = ReorderLinksInput.safeParse({ orderedIds: [UUIDS_V4[0], 'not-a-uuid'] });
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      const issue = r.error.issues.find((i) => i.path.join('.') === 'orderedIds.1');
+      expect(issue?.message).toBe('Identificador inválido');
+    }
+  });
+
+  it('rejeita orderedIds ausente ou não-array', () => {
+    expect(ReorderLinksInput.safeParse({}).success).toBe(false);
+    expect(ReorderLinksInput.safeParse({ orderedIds: 'abc' }).success).toBe(false);
   });
 });

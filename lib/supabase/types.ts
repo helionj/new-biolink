@@ -122,7 +122,7 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      reorder_links: { Args: { p_ordered_ids: string[] }; Returns: undefined };
     };
     Enums: {
       theme_preset: 'light' | 'dark' | 'brand';

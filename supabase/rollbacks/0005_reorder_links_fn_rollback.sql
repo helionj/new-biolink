@@ -1,0 +1,34 @@
+-- =============================================================================
+-- Rollback: 0005_reorder_links_fn_rollback.sql
+-- Companion to: supabase/migrations/0005_reorder_links_fn.sql
+-- Story:        2.6
+-- Author:       @dev (Dex)
+-- Date:         2026-05-19
+--
+-- Purpose:      Reverter completamente migration 0005_reorder_links_fn.sql.
+--               Apenas dropa a função reorder_links(uuid[]).
+--
+-- Pre-condition: ALWAYS snapshot before running this in prod.
+--                Sem dados perdidos — função é puramente computacional, mas
+--                após o drop a Server Action `reorderLinks` de Story 2.6
+--                deixará de funcionar.
+--
+-- Ordem de execução: este rollback é independente — pode rodar a qualquer
+--                    momento. Drop só é dependente da existência da função.
+--
+-- Idempotência: DROP usa IF EXISTS — safe para re-run.
+--
+-- NOT rolled back: A constraint `uniq_links_page_position DEFERRABLE` e a
+--                  tabela `links` pertencem a 0004 — fora de escopo. O
+--                  rollback de 0005 toca SOMENTE a função adicionada por
+--                  esta migration. Quem deseja remover a constraint deve
+--                  rodar 0004_links_rollback.sql adicionalmente.
+-- =============================================================================
+
+DROP FUNCTION IF EXISTS reorder_links(uuid[]);
+
+-- =============================================================================
+-- End of rollback 0005_reorder_links_fn_rollback.sql
+-- Verify post-rollback: SELECT proname FROM pg_proc WHERE proname = 'reorder_links';
+--                       → 0 rows
+-- =============================================================================
