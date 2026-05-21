@@ -58,3 +58,12 @@ export const ToggleLinkVisibilityInput = z.object({
 });
 
 export type ToggleLinkVisibilityInput = z.infer<typeof ToggleLinkVisibilityInput>;
+
+// Story 2.6 — reorder por drag-and-drop. orderedIds é a nova ordem completa
+// dos links da page (1..N). Reusa `linkId` (validação RFC 9562 v4 — links.id
+// é sempre gen_random_uuid).
+export const ReorderLinksInput = z.object({
+  orderedIds: z.array(linkId).min(1, 'Lista vazia'),
+});
+
+export type ReorderLinksInput = z.infer<typeof ReorderLinksInput>;
