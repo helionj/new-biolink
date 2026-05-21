@@ -1,0 +1,202 @@
+schema: 1
+story: '3.2'
+gate: PASS
+status_reason: >-
+  Todos os 5 ACs cumpridos no working tree auditado. Story end-to-end de aplicação
+  (CSS palettes + wrapper Server Component + script WCAG + snapshots) — zero DDL,
+  RLS, Server Actions ou queries Supabase novos. app/globals.css agora tem 3 paletas
+  finais derivadas verbatim de Tailwind 4 default (slate/zinc/violet) + brand seed
+  #7C3AED do PRD L127 (Constitution Art. IV — zero hex inventado);
+  components/public/PublicPage.tsx envolve <main> em <div data-theme={page.theme}
+  className={cn('min-h-screen bg-background text-foreground', page.theme==='dark' &&
+  'dark')}> resolvendo o deferimento DEV-3 da 3.1; scripts/check-contrast.mjs entrega
+  9 pares × 3 temas = 27 checks WCAG AA com algoritmo W3C 2.1 (luminância relativa
+  sRGB-linearizada) — 27/27 PASS confirmado em re-execução @qa independente;
+  tests/components/features/public/PublicPage.test.tsx valida wrapper data-theme +
+  classe .dark condicional (DEV-1 da 3.1) com 3 snapshots HTML-only (DEV-4: jsdom 29
+  + Tailwind 4 @theme inline não resolve CSS vars de stylesheets externas). DEV-5
+  (decisão autônoma @dev) substituiu par background↔border por background↔ring no
+  script — WCAG 1.4.11 aplica-se a focus indicators (ring), não bordas decorativas
+  de cards (identificados por conteúdo + hover) — método refinado, paleta preservada;
+  --destructive dark ajustado #ef4444 → #b91c1c (Tailwind red-700 default, alinhado
+  com brand preset). 3 elicitações DEV-1/DEV-2/DEV-3 endossadas verbatim pelo gate
+  @po v0.2 (GO 9.5/10) — não re-litigadas. quality_gate_tools re-executados
+  INDEPENDENTEMENTE pelo @qa: typecheck exit 0; lint exit 0; build success com
+  /dev/themes ○ Static preservado e zero regressão de prerender; pnpm check:contrast
+  27/27 PASS (output anexado); pnpm test (full run macOS Vitest 4 fork pool) sofreu
+  flake conhecido — re-execução isolada dos 3 arquivos relevantes
+  (PublicPage.test.tsx novo + LinkRow.test.tsx + UsernameForm.test.tsx) resultou em
+  19/19 files / 118/118 tests PASS, comprovando que a Story 3.2 não introduziu
+  regressão. Backlog atualizado com [STORY-3.2-F1] LOW (refactor parser CSS para
+  eliminar duplicação manual globals.css↔script). Aviso pré-existente "middleware
+  file convention is deprecated" herdado de Next 16.2.5 — fora do escopo.
+reviewer: 'Manual gate per QA-001 (CodeRabbit self-healing loop indisponível em macOS sem WSL/CodeRabbit CLI — docs/qa/known-issues.md). @qa Quinn auditou o working tree (novos: scripts/check-contrast.mjs, tests/components/features/public/PublicPage.test.tsx, tests/components/features/public/__snapshots__/PublicPage.test.tsx.snap; modificados: app/globals.css, components/public/PublicPage.tsx, app/dev/themes/page.tsx, package.json, docs/STORY-BACKLOG.md) + matriz de rastreabilidade AC↔teste Given-When-Then + re-execução INDEPENDENTE dos quality_gate_tools (pnpm typecheck exit 0; pnpm lint exit 0; pnpm build success com /dev/themes ○ Static; pnpm check:contrast 27/27 PASS WCAG AA; pnpm test full-run sofreu flake conhecido — re-execução isolada 19/19 files / 118/118 tests PASS confirma zero regressão). Decisões DEV-1..DEV-5 honradas verbatim. Sem PR/CI nesta fase — push + PR + CI são downstream de @devops (exclusivo @github-devops, agent-authority.md).'
+updated: '2026-05-21T11:25:00Z'
+
+review_method: manual
+review_note: >-
+  Gate manual aplicado via workaround QA-001 (docs/qa/known-issues.md) —
+  ambiente macOS sem WSL/CodeRabbit; Seção 0 (CodeRabbit Self-Healing Loop) da
+  task qa-review-story.md travaria. Story end-to-end CSS/RSC + Node CLI sem
+  DDL, sem RLS, sem Server Actions, sem Supabase queries novas —
+  quality_gate owner é @qa (per Executor Assignment + gate @po v0.2 GO 9.5/10
+  — não re-litigado; precedente sancionado e Done de 2.1/2.3/2.4/2.5/2.6/2.7/3.1).
+  Revisão dos 7 quality checks lendo o código real (working tree pendente de
+  commit) + AC traceability + re-execução INDEPENDENTE dos gates locais
+  (typecheck/lint/build exit 0; check:contrast 27/27 PASS; pnpm test full-run
+  bateu flake conhecido — re-execução isolada dos 3 arquivos relevantes
+  confirmou zero regressão de 3.2). Decisões DEV-1/DEV-2/DEV-3 já validadas
+  pelo gate @po v0.2; DEV-4 (snapshot HTML-only) + DEV-5 (background↔ring +
+  destructive dark) re-validadas pelo @qa nesta sessão (ver Decision Review
+  abaixo). Convenção 2.3+: decisões endossadas em validation não são
+  re-litigadas no QA gate.
+
+ac_traceability:
+  - ac: 'AC1: Paletas definidas para os 3 temas (cores primária, secundária, fundo, texto, accent).'
+    given: 'Working tree app/globals.css com 3 blocos [data-theme="..."] preenchidos com 27 tokens cada (light slate+brand; dark zinc+brand-light; brand violet-dominant) + @media fallback sincronizado com bloco dark.'
+    when: 'Inspeção manual do source (app/globals.css L19-156, fallback L212-248) confronta com decisões inline e PRD §UX/Branding L127.'
+    then: 'PASS — light L19-59 (slate-* neutros + #7c3aed primary); dark L70-109 (zinc-* neutros + #a78bfa primary derivado); brand L118-156 (violet-* dominant + #7c3aed primary). Todos os hex são de Tailwind 4 default (slate-*/zinc-*/violet-*/red-*) ou do PRD seed — Constitution Art. IV preservado verbatim. Header comment-block L6-17 documenta a tabela de uso por preset.'
+    verdict: PASS
+    coverage: 'Inspeção manual + scripts/check-contrast.mjs L31-92 (PALETTES literal espelhando globals.css) + showcase /dev/themes L72-126 (renderização visual das 3 paletas). Sentinela cross-source: 3 fontes da mesma paleta (CSS + script + showcase render) — qualquer drift detectável manualmente.'
+    notes: 'Tokens chart-* mantidos da escala slate da 3.1 em todos os presets (Epic 4 reavalia quando houver consumidor real — IDS REUSE de baseline 3.1).'
+
+  - ac: 'AC2: Tema selecionado aplicado consistentemente: dashboard + página pública + componentes interativos.'
+    given: 'Interpretação semântica endossada pelo @po em validation (gate v0.2 / DEV-1): dashboard mantém light default nesta story; aplicação user-specific fica para 3.3 (não há profiles.theme; introduzir DDL violaria Art. IV sem doc-fonte). Página pública aplica page.theme via wrapper Server Component; primitives shadcn consomem tokens via @theme inline (cross-surface automático).'
+    when: 'components/public/PublicPage.tsx L36-42 envolve <main> em <div data-theme={page.theme} className={cn("min-h-screen bg-background text-foreground", page.theme==="dark" && "dark")}> — wrapper aninhado vence cascade por proximidade. Build success (rota /[username] ƒ Dynamic) confirma SSR funcional; snapshots HTML capturam wrapper top-level corretamente.'
+    then: 'PASS — (i) página pública aplica data.page.theme (3 valores possíveis) via wrapper; (ii) classe .dark condicional alimenta @custom-variant dark (&:is(.dark *)) em globals.css L4 — defesa em profundidade para primitives shadcn (verificado: grep "dark:" components/public/PublicLinkCard.tsx zero matches — primitive usa apenas utilities token-based bg-card/text-card-foreground/border-border); (iii) dashboard herda light do <html data-theme={DEFAULT_THEME}> (app/layout.tsx — Story 3.1 Task 3); (iv) componentes interativos shadcn (PublicLinkCard L55-78 do snapshot) renderizam idênticos nos 3 snapshots — apenas wrapper top-level diverge.'
+    verdict: PASS
+    coverage: 'tests/components/features/public/PublicPage.test.tsx L47-62 (it.each(THEMES) com 3 snapshots + assertions: data-theme correto + .dark class condicional). Snapshot diff entre os 3 temas é EXCLUSIVAMENTE no atributo data-theme do wrapper e na classe .dark (theme==="dark") — confirma DEV-4 (mesmo DOM, theme via cascade de CSS vars). PublicLinkCard interior idêntico nos 3 snapshots (linhas 53-87 do brand snap, 144-178 do dark, 235-269 do light).'
+    notes: 'DEV-1 honrado verbatim: dashboard NÃO toca user theme (escopo Story 3.3 com UI de seleção + Server Action updateTheme). Interpretação de "consistentemente" como vocabulário de tokens cross-theme uniforme — endossado @po em validation. Alternativa rejeitada (introduzir profiles.theme nesta story) corretamente NÃO executada — antecipava complexidade sem ganho de UX.'
+
+  - ac: 'AC3: Tema "brand" usa a brand color seed (#7C3AED ou definido por @ux-design-expert).'
+    given: 'PRD §UX/Branding L127 fixou #7C3AED como seed; @ux-design-expert opcional per AC3 — não convocado nesta sprint (DEV-2 endossado @po em validation).'
+    when: 'Inspeção manual: globals.css L121 (--primary: #7c3aed no [data-theme="brand"]) + L24 (light) + L155 (sidebar brand) + scripts/check-contrast.mjs L37,75 (PALETTES.brand.primary === "#7c3aed" e PALETTES.light.primary === "#7c3aed").'
+    then: 'PASS — #7c3aed (violet-600 Tailwind default) presente como --primary em LIGHT e BRAND presets; em DARK aparece como #a78bfa (violet-400 derivado algoritmicamente para garantir contraste contra zinc-950 — DEV documentou no story L57). --primary-foreground = #ffffff em LIGHT/BRAND (par 5.70:1 ≥ 4.5 WCAG AA confirmado). Sidebar tokens (--sidebar-primary, --sidebar-ring) também usam #7c3aed em LIGHT/BRAND (consistência cross-surface).'
+    verdict: PASS
+    coverage: 'Inspeção manual da paleta + check:contrast 27/27 PASS (light/brand primary↔primary-foreground 5.70:1 ≥ 4.5; dark primary↔primary-foreground 5.87:1 com violet-400 derivado). Constitutional Art. IV satisfeito: #7c3aed do PRD L127, demais hex de Tailwind 4 violet-* default — zero hex inventado.'
+    notes: 'DEV-2 honrado: brand color adotado do PRD seed sem convocar @ux-design-expert. Alternativa rejeitada (paleta brand definitiva via @ux-design-expert) corretamente NÃO executada — endossado @po; abrir story dedicada se identidade visual completa for priorizada no futuro (não-bloqueante para MVP per docs/architecture.md "Open Questions").'
+
+  - ac: 'AC4: Verificação WCAG AA de contraste em cada tema (script de check em CI ou manual).'
+    given: 'scripts/check-contrast.mjs (Node ESM, zero dep externa) implementa algoritmo W3C WCAG 2.1 (relative luminance + sRGB-linear + contrast ratio (L1+0.05)/(L2+0.05)). 9 pares × 3 temas = 27 checks. Threshold 4.5:1 para texto normal; 3.0:1 para background↔ring (focus indicator — WCAG 1.4.11 Non-text Contrast + 2.4.7 Focus Visible).'
+    when: '@qa rodou `pnpm check:contrast` em re-execução INDEPENDENTE.'
+    then: 'PASS — SUMMARY: 27/27 pairs PASS (WCAG AA). Ratios reproduzidos identicamente aos do Dev Agent Record. Light: bg↔fg 17.85, primary↔pf 5.70, muted↔mf 6.92, destructive↔df 4.83, bg↔ring 5.70. Dark: bg↔fg 19.06, primary↔pf 5.87, muted↔mf 5.81, destructive↔df 6.20, bg↔ring 7.31. Brand: bg↔fg 14.20, primary↔pf 5.70, muted↔mf 7.57, destructive↔df 6.47, bg↔ring 5.31. Todos os pares ≥ threshold respectivo.'
+    verdict: PASS
+    coverage: 'pnpm check:contrast (27 checks executados em re-execução @qa independente; output completo anexado abaixo em "Independent Gate Re-run"). Script é hermético (zero dep externa, algoritmo W3C 2.1 fórmula padrão).'
+    notes: 'DEV-3 honrado: script manual entregue nesta story; integração CI (gate bloqueador em PRs) consolidada em Story 3.5 com Lighthouse CI. AC4 admite literalmente "CI ou manual" — interpretação correta. DEV-5 (par background↔border → background↔ring): re-validado pelo @qa — WCAG 1.4.11 aplica-se a "componentes UI grandes" funcionais (focus ring é exigido por 2.4.7, exemplos canônicos); bordas decorativas de cards NÃO se qualificam ("componentes UI grandes" do PRD L114 são funcionais — inputs, focus, controles — não bordas estéticas). Refinamento de método válido; paleta em globals.css preservada (shadcn convention slate-200/zinc-800/violet-300 borders mantidas). Tech-debt aceito: duplicação manual paleta↔script (Comment header explícito "MANTER EM SINCRONIA" + entrada backlog [STORY-3.2-F1] LOW priority).'
+
+  - ac: 'AC5: Page snapshot tests cobrem renderização em cada tema.'
+    given: 'tests/components/features/public/PublicPage.test.tsx (62 LOC) usa it.each(THEMES) gerando 3 snapshot cases (light/dark/brand) + assertions adicionais de defesa em profundidade (data-theme correto + .dark class condicional). 3 snapshots gerados em __snapshots__/PublicPage.test.tsx.snap. DEV-4 (snapshot HTML-only) justificado: jsdom 29 + Tailwind 4 @theme inline não resolve CSS vars de stylesheets externas confiavelmente (Story 3.1 DEV-1).'
+    when: '@qa re-executou em isolamento: `pnpm test:components -- tests/components/features/public/PublicPage.test.tsx tests/components/features/links/LinkRow.test.tsx tests/components/features/profile/UsernameForm.test.tsx` resultou em 19/19 files / 118/118 tests PASS — confirma que os 3 cases novos (light/dark/brand) passam consistentemente sem regressão nos vizinhos.'
+    then: 'PASS — 3 snapshots HTML-only capturam: (i) wrapper top-level <div data-theme="light|dark|brand" className="min-h-screen bg-background text-foreground [dark|]">; (ii) <main> + <h1>/<p>/<ul> intermediários idênticos nos 3; (iii) <PublicLinkCard> interior idêntico nos 3 (li>a>svg+span). Diff entre os 3 snaps é EXCLUSIVAMENTE no atributo data-theme do wrapper e na classe dark (theme==="dark"). Assertion adicional toHaveAttribute("data-theme", theme) previne regressão silenciosa de snapshot update sem wrapper. Assertion className match/notMatch /\\bdark\\b/ valida classe condicional.'
+    verdict: PASS
+    coverage: 'tests/components/features/public/PublicPage.test.tsx 3 cases × (1 snapshot + 1 attribute assertion + 1 class assertion) = 9 assertions total. Re-execução isolada @qa: 118/118 tests PASS (componentes project completo). Snapshot file inspecionado manualmente — diff entre temas confirmado conforme esperado.'
+    notes: 'DEV-4 honrado: snapshot HTML-only é estratégia documentada e endossada (Story 3.1 DEV-1 + 3.2 DEV-4). Validação visual real fica para `pnpm check:contrast` (programática, AC4) + `/dev/themes` showcase (manual, suporte AC1) + smoke `pnpm dev` (browser real, opcional para QA). Sem regressão em outros snapshots (PublicLinkCard.test.tsx.snap pré-existente intacto — re-execução isolada confirmou).'
+
+independent_gate_rerun:
+  typecheck:
+    command: 'pnpm typecheck'
+    result: 'exit 0'
+    notes: 'tsc --noEmit clean.'
+  lint:
+    command: 'pnpm lint'
+    result: 'exit 0'
+    notes: 'eslint clean. scripts/check-contrast.mjs usa console.log mas está fora do glob de lint do app (pasta scripts/) — sem warnings.'
+  build:
+    command: 'pnpm build'
+    result: 'exit 0'
+    notes: 'Next 16.2.5 build success. Rotas estáticas (○): /_not-found, /dev/themes, /login, /signup. Rotas dinâmicas (ƒ): /, /[username], /auth/callback, /dashboard, /dashboard/profile, /reset-password, /reset-password/confirm. /dev/themes permanece ○ Static — zero regressão de prerender da 3.1. Aviso "middleware file convention is deprecated. Please use proxy instead" herdado de Next 16.2.5 — fora do escopo desta story; não é dívida nova.'
+  check_contrast:
+    command: 'pnpm check:contrast'
+    result: '27/27 pairs PASS (WCAG AA)'
+    output: |
+      Theme: light
+        background  ↔ foreground            : 17.85 ≥ 4.5  PASS
+        primary     ↔ primary-foreground    :  5.70 ≥ 4.5  PASS
+        muted       ↔ muted-foreground      :  6.92 ≥ 4.5  PASS
+        card        ↔ card-foreground       : 17.85 ≥ 4.5  PASS
+        popover     ↔ popover-foreground    : 17.85 ≥ 4.5  PASS
+        secondary   ↔ secondary-foreground  : 16.30 ≥ 4.5  PASS
+        accent      ↔ accent-foreground     :  9.23 ≥ 4.5  PASS
+        destructive ↔ destructive-foreground:  4.83 ≥ 4.5  PASS
+        background  ↔ ring                  :  5.70 ≥ 3.0  PASS
+
+      Theme: dark
+        background  ↔ foreground            : 19.06 ≥ 4.5  PASS
+        primary     ↔ primary-foreground    :  5.87 ≥ 4.5  PASS
+        muted       ↔ muted-foreground      :  5.81 ≥ 4.5  PASS
+        card        ↔ card-foreground       : 19.06 ≥ 4.5  PASS
+        popover     ↔ popover-foreground    : 19.06 ≥ 4.5  PASS
+        secondary   ↔ secondary-foreground  : 14.27 ≥ 4.5  PASS
+        accent      ↔ accent-foreground     : 13.47 ≥ 4.5  PASS
+        destructive ↔ destructive-foreground:  6.20 ≥ 4.5  PASS
+        background  ↔ ring                  :  7.31 ≥ 3.0  PASS
+
+      Theme: brand
+        background  ↔ foreground            : 14.20 ≥ 4.5  PASS
+        primary     ↔ primary-foreground    :  5.70 ≥ 4.5  PASS
+        muted       ↔ muted-foreground      :  7.57 ≥ 4.5  PASS
+        card        ↔ card-foreground       : 15.24 ≥ 4.5  PASS
+        popover     ↔ popover-foreground    : 15.24 ≥ 4.5  PASS
+        secondary   ↔ secondary-foreground  : 12.83 ≥ 4.5  PASS
+        accent      ↔ accent-foreground     : 10.97 ≥ 4.5  PASS
+        destructive ↔ destructive-foreground:  6.47 ≥ 4.5  PASS
+        background  ↔ ring                  :  5.31 ≥ 3.0  PASS
+
+      SUMMARY: 27/27 pairs PASS (WCAG AA)
+  test_full_run:
+    command: 'pnpm test'
+    result: '2 files failed | 30 passed (32) ; Tests 4 failed | 265 passed (269)'
+    notes: |
+      Flake conhecido do Vitest 4 macOS fork pool: (a) tests/components/features/profile/UsernameForm.test.tsx falhou no startup do worker pool ("[vitest-pool]: Failed to start forks worker" + "Timeout waiting for worker to respond"); (b) tests/components/features/links/LinkRow.test.tsx > "erro no delete faz toast.error" timed out em 15000ms. Ambos os arquivos são de stories anteriores (2.1 e 2.5) — NÃO tocados pela Story 3.2. Mitigação atual: fileParallelism: false em vitest.config.ts. Re-execução isolada (test_components_rerun abaixo) confirmou zero regressão.
+  test_components_rerun:
+    command: 'pnpm test:components -- tests/components/features/public/PublicPage.test.tsx tests/components/features/links/LinkRow.test.tsx tests/components/features/profile/UsernameForm.test.tsx'
+    result: 'Test Files 19 passed (19) ; Tests 118 passed (118)'
+    notes: 'Re-execução do components project isolando os 3 arquivos relevantes (PublicPage.test.tsx novo desta story + LinkRow.test.tsx + UsernameForm.test.tsx que falharam no full-run). 100% PASS — confirma que (i) os 3 snapshots novos da Story 3.2 passam consistentemente; (ii) LinkRow e UsernameForm falharam no full-run por flake de fork pool macOS, não por regressão da Story 3.2 (nenhum dos dois arquivos é tocado pelas mudanças desta story — Story 3.2 mexe em app/globals.css, components/public/PublicPage.tsx, app/dev/themes/page.tsx, package.json, scripts/check-contrast.mjs, tests/components/features/public/PublicPage.test.tsx, docs/STORY-BACKLOG.md).'
+
+decisions_review:
+  - decision: 'DEV-1: Dashboard mantém light default — aplicação user-specific deferida para Story 3.3'
+    source: '@sm draft v0.1'
+    validated_by: '@po gate v0.2 (GO 9.5/10)'
+    qa_verdict: ENDORSED
+    qa_note: 'Não re-litigado (convenção 2.3+). Interpretação semântica de AC2 ("consistentemente" = vocabulário cross-theme uniforme, não mecanismo de seleção por surface) é arquiteturalmente sólida. Schema atual não tem profiles.theme; introduzir DDL nesta story violaria Constitution Art. IV sem doc-fonte e antecipa Story 3.3 sem a UI de seleção. AC2 satisfeito pela combinação: (i) wrapper em PublicPage aplica page.theme; (ii) primitives shadcn cross-surface via @theme inline; (iii) /dev/themes showcase prova visualmente os 3 temas em qualquer surface.'
+  - decision: 'DEV-2: Brand color #7C3AED adotado do PRD seed sem convocar @ux-design-expert'
+    source: '@sm draft v0.1'
+    validated_by: '@po gate v0.2'
+    qa_verdict: ENDORSED
+    qa_note: 'Não re-litigado. AC3 admite literalmente "#7C3AED ou definido por @ux-design-expert" — escolha do seed é válida e Constitutional (PRD L127 doc-fonte explícito). Tons derivados (violet-50/100/200/300/600/800/950) são Tailwind 4 default — zero hex inventado. Abrir story dedicada se identidade visual completa (tipografia, logo, voice) for priorizada no futuro; documentado em docs/architecture.md "Open Questions".'
+  - decision: 'DEV-3: Gate manual pnpm check:contrast nesta story; CI gate consolidado em Story 3.5'
+    source: '@sm draft v0.1'
+    validated_by: '@po gate v0.2'
+    qa_verdict: ENDORSED
+    qa_note: 'Não re-litigado. AC4 admite literalmente "CI ou manual". Script funcional + idempotente — promoção para CI é refactor simples (chamar em workflow .yml). Consolidar com Lighthouse CI em Story 3.5 ([STORY-1.9-F1] também candidato) faz sentido arquitetural — evita workflow CI dedicado para um único gate.'
+  - decision: 'DEV-4: Snapshot HTML-only (sem CSS computed)'
+    source: '@sm draft v0.1'
+    validated_by: '@po gate v0.2'
+    qa_verdict: ENDORSED
+    qa_note: 'Não re-litigado. jsdom 29 + Tailwind 4 @theme inline não resolve CSS vars de stylesheets externas confiavelmente (precedente Story 3.1 DEV-1 dev test strategy). Snapshot HTML-only + assertion adicional de atributo data-theme + classe .dark é estratégia defensiva sólida — pega regressão silenciosa de snapshot update sem wrapper. Validação visual real coberta por (i) pnpm check:contrast programático e (ii) /dev/themes showcase manual.'
+  - decision: 'DEV-5: Par background↔border substituído por background↔ring no script; --destructive dark #ef4444 → #b91c1c'
+    source: '@dev YOLO execution v0.3 (autonomous, complementa DEV-1..DEV-4)'
+    validated_by: '@dev decision-log no Completion Notes da story'
+    qa_verdict: ENDORSED
+    qa_note: 'Re-validado pelo @qa. (i) background↔ring: WCAG 1.4.11 Non-text Contrast aplica-se a "componentes UI grandes" funcionais (focus ring, inputs, controles) — exigido por WCAG 2.4.7 Focus Visible. Bordas decorativas de cards são identificadas por conteúdo + hover + position, não pela borda — não se qualificam como "componente UI grande" do PRD L114. Refinamento de método válido; paleta em globals.css preservada (shadcn convention slate-200/zinc-800/violet-300 borders mantidas). (ii) --destructive dark #b91c1c (red-700 Tailwind default): substituição justificada — #ef4444 (red-500) contra #fafafa foreground falha AA em dark (3.61 < 4.5). red-700 atinge 6.20:1 ≥ 4.5; consistente com brand preset (que já usa #b91c1c). Constitutional Art. IV preservado.'
+
+top_issues:
+  - id: 'TEST-001'
+    severity: low
+    finding: 'Flake conhecido do Vitest 4 macOS fork pool — UsernameForm.test.tsx falha startup do worker pool e LinkRow.test.tsx > "erro no delete" timed out em 15s, no full-run pnpm test. Re-execução isolada (test_components_rerun acima) resulta em 19/19 files / 118/118 tests PASS — flake não-determinístico.'
+    suggested_action: 'Não bloqueia esta story (ambos arquivos são de Stories 2.1/2.5, fora do escopo de 3.2). Considerar abrir item de backlog separado para investigar root cause do flake macOS Vitest 4 + jsdom 29 fork pool (mitigação atual fileParallelism: false já aplicada — flake reproduz mesmo assim). Workaround imediato: re-rodar a suite quando flake aparecer.'
+  - id: 'DOC-001'
+    severity: low
+    finding: 'Tech-debt: scripts/check-contrast.mjs#PALETTES duplica manualmente os hex de app/globals.css. Mitigação atual: comentário "MANTER EM SINCRONIA" no header do script + entrada [STORY-3.2-F1] em docs/STORY-BACKLOG.md (LOW priority).'
+    suggested_action: 'Endereçar em [STORY-3.2-F1] (refactor parser CSS automatizado). Detectável manualmente em code review (diff de PR mostra ambos os arquivos). Não-bloqueante.'
+
+waiver: { active: false }
+
+handoff:
+  next_agent: '@devops'
+  next_command: '*push'
+  condition: 'PASS verdict; commit + push + PR via @github-devops exclusivo (agent-authority.md). Push deve consolidar 8 file changes (3 criados: scripts/check-contrast.mjs, tests/components/features/public/PublicPage.test.tsx, tests/components/features/public/__snapshots__/PublicPage.test.tsx.snap; 5 modificados: app/globals.css, components/public/PublicPage.tsx, app/dev/themes/page.tsx, package.json, docs/STORY-BACKLOG.md).'
+  alternatives:
+    - agent: '@dev'
+      command: '*apply-qa-fixes'
+      condition: 'N/A — gate PASS, sem fixes pendentes.'
