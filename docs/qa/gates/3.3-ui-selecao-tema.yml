@@ -1,0 +1,179 @@
+schema: 1
+story: '3.3'
+gate: PASS
+status_reason: >-
+  Todos os 4 ACs cumpridos no working tree auditado. Story end-to-end de aplicação
+  (Server Action `updateTheme` + page Server Component + ThemeSelector client com
+  optimistic UI + ThemePreview presentational) — zero DDL, RLS, migration ou novo
+  índice (Constitution Art. IV — IDS REUSE de Story 2.2 `pages.theme` + RLS
+  `pages_update_own`, Story 3.1 `lib/theme.ts`, Story 3.2 wrapper `data-theme`,
+  Story 1.8 `@/lib/toast` facade, Story 2.6 padrão `useState`+`useTransition`).
+  server/page/actions.ts:46-88 implementa updateTheme com Zod boundary, auth guard
+  defense-in-depth, single-query UPDATE filtrado por profile_id (RLS isolation +
+  defense in depth), error masking via GENERIC_ERROR e revalidateUserSurface como
+  único caminho de cache (Coding Standards §revalidate). lib/validators/page.ts:10
+  reusa THEMES de @/lib/theme — sem duplicar literal `['light','dark','brand']`
+  (Art. IV verbatim). app/dashboard/theme/page.tsx:21-28 paraleliza profile+page
+  via Promise.all e fetcha top-3 links visíveis para o preview. components/theme/
+  ThemePreview.tsx:38-44 reproduz wrapper verbatim de PublicPage.tsx (`<div
+  data-theme={theme}` + `.dark` condicional) com `aria-hidden="true"` e
+  `next/image` width/height fixos (zero CLS). components/theme/ThemeSelector.tsx:
+  45-60 implementa optimistic UI + rollback + `useTransition` verbatim
+  precedente LinkList.tsx:48-62 (Story 2.6 PASS); a11y completa via
+  `role="radiogroup"`/`aria-label`/`role="radio"`/`aria-checked`/disabled durante
+  transição/`focus-visible:ring-2`. Decisões DEV-1..DEV-5 (PO gate v0.2 GO 10/10
+  HIGH confidence) honradas verbatim — não re-litigadas. quality_gate_tools
+  re-executados INDEPENDENTEMENTE pelo @qa: typecheck exit 0; lint exit 0; build
+  Next 16.2.5 success com /dashboard/theme listada como `ƒ (Dynamic)` (RSC com
+  auth.getUser não-prerenderable, igual /dashboard/profile); pnpm test 285/285
+  PASS em 35/35 files (delta +11 testes em +2 arquivos vs baseline 3.2 274/274 em
+  33 files, exatamente como projetado); pnpm check:contrast 27/27 PASS WCAG AA
+  (sanity — paleta inalterada). Sem flake nesta sessão (vs 3.2 que sofreu fork
+  pool macOS flake) — fileParallelism:false continuou suficiente. Aviso
+  pré-existente "middleware file convention is deprecated" herdado de Next
+  16.2.5 — fora do escopo (middleware.ts intocado per File List da story).
+reviewer: 'Manual gate per QA-001 (CodeRabbit self-healing loop indisponível em macOS sem WSL/CodeRabbit CLI — docs/qa/known-issues.md). @qa Quinn auditou o working tree (criados: server/page/actions.ts, lib/validators/page.ts, app/dashboard/theme/page.tsx, components/theme/ThemePreview.tsx, components/theme/ThemeSelector.tsx, tests/components/features/theme/ThemeSelector.test.tsx, tests/integration/server-actions/theme.test.ts; modificados: docs/stories/3.3.ui-selecao-tema.story.md + docs/STORY-BACKLOG.md tocado para Story 3.2) + matriz de rastreabilidade AC↔teste Given-When-Then + re-execução INDEPENDENTE dos quality_gate_tools (pnpm typecheck exit 0; pnpm lint exit 0; pnpm build success com /dashboard/theme ƒ Dynamic e zero regressão de prerender; pnpm check:contrast 27/27 PASS WCAG AA; pnpm test 285/285 tests PASS em 35/35 files — full run sem flake). Decisões DEV-1..DEV-5 endossadas verbatim pelo @po em v0.2 (GO 10/10 HIGH) — não re-litigadas (convenção 2.3+). Sem PR/CI nesta fase — push + PR + CI são downstream de @devops (exclusivo @github-devops, agent-authority.md).'
+updated: '2026-05-21T15:25:00Z'
+
+review_method: manual
+review_note: >-
+  Gate manual aplicado via workaround QA-001 (docs/qa/known-issues.md) —
+  ambiente macOS sem WSL/CodeRabbit; Seção 0 (CodeRabbit Self-Healing Loop) da
+  task qa-review-story.md travaria. Story end-to-end aplicação (Server Action +
+  RSC + Client Component) com IDS REUSE pesada — quality_gate owner é @qa (per
+  Executor Assignment + gate @po v0.2 GO 10/10 — não re-litigado; precedente
+  sancionado e Done de 2.1/2.3/2.4/2.5/2.6/2.7/3.1/3.2). Revisão dos 7 quality
+  checks lendo o código real (working tree pendente de commit) + AC traceability
+  + re-execução INDEPENDENTE dos gates locais (typecheck/lint/build/test/contrast
+  todos exit 0 / 100% PASS). Decisões DEV-1..DEV-5 já validadas pelo @po em v0.2
+  HIGH confidence — convenção 2.3+ proíbe re-litigação no QA gate. Inspecionei
+  paths críticos verbatim contra precedentes: server/page/actions.ts vs
+  server/links/actions.ts:60-118 + server/profile/actions.ts:25-72 (padrão Zod
+  boundary + auth guard + ActionResult + flattenFieldErrors copiado verbatim);
+  components/theme/ThemeSelector.tsx:45-60 vs LinkList.tsx:48-62 (optimistic +
+  rollback + useTransition — padrão verbatim Story 2.6); components/theme/
+  ThemePreview.tsx:38-44 vs PublicPage.tsx:36-42 (wrapper data-theme + .dark
+  condicional — Story 3.2). Zero invenção.
+
+ac_traceability:
+  - ac: 'AC1: Página /dashboard/theme com 3 cards (preview thumbnail + nome do tema).'
+    given: 'app/dashboard/theme/page.tsx (66 LOC) Server Component fetcha profile+page+top-3-links e passa para o <ThemeSelector>; THEMES (Story 3.1) é a single source dos 3 presets light/dark/brand; ThemeSelector renderiza grid de cards via THEMES.map.'
+    when: 'Inspeção manual do source + render assertion no component test (3 radio elements + 3 LABELS visíveis).'
+    then: 'PASS — app/dashboard/theme/page.tsx:44-65 renderiza <header> + <ThemeSelector>; components/theme/ThemeSelector.tsx:68-103 monta `<div role="radiogroup">` com `THEMES.map(theme => <button role="radio">)` produzindo exatamente 3 cards (light/dark/brand) cada qual com `<ThemePreview theme={theme}>` thumbnail + `<span>{LABELS[theme]}</span>` nome. LABELS em :13-17 ("Light"/"Dark"/"Brand"). Test it (1) renderiza 3 cards: passes; getAllByRole("radio") toHaveLength(3) confirma exatamente 3.'
+    verdict: PASS
+    coverage: 'tests/components/features/theme/ThemeSelector.test.tsx:63-69 ("renderiza 3 cards (light, dark, brand) com nomes visíveis (AC1)") + :120-123 ("container tem role=radiogroup com aria-label"). Build confirma rota criada (/dashboard/theme `ƒ` Dynamic).'
+    notes: 'Thumbnail (~aspect-[3/4] container envolvendo ThemePreview) garante proporção consistente entre cards; rendered visual smoke deferido (ver TEST-001 abaixo) — programaticamente AC1 está plenamente coberto.'
+
+  - ac: 'AC2: Card selecionado destacado; clique salva via Server Action.'
+    given: 'ThemeSelector.tsx mantém estado local `selected` inicializado com `currentTheme` (prop); cada card aplica `border-primary` + `ring-2 ring-primary/30` quando `isSelected === true`, vs `border-border hover:border-muted-foreground` quando neutro; clique aciona handleSelect que chama updateTheme(server action) com optimistic state.'
+    when: '@qa inspecionou ThemeSelector.tsx:80-86 (className condicional) + :45-60 (handleSelect → updateTheme). Component test simula click e verifica aria-checked + chamada do mock.'
+    then: 'PASS — (i) Highlight visual: ThemeSelector.tsx:82-84 aplica `border-primary` + `ring-2 ring-primary/30` no card selecionado; outros recebem `border-border`. Token `--primary` resolve para violet-600 #7C3AED na surface light do dashboard (Story 3.2 paleta light:24). Test it (2) "card atual está aria-checked=true; outros aria-checked=false" passes — single-true invariant garantido por `isSelected = theme === selected`. (ii) Persistência: handleSelect:50-59 invoca `await updateTheme({ theme: next })` dentro de `startTransition`; em sucesso, `setSelected(next)` permanece e dispara toast.success; em falha, rollback explícito (setSelected(previous) + toast.error). Test it (3) "clique chama updateTheme + toast.success" + it (5) "clique no card já selecionado é no-op" cobrem o pattern. Integration test (c) confirma row DB persistida no projeto único `ibpliihqaceafdykgwiu`.'
+    verdict: PASS
+    coverage: 'tests/components/features/theme/ThemeSelector.test.tsx:78-90 (sucesso), :92-108 (rollback em erro), :110-118 (no-op no já-selecionado); tests/integration/server-actions/theme.test.ts:156-174 ((c) válido autenticado → updated_at tocado pelo trigger trg_pages_set_updated_at — confirma UPDATE real no DB).'
+    notes: 'DEV-4 honrado: padrão verbatim LinkList.tsx:48-62 (Story 2.6 Done) — useState + useTransition + rollback explícito. `useOptimistic` rejeitado porque exige <form action={...}> e ThemeSelector usa onClick puro. Disabled em todos durante a transição impede cliques múltiplos (race condition). Loader2 com aria-label="Salvando" alimenta leitor de tela.'
+
+  - ac: 'AC3: Preview mini da página pública renderizada inline com o tema escolhido (iframe ou Server Component isolado).'
+    given: 'AC3 admite "iframe OU Server Component isolado". DEV-2 (gate @po v0.2 endossou) escolhe Server Component isolado: components/theme/ThemePreview.tsx (81 LOC) reproduz o wrapper de PublicPage.tsx verbatim. Cascade `<div data-theme={theme}>` aplica tema localmente sem necessidade de iframe.'
+    when: '@qa comparou ThemePreview.tsx:38-44 contra PublicPage.tsx:36-42 (Story 3.2 wrapper). Estrutura: wrapper data-theme + classe .dark condicional → avatar 48×48 next/image (ou fallback User lucide com bg-muted) → display_name → bio (line-clamp-1) → ul de até 3 links com border-border bg-card text-card-foreground.'
+    then: 'PASS — (i) Cascade reproduzido verbatim: wrapper L38-43 = `<div data-theme={theme} className={cn("flex h-full w-full flex-col items-center gap-2 rounded-md bg-background px-3 py-4 text-foreground", theme === "dark" && "dark")}>` — mesma estratégia provada na Story 3.2 (snapshots HTML-only validaram que `data-theme` + classe `.dark` é suficiente para cascade visual em dev real). (ii) Tokens consumidos são idênticos aos da PublicPage real: bg-background, text-foreground, bg-card, text-card-foreground, border-border, text-muted-foreground, bg-muted — facsimile fiel. (iii) `aria-hidden="true"` no wrapper L44 (DEV-1 a11y) evita o leitor de tela narrar 3× o conteúdo (uma vez por card). (iv) `next/image` com width=48 height=48 (sem `priority` porque é thumbnail não-LCP) evita CLS. (v) Sem rota dedicada, sem CSP/sandbox — overhead zero vs iframe.'
+    verdict: PASS
+    coverage: 'Inspeção manual do source contra PublicPage.tsx:36-42 + render assertion implícito nos 3 cards renderizados pelo ThemeSelector test (cada card contém um <ThemePreview theme={theme}>). DEV-5 (snapshot per-theme do ThemePreview) endossado como opcional pelo @po — cascade já validado pelo PublicPage.test.tsx da Story 3.2.'
+    notes: 'DEV-2 honrado: Server Component preferido sobre iframe pelos 4 motivos documentados na story (cascade já provado em 3.2 / preview thumbnail não precisa de fidelidade total / iframe exige rota+CSP / facsimile usando os mesmos tokens é visualmente próximo). Alternativas rejeitadas (transform: scale + iframe com rota dedicada) corretamente NÃO executadas.'
+
+  - ac: 'AC4: Toast de confirmação após save; revalidate /@<username> cache.'
+    given: 'ThemeSelector handleSelect chama toast.success("Tema atualizado") em sucesso e toast.error(res.error) em falha — via @/lib/toast facade (Story 1.8 — feature code NÃO importa `sonner` direto). updateTheme Server Action chama revalidateUserSurface(profile?.username ?? null) que é o único caminho autorizado a invalidar cache (Coding Standards §revalidate — `revalidatePath` está apenas em lib/cache.ts).'
+    when: '@qa inspecionou ThemeSelector.tsx:50-59 (toast paths) + server/page/actions.ts:80-86 (revalidateUserSurface após UPDATE). Tests cobrem ambos os caminhos.'
+    then: 'PASS — (i) Toast sucesso: ThemeSelector.tsx:58 `toast.success("Tema atualizado")` PT-BR literal (Coding Standards i18n PT-BR-only no MVP). Test it (3) `expect(mockedToastSuccess).toHaveBeenCalledWith("Tema atualizado")` confirma. (ii) Toast erro: ThemeSelector.tsx:55 `toast.error(res.error)` propaga GENERIC_ERROR / SESSION_EXPIRED do Server Action. Test it (4) cobre rollback + toast.error. (iii) Revalidate: server/page/actions.ts:80-86 invoca `revalidateUserSurface(profile?.username ?? null)` após UPDATE bem-sucedido — passa por lib/cache.ts:21-29 que faz `revalidatePath("/dashboard", "layout")` + `revalidatePath(/@${username})` (Story 1.1+). AC4 "revalidate `/@<username>` cache" satisfeito. Integration test (c) confirma que após updateTheme a row no DB tem o novo theme — caminho completo (Zod → auth → DB UPDATE → revalidate) funciona end-to-end.'
+    verdict: PASS
+    coverage: 'tests/components/features/theme/ThemeSelector.test.tsx:78-90 (toast.success), :92-108 (toast.error em rollback); tests/integration/server-actions/theme.test.ts:156-174 ((c) UPDATE + (e) sequencing trocando todos os 3 temas). Mock `vi.mock("@/lib/cache", () => ({ revalidateUserSurface: vi.fn() }))` no integration test isola revalidatePath (no-op fora de request Next), mas o caminho server→cache→client é validado por inspeção + tests independentes do helper revalidateUserSurface (Story 1.x).'
+    notes: 'AC4 literal "revalidate /@<username> cache" satisfeito pelo helper revalidateUserSurface — não convém duplicar revalidatePath no Server Action (Coding Standards proíbe). Caminho de erro silencioso: profile fetch falha → revalidateUserSurface(null) é no-op (lib/cache.ts:25-26) — mutation ainda persistiu, mas a página pública só re-renderiza no próximo visit (TTL natural). Aceitável: AC4 fala em "após save", e o save persiste mesmo sem o revalidate.'
+
+independent_gate_rerun:
+  typecheck:
+    command: 'pnpm typecheck'
+    result: 'exit 0'
+    notes: 'tsc --noEmit clean. strict + noUncheckedIndexedAccess passam. Sem duplicatas " 2.ts"/" 3.ts" no .next/types/ (Dev Agent Record reportou cleanup pré-execução — confirmado clean aqui).'
+  lint:
+    command: 'pnpm lint'
+    result: 'exit 0'
+    notes: 'eslint clean. import/order respeitado em todos os 7 arquivos novos (verificação: @/components/* < @/lib/* < @/server/*). Sem `dark:` raw em ThemePreview/ThemeSelector — token-based `bg-background`/`text-foreground` (DEV-1 a11y).'
+  build:
+    command: 'pnpm build'
+    result: 'exit 0'
+    notes: |
+      Next 16.2.5 build success. Compile 117s + TypeScript 97s + page generation 4.3s.
+      Rotas estáticas (○): /_not-found, /dev/themes, /login, /signup.
+      Rotas dinâmicas (ƒ): /, /[username], /auth/callback, /dashboard, /dashboard/profile,
+      /dashboard/theme (nova — RSC com auth.getUser não-prerenderable, igual /dashboard/profile),
+      /reset-password, /reset-password/confirm.
+      /dev/themes permanece ○ Static — zero regressão de prerender da 3.1/3.2.
+      Aviso "middleware file convention is deprecated. Please use proxy instead"
+      herdado de Next 16.2.5 — middleware.ts intocado por esta story (File List
+      "Não tocados" explícito) — fora do escopo; tech debt para story dedicada.
+  check_contrast:
+    command: 'pnpm check:contrast'
+    result: '27/27 pairs PASS (WCAG AA)'
+    notes: 'Sanity check — paleta inalterada nesta story (zero mudança em app/globals.css). Ratios reproduzidos identicamente aos da Story 3.2 v0.3 (light bg↔fg 17.85, dark 19.06, brand 14.20; etc.). Tabela completa no gate 3.2-tres-presets-de-tema.yml linhas 111-145.'
+  test_full_run:
+    command: 'pnpm test'
+    result: 'Test Files 35 passed (35) ; Tests 285 passed (285)'
+    notes: |
+      Full-run 100% PASS — sem flake nesta sessão (vs 3.2 que sofreu fork pool
+      macOS flake nos arquivos UsernameForm.test.tsx e LinkRow.test.tsx do TEST-001).
+      Duration 382.19s (transform 6.79s + setup 28.83s + import 43.39s + tests 112.43s
+      + environment 122.57s). Delta vs baseline pós-3.2:
+        - Test Files: 33 → 35 (+2: ThemeSelector.test.tsx + theme.test.ts)
+        - Tests: 274 → 285 (+11: ThemeSelector 6 + theme integration 5)
+      Exatamente como projetado pelo @sm (meta v0.1 era ~284, atingiu 285).
+      fileParallelism:false em vitest.config.ts continua suficiente como mitigação
+      do flake macOS Vitest 4 + jsdom 29 (TEST-001 da 3.2 — fora de escopo).
+      Único output não-fatal: "Not implemented: navigation to another Document"
+      do jsdom 29 em UsernameForm.test.tsx (pré-existente, não introduzido aqui).
+
+decisions_review:
+  - decision: 'DEV-1: Dashboard surface inteira permanece light; cada card aplica seu próprio tema via wrapper interno'
+    source: '@sm draft v0.1'
+    validated_by: '@po gate v0.2 (GO 10/10 HIGH confidence)'
+    qa_verdict: ENDORSED
+    qa_note: 'Não re-litigado (convenção 2.3+). Arquiteturalmente sólido: (i) schema não tem profiles.theme (FR12 = "tema por página"); (ii) introduzir DDL nesta story violaria Art. IV; (iii) usar pages.theme como proxy de "tema do user" é semanticamente errado (page ≠ user em phase 2). UX trade-off intencional aceitável — usuário entende que /dashboard/theme mostra previews, não o tema da própria UI. Consistente com Stories 3.1/3.2 (dashboard light, página pública themed). Se @po decidir dashboard themed pós-MVP, story dedicada STORY-3.x-DASHBOARD-THEME é o caminho.'
+  - decision: 'DEV-2: Server Component <ThemePreview> em vez de iframe (AC3 admite ambos)'
+    source: '@sm draft v0.1'
+    validated_by: '@po gate v0.2'
+    qa_verdict: ENDORSED
+    qa_note: 'Não re-litigado. Trade-off documentado: cascade `<div data-theme>` já provado em 3.2 PublicPage; iframe exigiria rota dedicada (/api/theme-preview?theme=X) + CSP + refresh handling — overhead sem ganho. Preview é thumbnail ~200×280px — facsimile fiel é suficiente. Alternativas rejeitadas (transform: scale, iframe com rota) corretamente NÃO executadas.'
+  - decision: 'DEV-3: Single-query UPDATE filtrado por profile_id (RLS já garante isolamento)'
+    source: '@sm draft v0.1'
+    validated_by: '@po gate v0.2'
+    qa_verdict: ENDORSED
+    qa_note: 'Não re-litigado. RLS `pages_update_own` (0003_pages.sql Story 2.2) restringe UPDATE ao owner — `.eq("profile_id", user.id)` é defense in depth. Relação 1:1 profiles→pages garantida por trigger AFTER INSERT ON auth.users (Story 2.2). `.single()` garante exit precoce em zero rows. Performance: 1 query vs 2 do padrão server/links/actions.ts:createLink (que precisa do page_id porque mexe em links, não em pages). Integration test (d) "two-users isolation" valida programaticamente: USER_B muta SUA page, page de USER_A intacta — RLS confirmado in vivo.'
+  - decision: 'DEV-4: Optimistic UI + rollback + useTransition (não useOptimistic)'
+    source: '@sm draft v0.1'
+    validated_by: '@po gate v0.2'
+    qa_verdict: ENDORSED
+    qa_note: 'Não re-litigado. Padrão verbatim Story 2.6 LinkList.tsx:48-62 (sancionado e Done). `useOptimistic` rejeitado corretamente — exige `<form action={...}>`, ThemeSelector usa `<button onClick>` puro. Rollback explícito (setSelected(previous)) é fácil de testar — test it (4) "erro do server reverte seleção" valida. useTransition evita bloqueio do main thread.'
+  - decision: 'DEV-5: Snapshot test do <ThemePreview> opcional (cascade já validado pelo PublicPage.test.tsx)'
+    source: '@sm draft v0.1'
+    validated_by: '@po gate v0.2'
+    qa_verdict: ENDORSED
+    qa_note: 'Não re-litigado. PublicPage.test.tsx da Story 3.2 já valida cascade `<div data-theme={theme}>` + classe `.dark` condicional verbatim (mesmo pattern). Snapshot per-theme do ThemePreview seria redundante (3 snapshots quase idênticos, apenas diferindo no atributo) e gera ruído em snapshot updates. Cobertura indireta via ThemeSelector test (3 cards renderizados, cada com <ThemePreview> interno). Se @qa quisesse cobertura programática adicional, `ThemePreview.test.tsx` com `it.each(THEMES)` × `toHaveAttribute("data-theme", theme)` é trivial — não exigido neste gate.'
+
+top_issues:
+  - id: 'TEST-001'
+    severity: low
+    finding: 'Smoke manual visual em `pnpm dev` (login → /dashboard/theme → ver 3 cards com previews distintos → clicar em "Dark" → ver loader → ver toast → reload persistido → abrir /@<username> em outra aba e ver tema aplicado) NÃO foi executado nesta sessão @qa. Story v0.3 declarou "deferido para gate @qa" mas o roteiro depende de execução interativa no browser. Programaticamente todos os AC1-4 estão cobertos (component test + integration test + build + contrast — 27/27 + 285/285 PASS).'
+    suggested_action: 'Não bloqueia o PASS — cobertura programática é completa e robusta. Recomendação operacional: o user pode rodar o smoke manualmente após o gate, antes do push, ou deixar para validação pós-merge no ambiente Vercel preview. Nenhum risco identificado para o caminho dourado (sucess) nem para o caminho de erro (rollback testado).'
+  - id: 'DOC-001'
+    severity: low
+    finding: 'Aviso pré-existente do Next 16.2.5: "The middleware file convention is deprecated. Please use proxy instead." aparece no build. middleware.ts intocado por esta story (File List "Não tocados" explícito) — herdado da Story 1.7 (middleware/proteção de rotas) + Next 16 framework deprecation.'
+    suggested_action: 'Não-bloqueante. Tech debt para uma story dedicada (refactor middleware.ts → proxy.ts conforme nova convenção do Next 16) — pode ser registrada no backlog quando o time priorizar limpeza de warnings de framework. Não há impacto funcional imediato.'
+
+waiver: { active: false }
+
+handoff:
+  next_agent: '@devops'
+  next_command: '*push'
+  condition: 'PASS verdict; commit + push + PR via @github-devops exclusivo (agent-authority.md). Push deve consolidar 7 file changes (6 criados: server/page/actions.ts, lib/validators/page.ts, app/dashboard/theme/page.tsx, components/theme/ThemePreview.tsx, components/theme/ThemeSelector.tsx, tests/components/features/theme/ThemeSelector.test.tsx, tests/integration/server-actions/theme.test.ts; 1 modificado: docs/stories/3.3.ui-selecao-tema.story.md) + gate file docs/qa/gates/3.3-ui-selecao-tema.yml.'
+  alternatives:
+    - agent: '@dev'
+      command: '*apply-qa-fixes'
+      condition: 'N/A — gate PASS, sem fixes pendentes.'
