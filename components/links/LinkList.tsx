@@ -83,7 +83,7 @@ export function LinkList({ links: initialLinks }: { links: Link[] }) {
   const ids = links.map((l) => l.id);
 
   return (
-    <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+    <DndContext id="links-dnd" sensors={sensors} onDragEnd={onDragEnd}>
       <SortableContext items={ids} strategy={verticalListSortingStrategy}>
         <ul className="space-y-2" aria-label="Seus links">
           {links.map((link, idx) => (
