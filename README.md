@@ -73,6 +73,7 @@ biolink/
 
 - [PRD](docs/prd.md)
 - [Architecture](docs/architecture.md)
+- [Design System](docs/design-system.md)
 - [Stories](docs/stories/)
 - [Dev Setup](docs/dev-setup.md)
 

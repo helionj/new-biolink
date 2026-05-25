@@ -3,7 +3,7 @@ title: Story Backlog
 description: Follow-up tasks, technical debt e oportunidades de otimização identificadas durante stories, dev e QA
 owner: '@po (Pax)'
 created: 2026-05-15
-last_updated: 2026-05-21 (Story 3.2 closed)
+last_updated: 2026-05-25 (Story 3.4 drafted)
 ---
 
 # Story Backlog

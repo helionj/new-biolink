@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { CheckUsernameInput, UpdateUsernameInput, usernameSchema } from '@/lib/validators/profile';
+import {
+  CheckUsernameInput,
+  UpdateUsernameInput,
+  UploadAvatarInput,
+  usernameSchema,
+} from '@/lib/validators/profile';
 
 describe('usernameSchema (DP-3 — single source compartilhado)', () => {
   it('aceita username válido', () => {
@@ -73,5 +78,70 @@ describe('CheckUsernameInput', () => {
 
   it('rejeita username com formato inválido', () => {
     expect(CheckUsernameInput.safeParse({ username: 'X' }).success).toBe(false);
+  });
+});
+
+describe('UploadAvatarInput (Story 3.4)', () => {
+  function pngBlob(size: number): Blob {
+    return new Blob([new Uint8Array(size)], { type: 'image/png' });
+  }
+
+  it('aceita Blob jpg/png/webp dentro do limite', () => {
+    expect(UploadAvatarInput.safeParse({ file: pngBlob(1024) }).success).toBe(true);
+    expect(
+      UploadAvatarInput.safeParse({
+        file: new Blob([new Uint8Array(1024)], { type: 'image/jpeg' }),
+      }).success,
+    ).toBe(true);
+    expect(
+      UploadAvatarInput.safeParse({
+        file: new Blob([new Uint8Array(1024)], { type: 'image/webp' }),
+      }).success,
+    ).toBe(true);
+  });
+
+  it('aceita Blob exatamente no limite de 1 MB', () => {
+    expect(UploadAvatarInput.safeParse({ file: pngBlob(1024 * 1024) }).success).toBe(true);
+  });
+
+  it('rejeita Blob > 1 MB com mensagem PT-BR', () => {
+    const r = UploadAvatarInput.safeParse({ file: pngBlob(1024 * 1024 + 1) });
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      const issue = r.error.issues.find((i) => i.path.join('.') === 'file');
+      expect(issue?.message).toBe('Arquivo deve ter no máximo 1 MB');
+    }
+  });
+
+  it('rejeita Blob vazio', () => {
+    const r = UploadAvatarInput.safeParse({
+      file: new Blob([], { type: 'image/png' }),
+    });
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      const issue = r.error.issues.find((i) => i.path.join('.') === 'file');
+      expect(issue?.message).toBe('Arquivo vazio');
+    }
+  });
+
+  it('rejeita mime não permitido (gif)', () => {
+    const r = UploadAvatarInput.safeParse({
+      file: new Blob([new Uint8Array(1024)], { type: 'image/gif' }),
+    });
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      const issue = r.error.issues.find((i) => i.path.join('.') === 'file');
+      expect(issue?.message).toBe('Use jpg, png ou webp');
+    }
+  });
+
+  it('rejeita valor não-Blob (string, número, null)', () => {
+    expect(UploadAvatarInput.safeParse({ file: 'not-a-blob' }).success).toBe(false);
+    expect(UploadAvatarInput.safeParse({ file: 42 }).success).toBe(false);
+    expect(UploadAvatarInput.safeParse({ file: null }).success).toBe(false);
+  });
+
+  it('rejeita payload sem file', () => {
+    expect(UploadAvatarInput.safeParse({}).success).toBe(false);
   });
 });

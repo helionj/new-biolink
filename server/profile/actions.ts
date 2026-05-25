@@ -1,9 +1,14 @@
 'use server';
 
+import { revalidateUserSurface } from '@/lib/cache';
 import type { ActionResult } from '@/lib/result';
 import { createClient } from '@/lib/supabase/server';
 import type { Tables } from '@/lib/supabase/types';
-import { CheckUsernameInput, UpdateUsernameInput } from '@/lib/validators/profile';
+import {
+  CheckUsernameInput,
+  UpdateUsernameInput,
+  UploadAvatarInput,
+} from '@/lib/validators/profile';
 
 type Profile = Tables<'profiles'>;
 
@@ -99,4 +104,83 @@ export async function checkUsernameAvailability(
   }
 
   return { ok: true, data: { available: !existing } };
+}
+
+// ---------------------------------------------------------------------------
+// uploadAvatar — Story 3.4 Task 2
+// ---------------------------------------------------------------------------
+//
+// Signature verbatim arch §Server Actions L388-390 (FormData binário, retorna
+// { avatar_url }). DEV-4 (story): path determinístico `{uid}/avatar.{ext}` +
+// upsert:true para zero objetos órfãos. DEV-3: getPublicUrl (bucket public:true,
+// DEV-5 ratificado por @data-engineer na Task 1).
+const EXT_BY_MIME: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+};
+
+export async function uploadAvatar(
+  formData: FormData,
+): Promise<ActionResult<{ avatar_url: string }>> {
+  // Next 16 server-side recebe Blob/File (Web API) ao deserializar FormData.
+  const fileField = formData.get('avatar');
+  const parsed = UploadAvatarInput.safeParse({ file: fileField });
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: 'Arquivo inválido',
+      fieldErrors: flattenFieldErrors(parsed.error),
+    };
+  }
+  const file = parsed.data.file;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Defense in depth — dashboard/layout.tsx já guarda.
+  if (!user) {
+    return { ok: false, error: 'Sessão expirada. Faça login novamente.' };
+  }
+
+  // DEV-4 — path determinístico `{user.id}/avatar.{ext}`. Trade-off: trocar
+  // jpg→png deixa o `.jpg` antigo órfão (best-effort cleanup omitido no MVP;
+  // 99% dos usuários trocam jpg→jpg).
+  const ext = EXT_BY_MIME[file.type] ?? 'bin';
+  const path = `${user.id}/avatar.${ext}`;
+
+  const uploadResult = await supabase.storage
+    .from('avatars')
+    .upload(path, file, { upsert: true, contentType: file.type });
+  if (uploadResult.error) {
+    return { ok: false, error: 'Erro ao enviar avatar. Tente novamente' };
+  }
+
+  // DEV-3 — getPublicUrl é síncrono (zero round-trip), alinhado com bucket
+  // public:true ratificado em DEV-5 (Task 1 da Dara).
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from('avatars').getPublicUrl(path);
+
+  // RLS `profiles_update_own` (0002_profiles.sql:107-115) restringe à row do
+  // owner. CHECK `avatar_url ~* '^https?://'` (0002:70) cobre Storage public URL.
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .update({ avatar_url: publicUrl })
+    .eq('id', user.id)
+    .select('username, avatar_url')
+    .single();
+
+  if (error || !profile) {
+    // Best-effort rollback: remove o objeto recém-enviado para não deixar
+    // dangling reference (RLS `avatars_delete_own` autoriza — owner-only).
+    await supabase.storage.from('avatars').remove([path]);
+    return { ok: false, error: 'Erro ao atualizar avatar. Tente novamente' };
+  }
+
+  revalidateUserSurface(profile.username);
+
+  return { ok: true, data: { avatar_url: profile.avatar_url ?? publicUrl } };
 }

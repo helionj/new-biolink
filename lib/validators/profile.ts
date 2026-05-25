@@ -21,3 +21,26 @@ export const CheckUsernameInput = z.object({
 });
 
 export type CheckUsernameInput = z.infer<typeof CheckUsernameInput>;
+
+// ---------------------------------------------------------------------------
+// Avatar upload (Story 3.4)
+// ---------------------------------------------------------------------------
+
+// MANTER EM SINCRONIA com supabase/migrations/0006_storage_avatars.sql
+// (`allowed_mime_types` do bucket). Drift detectado em code review (precedente
+// STORY-3.2-F1 backlog item LOW).
+const MAX_AVATAR_SIZE = 1 * 1024 * 1024; // 1 MB (FR13)
+const ALLOWED_AVATAR_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+
+export const UploadAvatarInput = z.object({
+  file: z
+    .instanceof(Blob, { message: 'Arquivo é obrigatório' })
+    .refine((b) => b.size > 0, 'Arquivo vazio')
+    .refine((b) => b.size <= MAX_AVATAR_SIZE, 'Arquivo deve ter no máximo 1 MB')
+    .refine(
+      (b) => (ALLOWED_AVATAR_MIME_TYPES as readonly string[]).includes(b.type),
+      'Use jpg, png ou webp',
+    ),
+});
+
+export type UploadAvatarInput = z.infer<typeof UploadAvatarInput>;
