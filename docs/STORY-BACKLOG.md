@@ -3,7 +3,7 @@ title: Story Backlog
 description: Follow-up tasks, technical debt e oportunidades de otimização identificadas durante stories, dev e QA
 owner: '@po (Pax)'
 created: 2026-05-15
-last_updated: 2026-05-26 (Story 4.1 closed; STORY-4.1-F1 added)
+last_updated: 2026-05-26 (Story 4.1 merged; STORY-4.1-F1 + STORY-3.5-F3 added)
 ---
 
 # Story Backlog
@@ -136,16 +136,34 @@ _Nenhum item._
 - **Risk if not done**: LOW — overhead atual é desprezível em volume MVP (< 1K rows por tabela user-data); só vira problema mensurável quando scans amplos sobre `click_events` ultrapassarem ~10K-100K rows por owner. Captura em Lighthouse CI / Vercel Analytics improvável (RLS roda em DB, não no edge). Detecção real só viria via `pg_stat_statements` em produção sob carga.
 - **Acceptance**: 8 policies reescritas com `(select auth.uid())`; advisor retorna 0 lints `auth_rls_initplan`; suítes RLS integration verdes; sem rollback necessário.
 
+#### [STORY-3.5-F3] Estabilizar Lighthouse CI — `runs: 1` → `runs: 3` mediana para reduzir flake na landing borderline
+
+- **Source**: Story 4.1 PR #18 — lighthouse falhou no 1º run (Performance `/` = 0.80, threshold 0.85) e passou no rerun com config idêntica + mesmo deploy Vercel — 2026-05-26
+- **Priority**: 🟢 LOW
+- **Effort**: ~0 (1-line edit em `.lighthouserc.json` + 1 mudança de assertion strategy; sem código novo)
+- **Status**: 📋 TODO
+- **Assignee**: @devops (Gage) — gate @qa (regressão de gate quality em PRs subsequentes)
+- **Sprint**: contínuo (não-bloqueante; race condition manifesta esporadicamente)
+- **Description**: O workflow `.github/workflows/lighthouse.yml` (Story 3.5 Task 6) usa `.lighthouserc.json` com `runs: 1` — single-run Lighthouse é **conhecidamente flaky** em scores borderline. Durante o PR #18 da Story 4.1, o 1º run reportou `categories.performance = 0.80` na landing `/` (5 pontos abaixo do threshold 0.85 do Story 3.5); o rerun manual passou com config idêntica — confirmando flake (não regressão). Causa raiz: combinação de (a) bundle baseline da landing em 199.06 KB gz (margem de ~1 KB do threshold AC3 — `[STORY-3.5-F1]`), (b) cold-start variável do deploy Vercel preview, (c) CPU contention no GitHub Actions runner, (d) single-run sem estatística agregada. Lighthouse oficialmente recomenda `runs: 3` com asserção sobre **median** para reduzir desvio padrão de score em ~60-70%.
+- **Success Criteria**:
+  - [ ] Editar `.lighthouserc.json`: `"ci": { "collect": { "numberOfRuns": 3 }, "assert": { "assertMatrix": [{ "matchingUrlPattern": ".*", "assertions": { ... }, "aggregationMethod": "median" }] } }` (ou equivalente Lighthouse CI 0.13+)
+  - [ ] Manter os mesmos thresholds (`minScore: 0.85` em 4 categorias) — o ajuste é estatístico, não relaxa o gate
+  - [ ] Documentar o motivo no header do `.lighthouserc.json` (`// runs: 3 + median — reduz flake em scores borderline (PR #18 evidência)`)
+  - [ ] Tempo de execução do job sobe de ~1m → ~3m (3× runs sequenciais) — aceitável vs. ruído de retries manuais
+  - [ ] Próximo PR que toque `app/**` ou `components/**` valida o novo comportamento (não regredir scores nem mascarar regressões reais)
+- **Risk if not done**: LOW (incômodo, não-bloqueante) — Lighthouse continua advisory check (não está em `required_status_checks` do branch protection da `main`); flakes futuros vão requerer `gh run rerun` manual por @devops em cada incidência. Para PRs que tocam `app/[username]/**` ou `components/public/**` (gate efetivo do bundle), cada flake "cria" um falso alarme que custa ~1-2 min de investigação + 1m de rerun.
+- **Acceptance**: `.lighthouserc.json` configurado com 3 runs + mediana; PR subsequente passa no 1º run consistentemente (3 PRs consecutivos sem rerun manual confirma fix); falsos alarmes de flake desaparecem dos relatórios de CI.
+
 ---
 
 ## 📊 Statistics
 
 | Métrica                  | Valor      |
 | ------------------------ | ---------- |
-| Total de itens ativos    | 5          |
+| Total de itens ativos    | 6          |
 | 🔴 HIGH                  | 0          |
 | 🟡 MEDIUM                | 1          |
-| 🟢 LOW                   | 4          |
+| 🟢 LOW                   | 5          |
 | ✅ DONE (não arquivados) | 1          |
 | Última atualização       | 2026-05-26 |
 
@@ -162,3 +180,4 @@ _Nenhum item._
 | 2026-05-25 | ADD    | `[STORY-3.5-F2]` UI de edição de `display_name` e `bio` no dashboard (gap funcional Story 3.5 Task 5)              | Dex (dev)     |
 | 2026-05-25 | DONE   | `[STORY-1.9-F1]` Lighthouse CI workflow — materializado via Story 3.5 Task 6 (lighthouse.yml + .lighthouserc.json) | Gage (devops) |
 | 2026-05-26 | ADD    | `[STORY-4.1-F1]` Batch fix `auth_rls_initplan` em 8 policies (PERF-001 do QA gate Story 4.1)                       | Pax (po)      |
+| 2026-05-26 | ADD    | `[STORY-3.5-F3]` Estabilizar Lighthouse CI (`runs: 1` → 3 + mediana) — evidência de flake no PR #18                | Gage (devops) |
