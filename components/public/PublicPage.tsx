@@ -1,7 +1,7 @@
 import { User } from 'lucide-react';
 import Image from 'next/image';
 
-import { PublicLinkCard } from '@/components/public/PublicLinkCard';
+import { TrackedLinkCard } from '@/components/public/TrackedLinkCard';
 import { cn } from '@/lib/utils';
 import type { PublicPageData } from '@/server/page/queries';
 
@@ -65,7 +65,7 @@ export function PublicPage({ data }: { data: PublicPageData }) {
         ) : (
           <ul className="flex w-full flex-col gap-3" aria-label={`Links de @${profile.username}`}>
             {links.map((link) => (
-              <PublicLinkCard key={link.id} link={link} />
+              <TrackedLinkCard key={link.id} link={link} />
             ))}
           </ul>
         )}
