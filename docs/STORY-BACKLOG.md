@@ -24,12 +24,32 @@ _Nenhum item._
 
 ## 🟡 MEDIUM Priority
 
-#### [STORY-1.9-F1] Story de CI dedicada — Lighthouse CI automatizado (`lighthouse.yml`)
+#### [STORY-3.5-F2] UI de edição de `display_name` e `bio` no dashboard
+
+- **Source**: Story 3.5 Task 5 — gap identificado durante criação do perfil `demo` em produção (Dex/dev + reporte do dono do projeto) — 2026-05-25
+- **Priority**: 🟡 MEDIUM
+- **Effort**: ~0.5-1 story (complexity S/M — form RHF + Zod + Server Action; segue padrão da `UsernameForm`)
+- **Status**: 📋 TODO
+- **Assignee**: @sm (draft) → @dev (implement) — gate @qa
+- **Sprint**: _A definir (`*backlog-schedule`)_
+- **Description**: O schema `profiles` (Story 2.2+) tem `display_name TEXT` e `bio TEXT` nullable, e ambos são renderizados em `components/public/PublicPage.tsx` (L33 `displayName = profile.display_name ?? \`@${profile.username}\``; L61 `{profile.bio && <p>...}`). Porém **não há UI** para editar nenhum dos dois: `/dashboard/profile`só edita`username` (`UsernameForm`) + `avatar` (`AvatarUpload`); `SignupForm`só pede email/username/password/terms. Resultado: usuários reais (não-seed) sempre têm h1 =`@username`(sem display name rico) e sem bio. Detectado quando o dono do projeto tentou popular o perfil`demo` em prod para Task 5 da Story 3.5 e descobriu que a bio "não tinha campo para preencher".
+- **Success Criteria**:
+  - [ ] Adicionar campos `display_name` (max 80 chars sugerido) e `bio` (textarea, max 280 chars sugerido) ao form de `/dashboard/profile`
+  - [ ] Validators Zod em `lib/validators/profile.ts` (limites, trim, opcional)
+  - [ ] Server Action `updateProfileMeta` em `server/profile/actions.ts` (padrão da `updateUsername`)
+  - [ ] UI segue padrão shadcn Form + RHF (precedente: `UsernameForm`)
+  - [ ] Persistência respeita RLS `profiles_update_own` (Story 2.2)
+  - [ ] Component test cobre validação + submit happy path + erro
+  - [ ] Atualizar perfil `demo` em prod (display_name + bio) após implementação
+- **Risk if not done**: MEDIUM — gap UX claro (usuários não conseguem se apresentar além do `@handle`). Não bloqueia ACs de outras stories, mas vazaria como "feature incompleta" no produto. Demo profile em prod fica menos rico para Lighthouse measurement realista (h1 sempre `@demo`, sem bio).
+- **Acceptance**: Usuário consegue editar `display_name` + `bio` em `/dashboard/profile`; mudanças refletidas em `/@username` após `router.refresh()`; testes verdes.
+
+#### [STORY-1.9-F1] Story de CI dedicada — Lighthouse CI automatizado (`lighthouse.yml`) ✅ DONE
 
 - **Source**: PO validação Story 1.9 (`*validate-story-draft 1.9`, DP-1) — 2026-05-15
 - **Priority**: 🟡 MEDIUM
 - **Effort**: ~1 story dedicada (complexity M)
-- **Status**: 📋 TODO
+- **Status**: ✅ **DONE** — Materializado via Story 3.5 Task 6 (Gage/devops, 2026-05-25). Criados `.github/workflows/lighthouse.yml` + `.lighthouserc.json`. DEV-6 ratificações: `patrickedqvist/wait-for-vercel-preview@v1.3.1` + preset mobile (default) + `minScore: 0.85` 4 categories + `temporaryPublicStorage: true` (sem secret extra, NFR10 preservado). Smoke do workflow será validado quando o primeiro PR pós-merge for aberto.
 - **Assignee**: @devops (Gage) / @dev — gate @architect (infra CI)
 - **Sprint**: _A definir (`*backlog-schedule`)_
 - **Description**: A Story 1.9 satisfez AC4 ("Lighthouse ≥ 90 nas 4 categorias na URL de produção") por **evidência manual** registrada no Dev Agent Record (padrão handoff 1.5–1.8). A automação via `.github/workflows/lighthouse.yml` foi **diferida** desta story (DP-1) porque: (1) AC4 diz "na URL de produção", não "automatizado no CI" (≠ AC6); (2) workflow Lighthouse com tratamento do timing assíncrono do deploy Vercel é trabalho de infra CI não-trivial; (3) manter 1.9 em complexity M e focada na landing/canary. A Story 1.3 (pipeline CI/CD, **Done**) escopou CI sem Lighthouse; arch §Unified Project Structure (~L1580) + §CI/CD Pipeline (~L598) preveem "Lighthouse CI em rotas-chave" — esta é a story que materializa esse componente.
@@ -64,6 +84,21 @@ _Nenhum item._
 - **Risk if not done**: LOW — dualidade `.dark` ↔ `[data-theme="dark"]` é cosmética; ambos os ativadores apontam para o mesmo bloco de tokens (zero drift). Apenas implementação fica mais elegante e reduz superfície cognitiva para novos contribuidores.
 - **Acceptance**: Primitives shadcn renderizam idênticos pré-pós refactor em ambos os temas; `.dark` removida da codebase (apenas `[data-theme="dark"]` aciona dark mode).
 
+#### [STORY-3.5-F1] Monitorar margem apertada de bundle da página pública (~1-2 KB)
+
+- **Source**: Story 3.5 §1 Bundle Baseline (Task 1 — Dex) — 2026-05-25
+- **Priority**: 🟢 LOW
+- **Effort**: ~0 (monitor-only; sem código novo)
+- **Status**: 📋 TODO
+- **Assignee**: @dev (gate manual em PRs que tocam `app/[username]/**` ou `components/public/**`)
+- **Sprint**: contínuo (não-bloqueante)
+- **Description**: Em Next 16.2.5 / Turbopack, o First Load JS de `/[username]` está em **198.04 KB gz** e o de `/` em **199.06 KB gz** — abaixo do threshold AC3 (< 200 KB) por margem de apenas ~1-2 KB. Qualquer dependência client-side nova na página pública pode quebrar AC3. O workflow Lighthouse CI da Story 3.5 AC6 cobre indiretamente via score de Performance, mas não checa bundle size explicitamente. A medição é feita manualmente via leitura de `.next/build-manifest.json` + `entryJSFiles` por rota + gzip-9 (DEV-1 da 3.5 — Turbopack omite First Load JS por rota no relatório textual do `pnpm build`).
+- **Success Criteria**:
+  - [ ] Cada PR que toca `app/[username]/**`, `components/public/**` ou adiciona dependência client-side re-mede First Load JS via script ad-hoc descrito em `docs/a11y-audit.md` §1
+  - [ ] Caso a margem passe a < 5 KB ou rompa o threshold, abrir story dedicada de mitigação (RSC isolation, code-split, ou substituição de dep)
+- **Risk if not done**: MEDIUM — bundle regression silenciosa quebra AC3 sem ser detectada até o próximo Lighthouse run em prod (que mede score, não bytes).
+- **Acceptance**: Convenção respeitada em revisão de PR; documento `docs/a11y-audit.md` §1 mantido atualizado em cada mudança que afete bundle público.
+
 #### [STORY-3.2-F1] Refactor `scripts/check-contrast.mjs` para parser CSS automatizado
 
 - **Source**: @sm DEV-3 da Story 3.2 + execução @dev YOLO Story 3.2 — 2026-05-21
@@ -88,19 +123,22 @@ _Nenhum item._
 
 | Métrica                  | Valor      |
 | ------------------------ | ---------- |
-| Total de itens ativos    | 3          |
+| Total de itens ativos    | 4          |
 | 🔴 HIGH                  | 0          |
 | 🟡 MEDIUM                | 1          |
-| 🟢 LOW                   | 2          |
-| ✅ DONE (não arquivados) | 0          |
-| Última atualização       | 2026-05-21 |
+| 🟢 LOW                   | 3          |
+| ✅ DONE (não arquivados) | 1          |
+| Última atualização       | 2026-05-25 |
 
 ---
 
 ## 📜 Change Log
 
-| Date       | Action | Item                                                                                                          | Author    |
-| ---------- | ------ | ------------------------------------------------------------------------------------------------------------- | --------- |
-| 2026-05-15 | ADD    | `[STORY-1.9-F1]` Lighthouse CI automatizado (diferido de Story 1.9 DP-1)                                      | Pax (po)  |
-| 2026-05-20 | ADD    | `[STORY-3.1-F1]` Refactor `@custom-variant dark` para eliminar `.dark` (DEV-1 Story 3.1)                      | Pax (po)  |
-| 2026-05-21 | ADD    | `[STORY-3.2-F1]` Refactor `scripts/check-contrast.mjs` para parser CSS automatizado (DEV-3 + DEV-5 Story 3.2) | Dex (dev) |
+| Date       | Action | Item                                                                                                               | Author        |
+| ---------- | ------ | ------------------------------------------------------------------------------------------------------------------ | ------------- |
+| 2026-05-15 | ADD    | `[STORY-1.9-F1]` Lighthouse CI automatizado (diferido de Story 1.9 DP-1)                                           | Pax (po)      |
+| 2026-05-20 | ADD    | `[STORY-3.1-F1]` Refactor `@custom-variant dark` para eliminar `.dark` (DEV-1 Story 3.1)                           | Pax (po)      |
+| 2026-05-21 | ADD    | `[STORY-3.2-F1]` Refactor `scripts/check-contrast.mjs` para parser CSS automatizado (DEV-3 + DEV-5 Story 3.2)      | Dex (dev)     |
+| 2026-05-25 | ADD    | `[STORY-3.5-F1]` Monitorar margem apertada de bundle da página pública (Finding MEDIUM Story 3.5 §1)               | Dex (dev)     |
+| 2026-05-25 | ADD    | `[STORY-3.5-F2]` UI de edição de `display_name` e `bio` no dashboard (gap funcional Story 3.5 Task 5)              | Dex (dev)     |
+| 2026-05-25 | DONE   | `[STORY-1.9-F1]` Lighthouse CI workflow — materializado via Story 3.5 Task 6 (lighthouse.yml + .lighthouserc.json) | Gage (devops) |

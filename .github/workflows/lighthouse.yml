@@ -1,0 +1,76 @@
+# =========================================================================
+# Lighthouse CI — Story 3.5 (AC1 / AC6, materializa [STORY-1.9-F1])
+# =========================================================================
+# Quality gate automatizado de performance/a11y/best-practices/SEO nas rotas
+# públicas. Roda em PRs que tocam código de UI (`app/**`, `components/**`) ou
+# config que afeta bundle/perf (`next.config.ts`, `package.json`). Espera o
+# preview deploy da Vercel ficar pronto (timing assíncrono via
+# wait-for-vercel-preview), depois roda Lighthouse contra as 3 URLs-chave
+# do PRD (`/`, `/@demo`, `/dashboard`).
+#
+# DECISÕES (DEV-6/7/8 da Story 3.5, ratificadas por @devops/Gage):
+#
+#   - wait-for-vercel-preview@v1.3.1 verbatim arch L2084-2113 — battle-tested
+#     vs alternativas mais recentes. max_timeout=300s (5 min) cobre o deploy
+#     médio da Vercel para este projeto.
+#   - Preset Lighthouse = MOBILE (default, sem flag explícita). Alinhado com
+#     PRD AC2 ("LCP < 2.5s e INP < 200ms sob throttle 4G simulado") — mobile
+#     preset do Lighthouse já aplica throttle 4G nativamente. Desktop preset
+#     seria menos representativo do uso real do link-in-bio (compartilhado
+#     em apps de mensagem ⇒ mobile).
+#   - minScore = 0.85 para as 4 categories (performance/accessibility/best-
+#     practices/seo). Floor de regressão verbatim AC6 ("falha se score
+#     regredir abaixo de 85"). Meta de produção (AC1) é ≥ 0.90, mas o floor
+#     de CI tolera ~5pts de variabilidade natural entre runs de preview.
+#   - temporaryPublicStorage: true evita LHCI_GITHUB_APP_TOKEN (NFR10 —
+#     zero secrets versionados). Reports ficam públicos por 7 dias na
+#     storage do treosh/lighthouse-ci-action.
+#   - /dashboard anônimo redireciona para /login — Lighthouse vai medir a
+#     landing de login, não o dashboard autenticado. Aceitável (DEV-7 da
+#     3.5): documenta-se em docs/a11y-audit.md §9 que /dashboard cobre a
+#     rota de login na prática.
+#
+# PATHS filter: além de `app/**` + `components/**` (arch L2084-2113), inclui
+# next.config.ts (mudanças em images/headers afetam Lighthouse) e package.json
+# (deps novas podem inflar bundle — finding F1 da 3.5 manda monitorar margem
+# apertada de ~2 KB no /[username]).
+#
+# Backlog crossover: materializa [STORY-1.9-F1] (MEDIUM, diferido de Story 1.9
+# DP-1). Ao mergear, fechar como ✅ DONE em docs/STORY-BACKLOG.md.
+
+name: Lighthouse CI
+
+on:
+  pull_request:
+    paths:
+      - 'app/**'
+      - 'components/**'
+      - 'next.config.ts'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.lighthouserc.json'
+      - '.github/workflows/lighthouse.yml'
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wait for Vercel preview
+        uses: patrickedqvist/wait-for-vercel-preview@v1.3.1
+        id: vercel
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          max_timeout: 300
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v11
+        with:
+          urls: |
+            ${{ steps.vercel.outputs.url }}/
+            ${{ steps.vercel.outputs.url }}/@demo
+            ${{ steps.vercel.outputs.url }}/dashboard
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          configPath: ./.lighthouserc.json

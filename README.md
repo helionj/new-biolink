@@ -74,6 +74,7 @@ biolink/
 - [PRD](docs/prd.md)
 - [Architecture](docs/architecture.md)
 - [Design System](docs/design-system.md)
+- [A11y & Performance Audit](docs/a11y-audit.md)
 - [Stories](docs/stories/)
 - [Dev Setup](docs/dev-setup.md)
 
