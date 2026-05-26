@@ -1,0 +1,166 @@
+schema: 1
+story: '3.5'
+gate: CONCERNS
+status_reason: |
+  ACs 3/4/5 PASS com evidência empírica (bundle 198KB gz, next/image audit, WCAG 2.1 AA);
+  ACs 1/2/6 com wiring completo mas evidência empírica pendente (depende de tráfego prod
+  ou primeiro PR pós-merge tocando app/components).
+reviewer: 'Quinn'
+updated: '2026-05-25T22:15:00Z'
+
+# Re-validated quality gates (executed by @qa during gate review):
+# - pnpm typecheck → exit 0 ✓
+# - pnpm lint → exit 0 ✓
+# - pnpm test → 326/326 PASS (40 test files) ✓
+# - pnpm check:contrast → 27/27 PASS WCAG AA ✓
+
+# Files verified present and conformant:
+# - .github/workflows/lighthouse.yml (76 linhas, header verbose, paths estendidos)
+# - .lighthouserc.json (4 categories × minScore 0.85)
+# - docs/a11y-audit.md (9 seções, 30KB, WCAG declaration)
+# - app/layout.tsx (Analytics wired após Toaster)
+# - package.json (@vercel/analytics ^2.0.1)
+# - docs/STORY-BACKLOG.md (F1/F2 registrados, [STORY-1.9-F1] ✅ DONE)
+# - README.md (link para a11y-audit.md)
+
+acceptance_criteria_status:
+  AC1:
+    status: PENDING
+    reason: |
+      Lighthouse ≥ 90 em produção — wiring completo (workflow CI deploya no
+      próximo PR que tocar app/components/next.config/package.json). Sem
+      medição absoluta one-shot porque Task 7.6 foi SKIPPED por decisão do
+      dono (rationale documentado: workflow CI cobre evidência contínua).
+  AC2:
+    status: PENDING
+    reason: |
+      LCP < 2.5s + INP < 200ms — Vercel Analytics v2.0.1 wirado em
+      app/layout.tsx populará Web Vitals em 24-48h pós-tráfego real.
+      Sem evidência one-shot (Task 7.6 SKIPPED).
+  AC3:
+    status: PASS
+    reason: |
+      /[username] = 198.04 KB gz, / = 199.06 KB gz (margem ~1-2 KB).
+      Medido via .next/build-manifest.json + entryJSFiles + gzip-9
+      (workaround Turbopack omite First Load JS textual — DEV-A).
+      F1 MEDIUM (margem apertada) registrado no backlog.
+  AC4:
+    status: PASS
+    reason: |
+      0 <img> raw na codebase. 3 next/image usages auditados:
+      PublicPage (priority quando avatar presente), AvatarUpload
+      (unoptimized para blob URL — justificado), ThemePreview (decorativo).
+  AC5:
+    status: PASS
+    reason: |
+      A11y manual documentada em docs/a11y-audit.md (9 seções):
+      keyboard audit por rota, screen reader smoke (code review),
+      contrast 27/27 PASS WCAG AA. WCAG 2.1 Level AA declaration.
+      Smoke runtime VoiceOver (Task 7.5 Cenário 3) SKIPPED — risco MÉDIO.
+  AC6:
+    status: PARTIAL
+    reason: |
+      Workflow .github/workflows/lighthouse.yml + .lighthouserc.json
+      criados e ratificados (Gage/devops). Smoke end-to-end (Task 6.3)
+      pendente do primeiro PR pós-merge que tocar paths gatilhos.
+
+top_issues:
+  - id: 'PERF-001'
+    severity: medium
+    finding: |
+      AC1 (Lighthouse ≥ 90 em /, /@demo, /dashboard) sem evidência empírica
+      one-shot — Task 7.6 (smoke prod PageSpeed Insights) SKIPPED.
+    suggested_action: |
+      Workflow Lighthouse CI dispara no próximo PR tocando app/components.
+      Recomendado: abrir PR de teste trivial (ex.: comentário em app/page.tsx)
+      pós-merge para validar workflow end-to-end E capturar primeira evidência
+      absoluta de AC1 no PR comment.
+
+  - id: 'PERF-002'
+    severity: medium
+    finding: |
+      AC2 (LCP < 2.5s, INP < 200ms) sem evidência empírica — Vercel Analytics
+      precisa de 24-48h de tráfego real para popular Web Vitals.
+    suggested_action: |
+      Verificar dashboard Vercel Analytics em 2026-05-27 (48h pós-deploy).
+      Se LCP/INP estiverem fora do threshold, escalar como Story de bugfix.
+      Alternativamente, executar PageSpeed Insights manual em
+      https://new-biolink.vercel.app/@demo (mobile preset) sob demanda.
+
+  - id: 'PERF-003'
+    severity: low
+    finding: |
+      AC6 workflow smoke end-to-end (Task 6.3) pendente — workflow YAML
+      validado por jq mas não executou contra um PR real ainda.
+    suggested_action: |
+      Próximo PR que tocar app/**/components/** servirá como smoke
+      involuntário. Se o workflow falhar (ex.: wait-for-vercel-preview
+      timeout), Gage tem 5 min de buffer + temporaryPublicStorage evita
+      issue de secrets (NFR10).
+
+  - id: 'TEST-001'
+    severity: low
+    finding: |
+      Tasks 4.3 (smoke dev Vercel Analytics), 7.5 (4 cenários runtime dev),
+      7.6 (smoke prod) SKIPPED por decisão do dono. Risco residual MÉDIO
+      conforme rationale na Task 7.6.
+    suggested_action: |
+      Aceitar skips conforme padrão do projeto (feedback_skip_manual_smoke.md)
+      — cobertura indireta via 326 testes + typecheck/build/lint + CI
+      health-check verde + Vercel Analytics contínuo. QA recomenda popular
+      tabela §7 do a11y-audit.md sob demanda quando workflow Lighthouse
+      produzir primeiro PR comment.
+
+  - id: 'PERF-004'
+    severity: low
+    finding: |
+      F1 MEDIUM — margem de bundle em /[username] (198.04 KB gz) e /
+      (199.06 KB gz) está ~1-2 KB do threshold de 200 KB. Qualquer dep
+      client-side futura pode quebrar AC3.
+    suggested_action: |
+      Documentado em §1 do a11y-audit.md e registrado como [STORY-3.5-F1]
+      no backlog. Gate manual em PRs futuros que toquem app/[username]/**.
+      Considerar @next/bundle-analyzer como story dedicada se margem
+      regredir abaixo de 1 KB.
+
+  - id: 'MNT-001'
+    severity: low
+    finding: |
+      F2 MEDIUM — dashboard sem UI para editar bio/display_name (schema e
+      render suportam ambos). Identificado durante criação do demo em prod.
+    suggested_action: |
+      Não bloqueia AC1-6. Registrado como [STORY-3.5-F2] no backlog
+      (MEDIUM). PublicPage faz fallback gracioso (h1 = @username, bio
+      omitida via {bio &&}). Endereçar em story de profile editing dedicada.
+
+waiver: { active: false }
+
+# Constitutional/IDS compliance verified:
+# - Article III (Story-Driven): 6/6 ACs verbatim PRD L531-538 ✓
+# - Article IV (No Invention): workflow verbatim arch L2084-2113;
+#   <Analytics /> verbatim arch L2750; thresholds verbatim AC6/AC1 ✓
+# - Article V (Quality First): novo quality gate tool lighthouse-ci
+#   adicionado ao gate config + 4 existentes mantidos ✓
+# - IDS G5 (QA Review): single new dep (@vercel/analytics) justified;
+#   reuse explícito de next/image, font-display swap, check-contrast,
+#   ci.yml pattern (health-check) ✓
+# - MEMORY check (QA-001 manual): N/A — CodeRabbit/WSL indisponível em
+#   macOS, gate manual conforme docs/qa/known-issues.md ✓
+
+next_steps:
+  - agent: '@devops'
+    command: '*close-story 3.5'
+    condition: |
+      QA verdict CONCERNS aceito pelo dono. Tasks 7.5/7.6 já SKIPPED
+      conforme padrão do projeto. Story pode transicionar InReview → Done
+      com gate CONCERNS documentado.
+  - agent: 'next PR author'
+    command: '(qualquer PR tocando app/components)'
+    condition: |
+      Workflow Lighthouse CI dispara automaticamente — produz primeira
+      evidência absoluta de AC1/AC6 via PR comment.
+  - alternative_agent: '@dev'
+    alternative_command: '*apply-qa-fixes 3.5'
+    condition: |
+      Apenas se dono decidir endereçar PERF-001/PERF-002 antes do close
+      via PageSpeed Insights manual + populating tabela §7 do audit.
