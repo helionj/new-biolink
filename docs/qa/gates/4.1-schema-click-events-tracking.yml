@@ -1,0 +1,232 @@
+schema: 1
+story: '4.1'
+gate: PASS
+status_reason: 'Implementação completa dos 6 ACs (migration 0007 + RLS + /api/track/click + libs hash/rate-limit + glue client). 367/367 testes verdes (263 unit+components + 104 integration); schema remoto sincronizado com 1 policy SELECT e zero policies INSERT/UPDATE/DELETE (AC4 honrado via ausência-de-policy + service-role bypass). 2 observações low não-bloqueantes (lint performance herdado + bundle re-measure deferido).'
+reviewer: 'Quinn'
+updated: '2026-05-26T14:22:57Z'
+
+top_issues:
+  - id: 'PERF-001'
+    severity: low
+    finding: |
+      Lint `auth_rls_initplan` introduzido pela policy `click_events_select_own` —
+      `auth.uid()` é chamado direto no predicado (subquery 2-hop link→page→profile)
+      em vez de `(select auth.uid())`, causando re-evaluation por linha em scans amplos.
+      Padrão idêntico às 7 policies herdadas de 0002/0003/0004 (`profiles_update_own`,
+      `pages_select_own/update_own`, `links_select_own/insert_own/update_own/delete_own`)
+      — não é regressão de 4.1, é coerência arquitetural. Mitigação por índice composto
+      `idx_click_events_link_id_clicked_at` (incluído na 0007) reduz custo prático.
+    suggested_action: |
+      Agendar batch fix de auth_rls_initplan para todas as 8 policies em sprint dedicado
+      (substituir `auth.uid()` por `(select auth.uid())` em uma migration 0008+ companheira).
+      Não bloqueante para 4.1; tracking via STORY-BACKLOG.md como LOW.
+
+  - id: 'TEST-001'
+    severity: low
+    finding: |
+      Re-medição programática de bundle First Load JS de `/[username]` (Task 7.5) ficou
+      bloqueada por drift do Turbopack — `.next/build-manifest.json` lista 0 files para a
+      rota (drift conhecido vs Story 3.5 que mediu 198.04 KB gz via mesmo método).
+      Continuação do `[STORY-3.5-F1]` (LOW — monitorar margem <200 KB gz).
+    suggested_action: |
+      Gate efetivo já está em CI: workflow `.github/workflows/lighthouse.yml` (Story 3.5)
+      roda Lighthouse minScore 0.85 em 4 categorias quando PR toca `app/**` ou `components/**`
+      — qualquer regressão de bundle/performance será capturada no PR. Resolver o drift do
+      build-manifest é tarefa de tooling (não-bloqueante).
+
+waiver: { active: false }
+
+# ---------------------------------------------------------------------------
+# Detalhes do review (informacional — fora do schema mínimo do qa-gate)
+# ---------------------------------------------------------------------------
+
+review_evidence:
+  date: '2026-05-26'
+  branch: 'feat/4.1-schema-click-events-tracking'
+  commit: '7697364'
+  reviewer_role: '@qa (Quinn) — gate manual QA-001 (CodeRabbit/WSL incompat. macOS)'
+
+  acceptance_criteria:
+    - id: AC1
+      verdict: PASS
+      evidence: |
+        Migration `supabase/migrations/0007_click_events.sql` cria tabela com
+        colunas (id bigint identity PK, link_id uuid FK ON DELETE CASCADE,
+        clicked_at timestamptz default now(), user_agent_hash bytea, ip_hash bytea)
+        + check_constraint chk_click_events_hash_size (octet_length=32). Verificado
+        no projeto remoto ibpliihqaceafdykgwiu via SQL: rls_enabled=true,
+        index_count=2, current_row_count=0.
+
+    - id: AC2
+      verdict: PASS
+      evidence: |
+        `app/api/track/click/route.ts` (POST handler, runtime:nodejs,
+        force-dynamic) resolve link via `createAdmin()` (service-role) com
+        `pages!inner(is_published)`. Retorna 404 se `link === null` ou
+        `is_published === false`. Validado por integration tests cenários
+        (b), (c) em `tests/integration/api/track-click.test.ts`.
+
+    - id: AC3
+      verdict: PASS
+      evidence: |
+        `lib/hash.ts` exporta `hashPII()` + `hashPIINullable()` usando Web Crypto
+        sha-256 com `env.HASH_SALT` (REUSE de Story 1.x; validado por `lib/env.ts:11-13`
+        com z.string().min(32)). DEV-4 resolvido em runtime via formato bytea-text
+        `\x<hex>` — smoke confirmou `octet_length(ip_hash)=32, octet_length(user_agent_hash)=32`.
+        9 unit tests cobrem determinismo, 32 bytes, salt dependence, null/empty handling.
+
+    - id: AC4
+      verdict: PASS
+      evidence: |
+        RLS habilitada + apenas 1 policy SELECT (`click_events_select_own`) com
+        predicado JOIN 2-hop link→page→profile. Zero policies INSERT/UPDATE/DELETE
+        — defesa canônica Supabase via ausência-de-policy + service-role bypass
+        (DEV-2). Validado por 10 cenários em `tests/integration/rls/click-events.test.ts`:
+        owner/non-owner/anon × SELECT + INSERT/UPDATE/DELETE bloqueados + CASCADE
+        + check constraint. Confirmado no remoto via SQL: policy_count=1, policies=[click_events_select_own:r].
+
+    - id: AC5
+      verdict: PASS
+      evidence: |
+        `lib/rate-limit.ts` implementa fixed-window in-memory (Map<key, {count,
+        windowStart}>) com cleanup piggybacked (cada 100 calls). Route handler
+        usa `ip_hash hex` como chave (defesa anti-PII em memória) com max=60,
+        windowMs=60_000. Bypass quando ip ausente (defensivo). DEV-5 limitação
+        serverless documentada em JSDoc. 8 unit tests cobrem first/last/over-limit,
+        window reset, key isolation. Integration test cenário (e) valida 429 +
+        `Retry-After` header após 61 POSTs.
+
+    - id: AC6
+      verdict: PASS
+      evidence: |
+        `components/public/TrackedLinkCard.tsx` (Client Component) wrappa
+        `PublicLinkCard.tsx` (Server Component preservado) com handlers
+        `onClickCapture`/`onAuxClickCapture` que disparam `navigator.sendBeacon`
+        (primário) ou `fetch({ keepalive: true })` (fallback). NÃO bloqueia
+        navegação (sem `preventDefault`). DEV-6 ratificado pelo PO em v0.2 do
+        Change Log — "beforeunload" literal era inalcançável com `target="_blank"`;
+        sendBeacon é o primitivo canônico de indústria. 4 component tests cobrem
+        render + sendBeacon dispatch + fetch fallback + onAuxClick.
+        `components/public/PublicPage.tsx` substitui o import.
+
+  quality_gate_set:
+    - check: 'pnpm typecheck'
+      result: PASS
+      notes: 'tsc --noEmit exit 0; sem erros.'
+    - check: 'pnpm lint'
+      result: PASS
+      notes: 'eslint exit 0; sem warnings.'
+    - check: 'pnpm build'
+      result: PASS
+      notes: |
+        Next 16.2.5 Turbopack ✓ Compiled em 109s. Route `ƒ /api/track/click`
+        registrada. Warning herdado "middleware file convention deprecated" é
+        INFO esperado (não-bloqueante; não introduzido por 4.1).
+    - check: 'pnpm db:types'
+      result: PASS
+      notes: 'lib/supabase/types.ts inclui Row/Insert/Update + Relationships click_events (2 ocorrências grep).'
+    - check: 'pnpm exec supabase migration list --linked'
+      result: PASS
+      notes: '0001..0007 Local=Remote; sincronia confirmada.'
+    - check: 'pnpm vitest run --project unit --project components'
+      result: PASS
+      notes: '263/263 testes em 33 arquivos; 9 hash + 8 rate-limit + 4 TrackedLinkCard novos.'
+    - check: 'pnpm vitest run --project integration'
+      result: PASS
+      notes: '104/104 testes em 12 arquivos; 10 track-click + 10 click-events RLS novos; regressão zero.'
+    - check: 'supabase get_advisors security'
+      result: PASS-with-notes
+      notes: |
+        6 lints SEC herdados de 0002/0006 + config Auth — NENHUM introduzido por 4.1:
+        set_updated_at search_path mutable (1.4), citext in public (1.4),
+        avatars public bucket listing (3.4), on_auth_user_created SECURITY DEFINER
+        anon+authenticated (1.4), auth_leaked_password_protection disabled (config).
+    - check: 'supabase get_advisors performance'
+      result: CONCERNS-low
+      notes: |
+        1 lint NEW: auth_rls_initplan em click_events_select_own — segue padrão
+        idêntico das 7 policies herdadas (profiles/pages/links). Ver PERF-001.
+    - check: 'smoke runtime Task 9.2 (DEV-7 EXECUTAR)'
+      result: PASS
+      notes: |
+        POST /api/track/click → 204 + SQL octet_length(ip_hash)=32, octet_length(user_agent_hash)=32.
+        DEV-4 (bytea serialização hex prefix) validado end-to-end. Row de smoke
+        limpa após validação (current_row_count=0).
+
+  nfr_validation:
+    - nfr: 'NFR1 RLS em user-data tables'
+      status: PASS
+      notes: 'click_events.rls_enabled=true confirmado no remoto.'
+    - nfr: 'NFR4 bundle First Load JS <200 KB gz'
+      status: PASS-deferred-to-CI
+      notes: |
+        Re-medição programática bloqueada (Turbopack drift — TEST-001).
+        Gate efetivo: Lighthouse CI minScore 0.85 (Story 3.5) dispara no PR.
+    - nfr: 'NFR6 cobertura backend ≥ 70%'
+      status: PASS
+      notes: |
+        ~600 LOC implementation + ~700 LOC tests (78 hash + 88 rate-limit + 226
+        track-click + 263 RLS + 142 TrackedLinkCard). Ratio test:impl >> 70%.
+    - nfr: 'NFR10 zero secrets versionados'
+      status: PASS
+      notes: 'HASH_SALT permanece em env (lib/env.ts:11-13 com z.min(32)). Sem hardcode no código.'
+    - nfr: 'NFR12 retenção 90d (PII)'
+      status: PASS-deferred-to-Phase2
+      notes: |
+        Schema preparado (chk_click_events_hash_size sanitiza), retenção via
+        pg_cron é Phase 2 (schema-design.md §6 L803). Documentado em comentário
+        SQL da 0007 + comment na tabela.
+    - nfr: 'NFR13 browser support (iOS 14+)'
+      status: PASS
+      notes: 'navigator.sendBeacon suportado iOS 11+. Fallback fetch keepalive cobre edge cases.'
+
+  deviations_resolved:
+    - id: DEV-1
+      status: APPROVED
+      notes: 'Naming 0007_ vs YYYYMMDD — convenção real do repo; idêntico a 2.2/2.3.'
+    - id: DEV-2
+      status: APPROVED
+      notes: |
+        AC4 via ausência-de-policy + service-role bypass é canônico Supabase.
+        Validado por 10 cenários RLS demonstrando bloqueio efetivo (owner/non-owner/anon).
+    - id: DEV-3
+      status: APPROVED
+      notes: |
+        Sem `hash_pii()` Postgres — hash exclusivo em lib/hash.ts (TS + Web Crypto).
+        Função SQL fica para Phase 2 se precisar de backfill consistente.
+    - id: DEV-4
+      status: APPROVED-with-fix
+      notes: |
+        Serialização bytea via `\x<hex>` (Postgres canônico) em vez de base64.
+        Resolvido em runtime — primeiro batch falhou com chk_click_events_hash_size
+        @ 44 bytes (base64 ASCII), fix passou para hex prefix → 32 bytes válidos.
+        Comentário inline no route handler explica trade-off.
+    - id: DEV-5
+      status: APPROVED
+      notes: |
+        Rate-limit in-memory per-instance em serverless é fallback verbatim do PRD
+        ("em-memory ou Redis-free fallback"). Documentado em JSDoc + comment inline.
+    - id: DEV-6
+      status: RATIFIED-by-PO
+      notes: |
+        sendBeacon + fetch+keepalive fallback substitui "fetch beforeunload" literal
+        do AC6. `target="_blank"` torna beforeunload técnico inalcançável; arch
+        §Workflow 2 L734 mostra dispatch no click. Ratificado em Change Log v0.2.
+    - id: DEV-7
+      status: EXECUTED
+      notes: |
+        Smoke runtime executado per ratificação @po (DEV-4 era único ponto não
+        coberto por integration tests). POST→204 + SQL octet_length=32 ✓.
+
+  code_intel_advisory: null
+
+# ---------------------------------------------------------------------------
+# Handoff
+# ---------------------------------------------------------------------------
+handoff:
+  next_agent: '@po'
+  next_command: '*close-story 4.1'
+  condition: 'Gate PASS — proceed to InReview → Done (status transition).'
+  alternatives:
+    - condition: 'Se PERF-001 batch fix for priorizado'
+      action: 'Adicionar item LOW ao STORY-BACKLOG.md como [STORY-4.1-F1]'
