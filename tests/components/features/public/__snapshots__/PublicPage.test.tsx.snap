@@ -50,41 +50,43 @@ exports[`<PublicPage> theme wrapper > aplica data-theme="brand" no wrapper top-l
         aria-label="Links de @demo"
         class="flex w-full flex-col gap-3"
       >
-        <li>
-          <a
-            class="flex w-full items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:bg-accent"
-            data-link-id="lnk-1"
-            href="https://instagram.com/demo"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            <svg
-              aria-hidden="true"
-              class="lucide lucide-link h-5 w-5 shrink-0"
-              fill="none"
-              height="24"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              width="24"
-              xmlns="http://www.w3.org/2000/svg"
+        <span>
+          <li>
+            <a
+              class="flex w-full items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:bg-accent"
+              data-link-id="lnk-1"
+              href="https://instagram.com/demo"
+              rel="noopener noreferrer"
+              target="_blank"
             >
-              <path
-                d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
-              />
-              <path
-                d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
-              />
-            </svg>
-            <span
-              class="flex-1 truncate font-medium"
-            >
-              Instagram
-            </span>
-          </a>
-        </li>
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-link h-5 w-5 shrink-0"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+                />
+                <path
+                  d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+                />
+              </svg>
+              <span
+                class="flex-1 truncate font-medium"
+              >
+                Instagram
+              </span>
+            </a>
+          </li>
+        </span>
       </ul>
     </main>
   </div>
@@ -141,41 +143,43 @@ exports[`<PublicPage> theme wrapper > aplica data-theme="dark" no wrapper top-le
         aria-label="Links de @demo"
         class="flex w-full flex-col gap-3"
       >
-        <li>
-          <a
-            class="flex w-full items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:bg-accent"
-            data-link-id="lnk-1"
-            href="https://instagram.com/demo"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            <svg
-              aria-hidden="true"
-              class="lucide lucide-link h-5 w-5 shrink-0"
-              fill="none"
-              height="24"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              width="24"
-              xmlns="http://www.w3.org/2000/svg"
+        <span>
+          <li>
+            <a
+              class="flex w-full items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:bg-accent"
+              data-link-id="lnk-1"
+              href="https://instagram.com/demo"
+              rel="noopener noreferrer"
+              target="_blank"
             >
-              <path
-                d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
-              />
-              <path
-                d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
-              />
-            </svg>
-            <span
-              class="flex-1 truncate font-medium"
-            >
-              Instagram
-            </span>
-          </a>
-        </li>
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-link h-5 w-5 shrink-0"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+                />
+                <path
+                  d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+                />
+              </svg>
+              <span
+                class="flex-1 truncate font-medium"
+              >
+                Instagram
+              </span>
+            </a>
+          </li>
+        </span>
       </ul>
     </main>
   </div>
@@ -232,41 +236,43 @@ exports[`<PublicPage> theme wrapper > aplica data-theme="light" no wrapper top-l
         aria-label="Links de @demo"
         class="flex w-full flex-col gap-3"
       >
-        <li>
-          <a
-            class="flex w-full items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:bg-accent"
-            data-link-id="lnk-1"
-            href="https://instagram.com/demo"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            <svg
-              aria-hidden="true"
-              class="lucide lucide-link h-5 w-5 shrink-0"
-              fill="none"
-              height="24"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              width="24"
-              xmlns="http://www.w3.org/2000/svg"
+        <span>
+          <li>
+            <a
+              class="flex w-full items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:bg-accent"
+              data-link-id="lnk-1"
+              href="https://instagram.com/demo"
+              rel="noopener noreferrer"
+              target="_blank"
             >
-              <path
-                d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
-              />
-              <path
-                d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
-              />
-            </svg>
-            <span
-              class="flex-1 truncate font-medium"
-            >
-              Instagram
-            </span>
-          </a>
-        </li>
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-link h-5 w-5 shrink-0"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+                />
+                <path
+                  d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+                />
+              </svg>
+              <span
+                class="flex-1 truncate font-medium"
+              >
+                Instagram
+              </span>
+            </a>
+          </li>
+        </span>
       </ul>
     </main>
   </div>

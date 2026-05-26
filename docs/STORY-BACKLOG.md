@@ -3,7 +3,7 @@ title: Story Backlog
 description: Follow-up tasks, technical debt e oportunidades de otimização identificadas durante stories, dev e QA
 owner: '@po (Pax)'
 created: 2026-05-15
-last_updated: 2026-05-25 (Story 3.4 drafted)
+last_updated: 2026-05-26 (Story 4.1 closed; STORY-4.1-F1 added)
 ---
 
 # Story Backlog
@@ -117,18 +117,37 @@ _Nenhum item._
 - **Risk if not done**: LOW — drift entre `globals.css` e `PALETTES` do script é detectável manualmente em code review (diff de PR mostra ambos os arquivos). Risco real só materializa se um PR alterar apenas um dos dois lados sem revisão atenta.
 - **Acceptance**: Script lê paletas diretamente do CSS-fonte; mudar uma cor em `globals.css` propaga automaticamente para o gate WCAG sem edit duplicado.
 
+#### [STORY-4.1-F1] Batch fix `auth_rls_initplan` — substituir `auth.uid()` direto por `(select auth.uid())` em 8 policies
+
+- **Source**: Story 4.1 QA Gate PERF-001 (Quinn — `docs/qa/gates/4.1-schema-click-events-tracking.yml`) — 2026-05-26
+- **Priority**: 🟢 LOW
+- **Effort**: ~0.5 story de tech-debt (complexity S — 1 migration 0008+ companheira reescrevendo 8 policies já existentes; sem mudança de schema/dados)
+- **Status**: 📋 TODO
+- **Assignee**: @data-engineer (Dara) — gate @qa (regressão de RLS via suítes integration existentes em `tests/integration/rls/`)
+- **Sprint**: _A definir (`*backlog-schedule`)_ — não prioritário enquanto volume de cada tabela for < 100K rows (overhead é proporcional ao tamanho do scan)
+- **Description**: O Supabase advisor `auth_rls_initplan` detecta que `auth.uid()` é chamado **direto no predicado** das policies em vez de `(select auth.uid())`, causando re-evaluation por linha em scans amplos (overhead linear, não otimizável pelo planner). Story 4.1 adicionou a 8ª policy com esse padrão (`click_events_select_own`) — todas as 7 anteriores herdaram o mesmo de `0002_profiles.sql`, `0003_pages.sql` e `0004_links.sql`: `profiles_update_own`, `pages_select_own`, `pages_update_own`, `links_select_own`, `links_insert_own`, `links_update_own`, `links_delete_own`. **Não é regressão da 4.1** — é coerência arquitetural; o índice composto `idx_click_events_link_id_clicked_at` da 0007 mitiga o custo prático. Fix canônico Supabase: substituir `auth.uid()` por `(select auth.uid())` no `USING`/`WITH CHECK` — o planner converte a subquery em InitPlan (1 execução por scan).
+- **Success Criteria**:
+  - [ ] Criar `supabase/migrations/0008_rls_initplan_fix.sql` (companheira; sem mudar lógica de autorização)
+  - [ ] Reescrever as 8 policies via `DROP POLICY IF EXISTS` + `CREATE POLICY` com `(select auth.uid())` em todos os predicados que hoje usam `auth.uid()` direto
+  - [ ] Criar `supabase/rollbacks/0008_rls_initplan_fix_rollback.sql` que restaura as policies originais (idempotente, ordem reversa)
+  - [ ] Suítes `tests/integration/rls/*.test.ts` (profiles, pages, links, click_events) continuam 100% verdes — zero mudança de comportamento de autorização esperada
+  - [ ] `supabase get_advisors performance` retorna **0 lints** de `auth_rls_initplan` após apply
+  - [ ] `pnpm exec supabase db push --linked` aplica limpo; `pnpm db:types` sem diff (policies não mudam tipos)
+- **Risk if not done**: LOW — overhead atual é desprezível em volume MVP (< 1K rows por tabela user-data); só vira problema mensurável quando scans amplos sobre `click_events` ultrapassarem ~10K-100K rows por owner. Captura em Lighthouse CI / Vercel Analytics improvável (RLS roda em DB, não no edge). Detecção real só viria via `pg_stat_statements` em produção sob carga.
+- **Acceptance**: 8 policies reescritas com `(select auth.uid())`; advisor retorna 0 lints `auth_rls_initplan`; suítes RLS integration verdes; sem rollback necessário.
+
 ---
 
 ## 📊 Statistics
 
 | Métrica                  | Valor      |
 | ------------------------ | ---------- |
-| Total de itens ativos    | 4          |
+| Total de itens ativos    | 5          |
 | 🔴 HIGH                  | 0          |
 | 🟡 MEDIUM                | 1          |
-| 🟢 LOW                   | 3          |
+| 🟢 LOW                   | 4          |
 | ✅ DONE (não arquivados) | 1          |
-| Última atualização       | 2026-05-25 |
+| Última atualização       | 2026-05-26 |
 
 ---
 
@@ -142,3 +161,4 @@ _Nenhum item._
 | 2026-05-25 | ADD    | `[STORY-3.5-F1]` Monitorar margem apertada de bundle da página pública (Finding MEDIUM Story 3.5 §1)               | Dex (dev)     |
 | 2026-05-25 | ADD    | `[STORY-3.5-F2]` UI de edição de `display_name` e `bio` no dashboard (gap funcional Story 3.5 Task 5)              | Dex (dev)     |
 | 2026-05-25 | DONE   | `[STORY-1.9-F1]` Lighthouse CI workflow — materializado via Story 3.5 Task 6 (lighthouse.yml + .lighthouserc.json) | Gage (devops) |
+| 2026-05-26 | ADD    | `[STORY-4.1-F1]` Batch fix `auth_rls_initplan` em 8 policies (PERF-001 do QA gate Story 4.1)                       | Pax (po)      |

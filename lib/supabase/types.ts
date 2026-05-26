@@ -8,6 +8,38 @@ export type Database = {
   };
   public: {
     Tables: {
+      click_events: {
+        Row: {
+          clicked_at: string;
+          id: number;
+          ip_hash: string | null;
+          link_id: string;
+          user_agent_hash: string | null;
+        };
+        Insert: {
+          clicked_at?: string;
+          id?: never;
+          ip_hash?: string | null;
+          link_id: string;
+          user_agent_hash?: string | null;
+        };
+        Update: {
+          clicked_at?: string;
+          id?: never;
+          ip_hash?: string | null;
+          link_id?: string;
+          user_agent_hash?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'click_events_link_id_fkey';
+            columns: ['link_id'];
+            isOneToOne: false;
+            referencedRelation: 'links';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       links: {
         Row: {
           created_at: string;
