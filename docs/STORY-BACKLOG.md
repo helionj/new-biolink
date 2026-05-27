@@ -3,7 +3,7 @@ title: Story Backlog
 description: Follow-up tasks, technical debt e oportunidades de otimização identificadas durante stories, dev e QA
 owner: '@po (Pax)'
 created: 2026-05-15
-last_updated: 2026-05-27 (Story 4.2 closed; STORY-4.1-F1 expanded 8 → 9 policies)
+last_updated: 2026-05-27 (Story 4.3 QA gate PASS by @architect; STORY-4.3-F1 added — function_search_path_mutable batch fix)
 ---
 
 # Story Backlog
@@ -136,6 +136,25 @@ _Nenhum item._
 - **Risk if not done**: LOW — overhead atual é desprezível em volume MVP (< 1K rows por tabela user-data); só vira problema mensurável quando scans amplos sobre `click_events`/`page_views` ultrapassarem ~10K-100K rows por owner. Captura em Lighthouse CI / Vercel Analytics improvável (RLS roda em DB, não no edge). Detecção real só viria via `pg_stat_statements` em produção sob carga.
 - **Acceptance**: 9 policies reescritas com `(select auth.uid())`; advisor retorna 0 lints `auth_rls_initplan`; suítes RLS integration verdes; sem rollback necessário.
 
+#### [STORY-4.3-F1] Batch fix `function_search_path_mutable` — adicionar `SET search_path = public, pg_temp` em 3 funções
+
+- **Source**: Story 4.3 QA Gate SEC-001 (Aria — `docs/qa/gates/4.3-agregacoes-sql-views-7d-30d.yml`) — 2026-05-27. Lint 0011 do Supabase advisor introduzido em `public.get_link_clicks_series(uuid, integer)` e `public.get_page_views_series(uuid, integer)`; lint idêntico em `public.set_updated_at` herdado desde Story 1.4. Total: 3 funções afetadas.
+- **Priority**: 🟢 LOW
+- **Effort**: ~0.25 story de tech-debt (complexity XS — 1 migration `0010_function_search_path_fix.sql` com 3 `ALTER FUNCTION` statements; sem mudança de lógica; sem novo teste — apenas verificação via `get_advisors security` post-apply). Pode ser **consolidado com `[STORY-4.1-F1]`** numa migration única `0010_db_hardening.sql` (12 `DROP POLICY/CREATE POLICY` + 3 `ALTER FUNCTION` — ambos batch fixes de hardening advisor-driven sem mudança de comportamento).
+- **Status**: 📋 TODO
+- **Assignee**: @data-engineer (Dara) — gate @qa (regressão zero esperada; suítes integration existentes confirmam comportamento preservado)
+- **Sprint**: _A definir (`*backlog-schedule`)_ — não prioritário; advisor é WARN não ERROR; sem impact mensurável em prod MVP
+- **Description**: O Supabase advisor `function_search_path_mutable` (lint 0011) detecta funções `public.*` sem `search_path` definido explicitamente — risco teórico de schema-shadowing attacks (atacante cria `pg_catalog.now()` ou similar no schema do user e a função vulnerável invoca a versão errada). Severidade real LOW nas 3 funções afetadas: (a) **`set_updated_at`** (Story 1.4) é trigger function de manutenção — só roda via `UPDATE` em tabelas user-owned, atacante já tem acesso de write; (b/c) **`get_link_clicks_series`** e **`get_page_views_series`** (Story 4.3) são `LANGUAGE sql SECURITY INVOKER STABLE` — atacante só ataca próprio schema (sem elevação de privilégio); Postgres inline-otimiza one-liners com search_path do caller; tabelas referenciadas (`page_views`, `click_events`) qualificadas implicitamente como `public`. Fix canônico Supabase: `ALTER FUNCTION ... SET search_path = public, pg_temp` — fixa o search_path no contexto da função sem mudar lógica nem comportamento observable.
+- **Success Criteria**:
+  - [ ] Criar `supabase/migrations/0010_function_search_path_fix.sql` (ou consolidar em `0010_db_hardening.sql` com `[STORY-4.1-F1]`) com 3 statements `ALTER FUNCTION public.<name>(args) SET search_path = public, pg_temp;` para `set_updated_at()`, `get_link_clicks_series(uuid, integer)` e `get_page_views_series(uuid, integer)`.
+  - [ ] Criar `supabase/rollbacks/0010_function_search_path_fix_rollback.sql` que executa `ALTER FUNCTION ... RESET search_path` em todas as 3 funções (idempotente).
+  - [ ] Avaliar empiricamente se `reorder_links` (0005, mesmo modelo SECURITY INVOKER STABLE) é flagged pelo advisor — se sim, incluir no batch (atualizar count para 4 funções).
+  - [ ] `supabase get_advisors security` retorna **0 lints** `function_search_path_mutable` após apply.
+  - [ ] Suítes integration `tests/integration/db/aggregations.test.ts` + `tests/integration/rls/aggregations.test.ts` + `tests/integration/profiles.test.ts` (que invoca `set_updated_at` via trigger) continuam 100% verdes — zero mudança de comportamento.
+  - [ ] `pnpm exec supabase db push --linked` aplica limpo; `pnpm db:types` sem diff (search_path não afeta tipos PostgREST).
+- **Risk if not done**: LOW — schema-shadowing attack exige (a) atacante com privilégio CREATE em algum schema acessível ao caller (não há), (b) função vulnerável invocando builtin sem qualificar schema (one-liners SQL são robustos) e (c) flag de WARN não ERROR no advisor. Detectável apenas via review manual de advisor; sem impact em CI/Lighthouse/Vercel Analytics; sem regressão de UX/perf.
+- **Acceptance**: 3 funções com `search_path` fixado; advisor retorna 0 lints `function_search_path_mutable`; suítes integration verdes; tipos sem diff; rollback testado.
+
 #### [STORY-3.5-F3] Estabilizar Lighthouse CI — `runs: 1` → `runs: 3` mediana para reduzir flake na landing borderline ✅ DONE
 
 - **Source**: Story 4.1 PR #18 — lighthouse falhou no 1º run (Performance `/` = 0.80, threshold 0.85) e passou no rerun com config idêntica + mesmo deploy Vercel — 2026-05-26
@@ -160,10 +179,10 @@ _Nenhum item._
 
 | Métrica                  | Valor      |
 | ------------------------ | ---------- |
-| Total de itens ativos    | 6          |
+| Total de itens ativos    | 7          |
 | 🔴 HIGH                  | 0          |
 | 🟡 MEDIUM                | 1          |
-| 🟢 LOW                   | 5          |
+| 🟢 LOW                   | 6          |
 | ✅ DONE (não arquivados) | 1          |
 | Última atualização       | 2026-05-27 |
 
@@ -171,16 +190,17 @@ _Nenhum item._
 
 ## 📜 Change Log
 
-| Date       | Action | Item                                                                                                                                                                         | Author        |
-| ---------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| 2026-05-15 | ADD    | `[STORY-1.9-F1]` Lighthouse CI automatizado (diferido de Story 1.9 DP-1)                                                                                                     | Pax (po)      |
-| 2026-05-20 | ADD    | `[STORY-3.1-F1]` Refactor `@custom-variant dark` para eliminar `.dark` (DEV-1 Story 3.1)                                                                                     | Pax (po)      |
-| 2026-05-21 | ADD    | `[STORY-3.2-F1]` Refactor `scripts/check-contrast.mjs` para parser CSS automatizado (DEV-3 + DEV-5 Story 3.2)                                                                | Dex (dev)     |
-| 2026-05-25 | ADD    | `[STORY-3.5-F1]` Monitorar margem apertada de bundle da página pública (Finding MEDIUM Story 3.5 §1)                                                                         | Dex (dev)     |
-| 2026-05-25 | ADD    | `[STORY-3.5-F2]` UI de edição de `display_name` e `bio` no dashboard (gap funcional Story 3.5 Task 5)                                                                        | Dex (dev)     |
-| 2026-05-25 | DONE   | `[STORY-1.9-F1]` Lighthouse CI workflow — materializado via Story 3.5 Task 6 (lighthouse.yml + .lighthouserc.json)                                                           | Gage (devops) |
-| 2026-05-26 | ADD    | `[STORY-4.1-F1]` Batch fix `auth_rls_initplan` em 8 policies (PERF-001 do QA gate Story 4.1)                                                                                 | Pax (po)      |
-| 2026-05-26 | ADD    | `[STORY-3.5-F3]` Estabilizar Lighthouse CI (`runs: 1` → 3 + mediana) — evidência de flake no PR #18                                                                          | Gage (devops) |
-| 2026-05-26 | NOTE   | Story 4.2 `[STORY-4.2-prep]` — AC5 forward-looking: schema `page_views` habilita agregações 4.3 + dashboard 4.4                                                              | Dex (dev)     |
-| 2026-05-27 | UPDATE | `[STORY-4.1-F1]` expandido de 8 → 9 policies (inclui `page_views_select_own`) ao close-story 4.2 — PERF-001 gate                                                             | Pax (po)      |
-| 2026-05-27 | NOTE   | Story 4.3 AC2 — estratégia "regular views + materialized deferida" registrada por referência a arch.md §L356-365 + schema-design.md §4 L655-657 (não duplica decisão; DEV-6) | Dex (dev)     |
+| Date       | Action | Item                                                                                                                                                                         | Author           |
+| ---------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| 2026-05-15 | ADD    | `[STORY-1.9-F1]` Lighthouse CI automatizado (diferido de Story 1.9 DP-1)                                                                                                     | Pax (po)         |
+| 2026-05-20 | ADD    | `[STORY-3.1-F1]` Refactor `@custom-variant dark` para eliminar `.dark` (DEV-1 Story 3.1)                                                                                     | Pax (po)         |
+| 2026-05-21 | ADD    | `[STORY-3.2-F1]` Refactor `scripts/check-contrast.mjs` para parser CSS automatizado (DEV-3 + DEV-5 Story 3.2)                                                                | Dex (dev)        |
+| 2026-05-25 | ADD    | `[STORY-3.5-F1]` Monitorar margem apertada de bundle da página pública (Finding MEDIUM Story 3.5 §1)                                                                         | Dex (dev)        |
+| 2026-05-25 | ADD    | `[STORY-3.5-F2]` UI de edição de `display_name` e `bio` no dashboard (gap funcional Story 3.5 Task 5)                                                                        | Dex (dev)        |
+| 2026-05-25 | DONE   | `[STORY-1.9-F1]` Lighthouse CI workflow — materializado via Story 3.5 Task 6 (lighthouse.yml + .lighthouserc.json)                                                           | Gage (devops)    |
+| 2026-05-26 | ADD    | `[STORY-4.1-F1]` Batch fix `auth_rls_initplan` em 8 policies (PERF-001 do QA gate Story 4.1)                                                                                 | Pax (po)         |
+| 2026-05-26 | ADD    | `[STORY-3.5-F3]` Estabilizar Lighthouse CI (`runs: 1` → 3 + mediana) — evidência de flake no PR #18                                                                          | Gage (devops)    |
+| 2026-05-26 | NOTE   | Story 4.2 `[STORY-4.2-prep]` — AC5 forward-looking: schema `page_views` habilita agregações 4.3 + dashboard 4.4                                                              | Dex (dev)        |
+| 2026-05-27 | UPDATE | `[STORY-4.1-F1]` expandido de 8 → 9 policies (inclui `page_views_select_own`) ao close-story 4.2 — PERF-001 gate                                                             | Pax (po)         |
+| 2026-05-27 | ADD    | `[STORY-4.3-F1]` Batch fix `function_search_path_mutable` em 3 funções (SEC-001 do QA gate Story 4.3 — set_updated_at + 2 helpers novas) — consolidar com STORY-4.1-F1       | Aria (architect) |
+| 2026-05-27 | NOTE   | Story 4.3 AC2 — estratégia "regular views + materialized deferida" registrada por referência a arch.md §L356-365 + schema-design.md §4 L655-657 (não duplica decisão; DEV-6) | Dex (dev)        |
