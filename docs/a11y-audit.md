@@ -65,6 +65,14 @@ A margem de ~1-2 KB gz entre `/[username]` e o threshold de 200 KB significa que
 
 `First Load JS` (definição Next 16: shared + route-only entries, gzipped) é exatamente o que o PRD AC3 ("Bundle JS inicial da página pública < 200 KB gzipped") prescreve. Sem ajuste de threshold.
 
+### Re-medição pós-Story 4.2 (2026-05-26)
+
+Story 4.2 adicionou `components/public/ViewBeacon.tsx` (Client Component novo) ao `PublicPage.tsx`. Re-medição programática via `.next/build-manifest.json` **bloqueada por Turbopack chunk-name hashing drift** (TEST-001 herdado de Story 4.1 — chunk filenames hasheados não permitem mapeamento determinístico por rota). Mesmo gap registrado em Story 4.1 (`TrackedLinkCard.tsx`) e idêntico mitigation.
+
+**Gate efetivo:** Lighthouse CI (`.github/workflows/lighthouse.yml`, Story 3.5 AC6, minScore 0.85) dispara automaticamente em PRs que tocam `app/**` ou `components/**` — captura regressões de performance que excedam threshold do AC3 indiretamente (score Performance ≥ 85 + LCP/TBT/CLS).
+
+**Esperado:** ViewBeacon adiciona ~50-100 bytes gz ao bundle de `/[username]` (~0.05% do threshold de 200 KB) — `useEffect` + `sendBeacon`/`fetch` dispatch, sem deps. Acoplamento ínfimo vs. ganho de tracking accurate (DEV-8 ratificado). Risco residual: cumulative drift cross-stories. Continuar monitorando via Lighthouse CI até `[STORY-3.5-F1]` ser resolvido (bundle analyzer determinístico).
+
 ---
 
 ## 2. Imagens — `next/image` + `priority` (AC4)

@@ -2,6 +2,7 @@ import { User } from 'lucide-react';
 import Image from 'next/image';
 
 import { TrackedLinkCard } from '@/components/public/TrackedLinkCard';
+import { ViewBeacon } from '@/components/public/ViewBeacon';
 import { cn } from '@/lib/utils';
 import type { PublicPageData } from '@/server/page/queries';
 
@@ -38,6 +39,7 @@ export function PublicPage({ data }: { data: PublicPageData }) {
       className={cn('min-h-screen bg-background text-foreground', page.theme === 'dark' && 'dark')}
     >
       <main className="mx-auto flex w-full max-w-md flex-col items-center gap-6 px-4 py-8 sm:py-12">
+        <ViewBeacon pageId={page.id} />
         {profile.avatar_url ? (
           <Image
             src={profile.avatar_url}
