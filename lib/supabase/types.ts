@@ -183,9 +183,86 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      link_clicks_30d: {
+        Row: {
+          count: number | null;
+          day: string | null;
+          link_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'click_events_link_id_fkey';
+            columns: ['link_id'];
+            isOneToOne: false;
+            referencedRelation: 'links';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      link_clicks_7d: {
+        Row: {
+          count: number | null;
+          day: string | null;
+          link_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'click_events_link_id_fkey';
+            columns: ['link_id'];
+            isOneToOne: false;
+            referencedRelation: 'links';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      page_views_30d: {
+        Row: {
+          count: number | null;
+          day: string | null;
+          page_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'page_views_page_id_fkey';
+            columns: ['page_id'];
+            isOneToOne: false;
+            referencedRelation: 'pages';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      page_views_7d: {
+        Row: {
+          count: number | null;
+          day: string | null;
+          page_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'page_views_page_id_fkey';
+            columns: ['page_id'];
+            isOneToOne: false;
+            referencedRelation: 'pages';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Functions: {
+      get_link_clicks_series: {
+        Args: { p_days?: number; p_link_id: string };
+        Returns: {
+          count: number;
+          day: string;
+        }[];
+      };
+      get_page_views_series: {
+        Args: { p_days?: number; p_page_id: string };
+        Returns: {
+          count: number;
+          day: string;
+        }[];
+      };
       reorder_links: { Args: { p_ordered_ids: string[] }; Returns: undefined };
     };
     Enums: {

@@ -1,0 +1,333 @@
+schema: 1
+story: '4.3'
+gate: PASS
+status_reason: 'Implementação completa dos 4 ACs (migration 0009 com 4 views + 2 helper functions, rollback companion, types regen, 2 suítes integration novas com 22 cenários, validação remoto em 3 camadas confirma DEV-2/DEV-3/DEV-4/DEV-5/DEV-9 em runtime). PR #20 com 9/9 required status checks SUCCESS (install, lint, typecheck, test-unit, test-components, test-integration, build, gitleaks, audit) + Vercel Preview SUCCESS + mergeStateStatus=CLEAN. Validação direta no projeto remoto ibpliihqaceafdykgwiu via MCP: 4 views com pg_class.reloptions=["security_invoker=true"], 2 funções com prosecdef=false (SECURITY INVOKER) + provolatile=s (STABLE). 10 ratificações vinculantes do PO v0.2 (DEV-2/3/4/5/6/7/8/9/10) honradas — DEV-2 confirmado em runtime via cenário (p) que compara admin (service-role bypass) vs alice (RLS aplicada) → conjuntos diferentes provam security_invoker funcional. 1 observação new (SEC-001 — function_search_path_mutable nas 2 helpers) documentada como low non-blocking + follow-up [STORY-4.3-F1] no backlog. Observações low herdadas (auth_rls_initplan em 9 policies + multiple_permissive_policies em links/pages + bundle gate via Lighthouse) sem regressão.'
+reviewer: 'Aria'
+updated: '2026-05-27T18:50:00Z'
+
+top_issues:
+  - id: 'SEC-001'
+    severity: low
+    finding: |
+      Lint `function_search_path_mutable` (0011) introduzido em **2 funções
+      novas** desta story — `public.get_link_clicks_series(uuid, integer)` e
+      `public.get_page_views_series(uuid, integer)`. Ambas criadas com
+      `LANGUAGE sql SECURITY INVOKER STABLE` mas sem cláusula
+      `SET search_path = public, pg_temp` — supabase advisor (WARN) recomenda
+      definir search_path explicitamente para mitigar schema-shadowing attacks.
+      Severidade real LOW porque: (a) SECURITY INVOKER (atacante só atacaria
+      próprio schema — sem elevação de privilégio); (b) LANGUAGE sql one-liner
+      (Postgres inline-otimiza com search_path do caller); (c) tabelas
+      referenciadas (`page_views`, `click_events`) qualificadas como public.
+      Precedente: lint idêntico em `public.set_updated_at` (de 1.4) foi
+      aceito em todos os gates anteriores (1.4 → 4.2) — coerência com herança.
+    suggested_action: |
+      Criar `[STORY-4.3-F1]` LOW em `docs/STORY-BACKLOG.md` para batch fix
+      via migration companheira `0010_function_search_path_fix.sql`:
+      `ALTER FUNCTION ... SET search_path = public, pg_temp` para as 3 funções
+      afetadas (`set_updated_at`, `get_link_clicks_series`, `get_page_views_series`).
+      Não bloqueante; advisor passa de 3 WARN para 0 após apply. Não toca
+      `reorder_links` (já 0005, mesmo modelo SECURITY INVOKER STABLE — confirmar
+      empiricamente no fix se precisa ou não da cláusula).
+
+waiver: { active: false }
+
+# ---------------------------------------------------------------------------
+# Detalhes do review (informacional — fora do schema mínimo do qa-gate)
+# ---------------------------------------------------------------------------
+
+review_evidence:
+  date: '2026-05-27'
+  branch: 'feat/4.3-agregacoes-sql-views-7d-30d (PR #20 OPEN, CLEAN, MERGEABLE)'
+  commit: 'c69a2c6'
+  reviewer_role: '@architect (Aria) — gate manual QA-001 (CodeRabbit/WSL incompat. macOS, MEMORY project_qa_review_hang.md). Quality gate da Story 4.3 atribuído a @architect per Executor Assignment (Database story com decisões arquiteturais críticas — security_invoker é caso canônico de defense-in-depth).'
+
+  acceptance_criteria:
+    - id: AC1
+      verdict: PASS
+      evidence: |
+        Migration `supabase/migrations/0009_views_aggregations.sql` (218 LOC)
+        cria as 4 views — `link_clicks_7d`, `link_clicks_30d`, `page_views_7d`,
+        `page_views_30d` — agregando por (link_id|page_id, dia) via
+        `date_trunc('day', X)` + `count(*)::bigint`. Predicado de janela
+        `WHERE X >= now() - interval 'N days'` com N=7|30. Todas as 4 views
+        criadas com `WITH (security_invoker = true)` (PG 15+) — confirmado
+        no remoto via `pg_class.reloptions = ["security_invoker=true"]` para
+        as 4 (DEV-2 runtime). Migration 0009 aplicada via `pnpm exec supabase
+        db push --linked` (sync 0001..0009 confirmado via `list_migrations`
+        MCP). DDL verbatim de `schema-design.md §4 Views L625-647`.
+        COMMENT por view populado (FR11 referenciado).
+
+    - id: AC2
+      verdict: PASS
+      evidence: |
+        Estratégia documentada em 3 locais: (1) header da migration
+        `0009_views_aggregations.sql` linhas 35-42 (Strategy block); (2)
+        `docs/architecture/schema-design.md §4 Views §Materialized Views`
+        linhas 655-657 com trade-off explícito (regular views agora; switch
+        para materialized + REFRESH 5min quando P95 dashboard >500ms); (3)
+        `docs/architecture.md §Data Models §Aggregation Views` linhas 356-365.
+        AC2 satisfeito por referência (Constitution Art. IV — No Invention) —
+        ratificado como DEV-6 pelo PO em v0.2 da story.
+
+    - id: AC3
+      verdict: PASS
+      evidence: |
+        2 helper functions criadas: `get_page_views_series(p_page_id uuid,
+        p_days int DEFAULT 7) RETURNS TABLE(day date, count bigint)` + análoga
+        `get_link_clicks_series(p_link_id uuid, p_days int DEFAULT 7)`. Ambas
+        `LANGUAGE sql SECURITY INVOKER STABLE`. Confirmado no remoto via MCP:
+        `pg_proc.prosecdef = false` (INVOKER) + `provolatile = 's'` (STABLE).
+        Retorno serializa `day date` como string ISO no PostgREST e `count
+        bigint` como number (sancionado em 4.1). Default `p_days = 7` (DEV-4)
+        validado empiricamente em cenário (g) — RPC sem `p_days` retorna
+        mesmo resultado de `p_days: 7`. Sparse series (DEV-5) confirmado em
+        cenário (h). Ordem ASC explícita confirmada em cenários (e)/(f).
+
+    - id: AC4
+      verdict: PASS
+      evidence: |
+        2 suítes integration novas validam agregação correta com seed
+        determinístico: (a) `tests/integration/db/aggregations.test.ts` —
+        9 cenários (a-i) cobrindo AC1 (agregação 4 views) + AC3 (helpers) +
+        AC4 (correctness) + DEV-4 (default p_days) + DEV-5 (sparse) + DEV-9
+        (boundary `>=` inclusivo). Seed canônico: 7 click_events em alice
+        (3 today, 2 today-3, 1 today-10, 1 today-40) + 8 page_views em alice
+        (4 today, 2 today-5, 1 today-20, 1 today-100). Expectations precisas:
+        view 7d=2 dias/total 5; view 30d=3 dias/total 6 (click_events); view
+        7d=2 dias/total 6; view 30d=3 dias/total 7 (page_views).
+        (b) `tests/integration/rls/aggregations.test.ts` — 13 cenários (a-p)
+        cobrindo RLS por view × helper × owner/non-owner/anon, **incluindo
+        cenário (p) crítico** comparando admin (service-role bypass) vs alice
+        (RLS aplicada): Set sizes diferentes provam security_invoker funcional
+        (se iguais, gate falharia). CI test-integration SUCCESS no PR #20.
+
+  quality_gate_set:
+    - check: 'PR #20 CI: install'
+      result: PASS
+      notes: 'completedAt 2026-05-27T18:41:15Z, SUCCESS.'
+    - check: 'PR #20 CI: lint'
+      result: PASS
+      notes: 'completedAt 2026-05-27T18:41:40Z, SUCCESS.'
+    - check: 'PR #20 CI: typecheck'
+      result: PASS
+      notes: 'completedAt 2026-05-27T18:41:44Z, SUCCESS.'
+    - check: 'PR #20 CI: test-unit'
+      result: PASS
+      notes: 'completedAt 2026-05-27T18:41:42Z, SUCCESS.'
+    - check: 'PR #20 CI: test-components'
+      result: PASS
+      notes: 'completedAt 2026-05-27T18:42:14Z, SUCCESS.'
+    - check: 'PR #20 CI: test-integration'
+      result: PASS
+      notes: '2 suítes novas (aggregations.test.ts + RLS aggregations.test.ts) em ~22 cenários verdes; 147/147 testes totais no run local Dev Agent Record. Suites integration full SUCCESS no CI.'
+    - check: 'PR #20 CI: build'
+      result: PASS
+      notes: 'completedAt 2026-05-27T18:42:51Z, SUCCESS (warning ƒ Proxy Middleware INFO-001 herdado não-bloqueante).'
+    - check: 'PR #20 CI: gitleaks'
+      result: PASS
+      notes: 'completedAt 2026-05-27T18:40:55Z, SUCCESS (zero secrets versionados — NFR10).'
+    - check: 'PR #20 CI: audit'
+      result: PASS
+      notes: 'completedAt 2026-05-27T18:41:40Z, SUCCESS.'
+    - check: 'PR #20: Vercel Preview'
+      result: PASS
+      notes: 'state SUCCESS — preview deploy não-aplicável para mudança DB-only mas confirma zero regressão em build/runtime.'
+    - check: 'PR #20: mergeStateStatus'
+      result: PASS
+      notes: 'CLEAN + MERGEABLE — branch protection (9 required status checks) satisfeita; aguarda apenas merge manual.'
+    - check: 'Local re-validation: pnpm typecheck'
+      result: PASS
+      notes: 'tsc --noEmit exit 0 (Dev Agent Record + re-run em pre-push @devops).'
+    - check: 'Local re-validation: pnpm lint'
+      result: PASS
+      notes: 'eslint exit 0.'
+    - check: 'supabase list_migrations (MCP)'
+      result: PASS
+      notes: '0001..0009 sync confirmado; 0009 views_aggregations aplicada limpo.'
+    - check: 'supabase pg_class.reloptions (MCP)'
+      result: PASS
+      notes: |
+        4 views com `["security_invoker=true"]` no remoto:
+        link_clicks_7d, link_clicks_30d, page_views_7d, page_views_30d.
+        DEV-2 confirmado runtime em produção remoto, não apenas em local.
+    - check: 'supabase pg_proc (MCP)'
+      result: PASS
+      notes: |
+        2 funções com prosecdef=false (SECURITY INVOKER) + provolatile='s'
+        (STABLE) + args="p_X_id uuid, p_days integer" + returns="TABLE(day
+        date, count bigint)". DEV-3, DEV-4 confirmados runtime.
+    - check: 'supabase get_advisors security (MCP)'
+      result: PASS-with-notes
+      notes: |
+        8 WARN total: 2 NEW introduzidos por 4.3 (function_search_path_mutable
+        em get_link_clicks_series + get_page_views_series — ver SEC-001) +
+        6 herdados (set_updated_at search_path mutable de 1.4, citext in
+        public, avatars public bucket listing, on_auth_user_created SECURITY
+        DEFINER anon+authenticated, auth_leaked_password_protection). Zero
+        lints SEC CRITICAL/HIGH. Os 2 NEW são família do herdado
+        `set_updated_at` — coerência arquitetural com precedent ratificado.
+    - check: 'supabase get_advisors performance (MCP)'
+      result: PASS-no-regression
+      notes: |
+        21 lints PERF — TODOS herdados: 9 auth_rls_initplan (mesmo escopo
+        de [STORY-4.1-F1] LOW pós-4.2) + 12 multiple_permissive_policies
+        (links/pages — herdado de 2.x: links_select_own + links_select_public;
+        pages_select_own + pages_select_public). ZERO lints PERF introduzidos
+        por 4.3 — views agregam por security_invoker, não criam policies.
+
+  nfr_validation:
+    - nfr: 'NFR1 RLS em user-data tables'
+      status: PASS
+      notes: |
+        Views NÃO criam policies próprias. RLS é herdada por
+        security_invoker=true das tabelas-base (click_events_select_own +
+        page_views_select_own). [STORY-4.1-F1] permanece em 9 policies
+        (não cresce para 13 hipotéticas — 4 views + helpers). Defense-in-depth
+        validada em runtime pelo cenário (p) crítico — admin vê 2 link_ids,
+        alice vê 1; conjunto diferente prova security_invoker funcional.
+    - nfr: 'NFR4 bundle First Load JS <200 KB gz'
+      status: NOT-APPLICABLE
+      notes: |
+        Story 4.3 é Database-only. Zero mudança em app/** ou components/**.
+        `.github/workflows/lighthouse.yml` trigger paths não disparou
+        (esperado per Story DEV-5 forward-looking). Bundle baseline
+        preservado.
+    - nfr: 'NFR6 cobertura backend ≥ 70%'
+      status: PASS
+      notes: |
+        ~210 LOC implementation SQL (4 views + 2 functions) + ~690 LOC tests
+        (378 db/aggregations.test.ts + 311 rls/aggregations.test.ts +
+        50 rollback). Ratio test:impl >> 70%. Cobre AC1-AC4 + AP-6 EXPLAIN
+        smoke + DEV-2/3/4/5/9 validations em runtime.
+    - nfr: 'NFR7 testes integration verdes'
+      status: PASS
+      notes: |
+        2 suítes novas em 22 cenários compactos (9 a-i agg + 13 a-p RLS) —
+        100% verdes em CI (test-integration SUCCESS no PR #20). Re-run local
+        147/147 testes verdes (Dev Agent Record).
+    - nfr: 'NFR10 zero secrets versionados'
+      status: PASS
+      notes: 'gitleaks job SUCCESS no PR #20. Zero secrets nas 211 LOC SQL nem nos 689 LOC TS.'
+    - nfr: 'NFR12 retenção 90d (PII)'
+      status: PASS-deferred-to-Phase2
+      notes: |
+        Schema preparado nas tabelas-base (chk_*_hash_size sanitiza); views
+        herdam — retenção via pg_cron é Phase 2 (schema-design.md §6 L803).
+        Idem 4.1/4.2.
+    - nfr: 'NFR13 browser support (iOS 14+)'
+      status: NOT-APPLICABLE
+      notes: 'Database-only — nenhum browser code path.'
+
+  deviations_resolved:
+    - id: DEV-1
+      status: APPROVED
+      notes: |
+        Naming `0009_views_aggregations.sql` convenção `000N_` real do
+        repo (NÃO YYYYMMDDHHMMSS de schema-design.md §10; arch.md §1644
+        referencia "0005_views_aggregations.sql" como off-by-N histórico).
+        Idem 4.1/4.2 DEV-1.
+    - id: DEV-2
+      status: RATIFIED-RUNTIME
+      notes: |
+        `WITH (security_invoker = true)` em cada uma das 4 views
+        — confirmado runtime via pg_class.reloptions=["security_invoker=true"]
+        no remoto (MCP query). Cenário (p) crítico de tests/integration/rls/
+        aggregations.test.ts valida defense-in-depth funcional: admin vê
+        rows da alice E bob nas views; alice vê apenas suas. Conjuntos
+        diferentes → security_invoker aplicado. Se fosse igual, story
+        falharia o gate. Mandatório per PO ratificação v0.2.
+    - id: DEV-3
+      status: RATIFIED-RUNTIME
+      notes: |
+        `SECURITY INVOKER STABLE LANGUAGE sql` nas 2 helpers — confirmado
+        runtime: prosecdef=false (INVOKER) + provolatile='s' (STABLE).
+        Mesmo modelo de reorder_links (0005). RLS de click_events_select_own
+        e page_views_select_own aplicadas via INVOKER. Validado pelos
+        cenários (m, n, o) — non-owner/anon recebem 0 rows.
+    - id: DEV-4
+      status: RATIFIED-RUNTIME
+      notes: |
+        `p_days DEFAULT 7` — confirmado runtime: pg_proc args mostram
+        "p_X_id uuid, p_days integer" com default. Validado empiricamente
+        em cenário (g): RPC sem `p_days` retorna mesmo resultado de
+        `p_days: 7`. PostgREST aceita omissão (Supabase JS Args declara
+        `p_days?: number`).
+    - id: DEV-5
+      status: RATIFIED-RUNTIME
+      notes: |
+        Sparse series (dias zerados omitidos) — validado em cenário (h):
+        link com 1 click hoje retorna length=1, NÃO length=7 com 6 zeros.
+        Gap-fill é responsabilidade da UI 4.4.
+    - id: DEV-6
+      status: APPROVED
+      notes: |
+        AC2 satisfeito por referência (Constitution Art. IV — No Invention).
+        Documentação em 3 locais (migration header + schema-design.md §4 +
+        architecture.md §Data Models). Trade-off explícito materialized vs
+        regular views: switch quando P95 dashboard >500ms.
+    - id: DEV-7
+      status: APPROVED
+      notes: |
+        Sem GRANT/REVOKE customizado. Defense 100% via RLS + security_invoker
+        (validado runtime). Postgres default + Supabase: roles authenticated
+        e anon herdam SELECT sobre views públicas; RLS aplicada
+        defensivamente.
+    - id: DEV-8
+      status: APPROVED
+      notes: |
+        Subdir novo `tests/integration/db/` criado (separação semântica:
+        "schema/database semantics" vs "RLS policies"). Útil como precedent
+        para futuras schema stories (partitioning Phase 2).
+    - id: DEV-9
+      status: RATIFIED-RUNTIME
+      notes: |
+        Boundary `>=` inclusivo — validado em cenário (i): event @ ~6.95d
+        entra na view 7d; event @ ~7.05d NÃO entra. Documentado para que
+        4.4 saiba a semântica.
+    - id: DEV-10
+      status: EXECUTED-SKIP-OK
+      notes: |
+        Smoke runtime manual SKIPPED per MEMORY feedback_skip_manual_smoke.md
+        — sem novo Route Handler; cobertura indireta 25+ cenários integration
+        test contra DB real cobrem AC1-AC4. Smoke EXPLAIN executado via MCP
+        (Task 7) — 0.144ms / 0.157ms em tabela quasi-vazia (Seq Scan aceito
+        per Task 7.2). Marcado [x] na Task 9.2 com nota SKIPPED.
+
+  code_intel_advisory: null
+
+  ids_compliance:
+    reuse_count: 5
+    reused_artifacts:
+      - 'lib/supabase/admin.ts (createAdmin — 1.x)'
+      - 'tests/integration/helpers/test-users.ts (1.4)'
+      - 'idx_click_events_link_id_clicked_at (0007 — usado pelos views 7d/30d)'
+      - 'idx_page_views_page_id_viewed_at (0008 — usado pelos views 7d/30d)'
+      - 'click_events_select_own + page_views_select_own RLS policies (4.1/4.2 — herdadas via security_invoker)'
+    new_artifacts:
+      - 'supabase/migrations/0009_views_aggregations.sql (DDL — novo schema)'
+      - 'supabase/rollbacks/0009_views_aggregations_rollback.sql (companion)'
+      - 'tests/integration/db/aggregations.test.ts (novo subdir DEV-8)'
+      - 'tests/integration/rls/aggregations.test.ts'
+    justification: |
+      Migration consolida 4 views + 2 functions em 1 arquivo (~210 LOC SQL).
+      Zero novos índices (reuso de 0007/0008 — cobertura O(log n) para
+      predicados de janela). Zero novas RLS policies (security_invoker
+      herda das tabelas-base). Constitution Art. V (Quality First — no
+      duplication) respeitada estritamente.
+
+# ---------------------------------------------------------------------------
+# Handoff
+# ---------------------------------------------------------------------------
+handoff:
+  next_agent: '@devops'
+  next_command: '*merge 20 --squash'
+  condition: |
+    Gate PASS — PR #20 está CLEAN + MERGEABLE. @devops deve executar merge
+    squash em main, deletar branch remota, atualizar local main, e marcar
+    Status: Ready for Review → Done na story 4.3.
+  alternatives:
+    - condition: 'Story 4.4 ready to draft (UI Dashboard de Analytics)'
+      action: '@sm *draft 4.4 — agora que views + helpers estão tipados (lib/supabase/types.ts) e funcionais em prod, 4.4 pode prosseguir com consumer code via supabase.from(view) e supabase.rpc(helper).'
+    - condition: 'Schedulear [STORY-4.3-F1] no próximo sprint de tech-debt'
+      action: '@po *backlog-schedule — fix de search_path em 3 funções é S complexity, ~0.5 story; pode ser bundlado com [STORY-4.1-F1] (mesmo target: 0010_rls_initplan_fix + 0010_function_search_path_fix → consolidar em 0010_db_hardening?).'
