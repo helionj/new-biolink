@@ -71,6 +71,7 @@ jobs:
             ${{ steps.vercel.outputs.url }}/
             ${{ steps.vercel.outputs.url }}/@demo
             ${{ steps.vercel.outputs.url }}/dashboard
+          runs: 3
           uploadArtifacts: true
           temporaryPublicStorage: true
           configPath: ./.lighthouserc.json

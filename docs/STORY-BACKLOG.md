@@ -136,12 +136,12 @@ _Nenhum item._
 - **Risk if not done**: LOW — overhead atual é desprezível em volume MVP (< 1K rows por tabela user-data); só vira problema mensurável quando scans amplos sobre `click_events` ultrapassarem ~10K-100K rows por owner. Captura em Lighthouse CI / Vercel Analytics improvável (RLS roda em DB, não no edge). Detecção real só viria via `pg_stat_statements` em produção sob carga.
 - **Acceptance**: 8 policies reescritas com `(select auth.uid())`; advisor retorna 0 lints `auth_rls_initplan`; suítes RLS integration verdes; sem rollback necessário.
 
-#### [STORY-3.5-F3] Estabilizar Lighthouse CI — `runs: 1` → `runs: 3` mediana para reduzir flake na landing borderline
+#### [STORY-3.5-F3] Estabilizar Lighthouse CI — `runs: 1` → `runs: 3` mediana para reduzir flake na landing borderline ✅ DONE
 
 - **Source**: Story 4.1 PR #18 — lighthouse falhou no 1º run (Performance `/` = 0.80, threshold 0.85) e passou no rerun com config idêntica + mesmo deploy Vercel — 2026-05-26
 - **Priority**: 🟢 LOW
 - **Effort**: ~0 (1-line edit em `.lighthouserc.json` + 1 mudança de assertion strategy; sem código novo)
-- **Status**: 📋 TODO
+- **Status**: ✅ DONE — aplicado no PR #19 (Story 4.2) após evidência adicional de flake severo (run 1: perf `/` = 0.81; rerun: 0.66 — variance 0.15 em 8min, código idêntico, mesmo deploy). Materializado em `.lighthouserc.json` (`collect.numberOfRuns: 3` + `assert.assertMatrix[0].aggregationMethod: "median"`) + `.github/workflows/lighthouse.yml` (`runs: 3` explícito para garantir override do default 1 da action). Validação no próximo PR.
 - **Assignee**: @devops (Gage) — gate @qa (regressão de gate quality em PRs subsequentes)
 - **Sprint**: contínuo (não-bloqueante; race condition manifesta esporadicamente)
 - **Description**: O workflow `.github/workflows/lighthouse.yml` (Story 3.5 Task 6) usa `.lighthouserc.json` com `runs: 1` — single-run Lighthouse é **conhecidamente flaky** em scores borderline. Durante o PR #18 da Story 4.1, o 1º run reportou `categories.performance = 0.80` na landing `/` (5 pontos abaixo do threshold 0.85 do Story 3.5); o rerun manual passou com config idêntica — confirmando flake (não regressão). Causa raiz: combinação de (a) bundle baseline da landing em 199.06 KB gz (margem de ~1 KB do threshold AC3 — `[STORY-3.5-F1]`), (b) cold-start variável do deploy Vercel preview, (c) CPU contention no GitHub Actions runner, (d) single-run sem estatística agregada. Lighthouse oficialmente recomenda `runs: 3` com asserção sobre **median** para reduzir desvio padrão de score em ~60-70%.
