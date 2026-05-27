@@ -171,15 +171,16 @@ _Nenhum item._
 
 ## 📜 Change Log
 
-| Date       | Action | Item                                                                                                               | Author        |
-| ---------- | ------ | ------------------------------------------------------------------------------------------------------------------ | ------------- |
-| 2026-05-15 | ADD    | `[STORY-1.9-F1]` Lighthouse CI automatizado (diferido de Story 1.9 DP-1)                                           | Pax (po)      |
-| 2026-05-20 | ADD    | `[STORY-3.1-F1]` Refactor `@custom-variant dark` para eliminar `.dark` (DEV-1 Story 3.1)                           | Pax (po)      |
-| 2026-05-21 | ADD    | `[STORY-3.2-F1]` Refactor `scripts/check-contrast.mjs` para parser CSS automatizado (DEV-3 + DEV-5 Story 3.2)      | Dex (dev)     |
-| 2026-05-25 | ADD    | `[STORY-3.5-F1]` Monitorar margem apertada de bundle da página pública (Finding MEDIUM Story 3.5 §1)               | Dex (dev)     |
-| 2026-05-25 | ADD    | `[STORY-3.5-F2]` UI de edição de `display_name` e `bio` no dashboard (gap funcional Story 3.5 Task 5)              | Dex (dev)     |
-| 2026-05-25 | DONE   | `[STORY-1.9-F1]` Lighthouse CI workflow — materializado via Story 3.5 Task 6 (lighthouse.yml + .lighthouserc.json) | Gage (devops) |
-| 2026-05-26 | ADD    | `[STORY-4.1-F1]` Batch fix `auth_rls_initplan` em 8 policies (PERF-001 do QA gate Story 4.1)                       | Pax (po)      |
-| 2026-05-26 | ADD    | `[STORY-3.5-F3]` Estabilizar Lighthouse CI (`runs: 1` → 3 + mediana) — evidência de flake no PR #18                | Gage (devops) |
-| 2026-05-26 | NOTE   | Story 4.2 `[STORY-4.2-prep]` — AC5 forward-looking: schema `page_views` habilita agregações 4.3 + dashboard 4.4    | Dex (dev)     |
-| 2026-05-27 | UPDATE | `[STORY-4.1-F1]` expandido de 8 → 9 policies (inclui `page_views_select_own`) ao close-story 4.2 — PERF-001 gate   | Pax (po)      |
+| Date       | Action | Item                                                                                                                                                                         | Author        |
+| ---------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| 2026-05-15 | ADD    | `[STORY-1.9-F1]` Lighthouse CI automatizado (diferido de Story 1.9 DP-1)                                                                                                     | Pax (po)      |
+| 2026-05-20 | ADD    | `[STORY-3.1-F1]` Refactor `@custom-variant dark` para eliminar `.dark` (DEV-1 Story 3.1)                                                                                     | Pax (po)      |
+| 2026-05-21 | ADD    | `[STORY-3.2-F1]` Refactor `scripts/check-contrast.mjs` para parser CSS automatizado (DEV-3 + DEV-5 Story 3.2)                                                                | Dex (dev)     |
+| 2026-05-25 | ADD    | `[STORY-3.5-F1]` Monitorar margem apertada de bundle da página pública (Finding MEDIUM Story 3.5 §1)                                                                         | Dex (dev)     |
+| 2026-05-25 | ADD    | `[STORY-3.5-F2]` UI de edição de `display_name` e `bio` no dashboard (gap funcional Story 3.5 Task 5)                                                                        | Dex (dev)     |
+| 2026-05-25 | DONE   | `[STORY-1.9-F1]` Lighthouse CI workflow — materializado via Story 3.5 Task 6 (lighthouse.yml + .lighthouserc.json)                                                           | Gage (devops) |
+| 2026-05-26 | ADD    | `[STORY-4.1-F1]` Batch fix `auth_rls_initplan` em 8 policies (PERF-001 do QA gate Story 4.1)                                                                                 | Pax (po)      |
+| 2026-05-26 | ADD    | `[STORY-3.5-F3]` Estabilizar Lighthouse CI (`runs: 1` → 3 + mediana) — evidência de flake no PR #18                                                                          | Gage (devops) |
+| 2026-05-26 | NOTE   | Story 4.2 `[STORY-4.2-prep]` — AC5 forward-looking: schema `page_views` habilita agregações 4.3 + dashboard 4.4                                                              | Dex (dev)     |
+| 2026-05-27 | UPDATE | `[STORY-4.1-F1]` expandido de 8 → 9 policies (inclui `page_views_select_own`) ao close-story 4.2 — PERF-001 gate                                                             | Pax (po)      |
+| 2026-05-27 | NOTE   | Story 4.3 AC2 — estratégia "regular views + materialized deferida" registrada por referência a arch.md §L356-365 + schema-design.md §4 L655-657 (não duplica decisão; DEV-6) | Dex (dev)     |
