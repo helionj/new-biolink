@@ -84,6 +84,38 @@ export type Database = {
           },
         ];
       };
+      page_views: {
+        Row: {
+          id: number;
+          ip_hash: string | null;
+          page_id: string;
+          user_agent_hash: string | null;
+          viewed_at: string;
+        };
+        Insert: {
+          id?: never;
+          ip_hash?: string | null;
+          page_id: string;
+          user_agent_hash?: string | null;
+          viewed_at?: string;
+        };
+        Update: {
+          id?: never;
+          ip_hash?: string | null;
+          page_id?: string;
+          user_agent_hash?: string | null;
+          viewed_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'page_views_page_id_fkey';
+            columns: ['page_id'];
+            isOneToOne: false;
+            referencedRelation: 'pages';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       pages: {
         Row: {
           created_at: string;

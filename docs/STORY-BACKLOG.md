@@ -181,3 +181,4 @@ _Nenhum item._
 | 2026-05-25 | DONE   | `[STORY-1.9-F1]` Lighthouse CI workflow — materializado via Story 3.5 Task 6 (lighthouse.yml + .lighthouserc.json) | Gage (devops) |
 | 2026-05-26 | ADD    | `[STORY-4.1-F1]` Batch fix `auth_rls_initplan` em 8 policies (PERF-001 do QA gate Story 4.1)                       | Pax (po)      |
 | 2026-05-26 | ADD    | `[STORY-3.5-F3]` Estabilizar Lighthouse CI (`runs: 1` → 3 + mediana) — evidência de flake no PR #18                | Gage (devops) |
+| 2026-05-26 | NOTE   | Story 4.2 `[STORY-4.2-prep]` — AC5 forward-looking: schema `page_views` habilita agregações 4.3 + dashboard 4.4    | Dex (dev)     |
