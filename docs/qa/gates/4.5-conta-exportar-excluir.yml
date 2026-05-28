@@ -1,0 +1,496 @@
+schema: 1
+story: '4.5'
+gate: PASS
+status_reason: |
+  Implementação completa dos 5 ACs do PRD §Epic 4 Story 4.5 L611-615 (page
+  /dashboard/account + JSON export blob + delete com username confirmation +
+  signOut/redirect + integration tests cascade). Quality gates locais 100%
+  verdes (re-rodados pelo @architect): typecheck ✅ / lint ✅ / build ✅
+  (15 pages, /dashboard/account dynamic) / 188 component tests 33 files ✅
+  (9 novos em features/account/) / 160 integration tests 18 files ✅
+  (7 novos em account.test.ts cobrindo cenários a/b/c/d/d.2/e/f — shape do
+  export + minimal + wrong-username + cascade 5 tabelas + case-insensitive
+  match + unauth defense + Storage cleanup end-to-end). 16 deviations
+  DEV-1..DEV-16 ratificadas pelo @po em v0.2 e materializadas verbatim em
+  v0.3 sem ajustes (único refinamento: form.watch → useWatch para silenciar
+  warning react-hooks/incompatible-library, alinhamento ao pattern do projeto
+  em SignupForm/UsernameForm). **Security clean (story Security-critical):**
+  (1) Service-role ISOLADO via grep — `createAdmin` importado em apenas 4
+  paths legítimos (server/account/actions.ts NOVO + 2 trackers /api/track +
+  lib/track.ts), zero vazamento para components/ ou outros dashboards.
+  (2) Cascade chain DB-side confirmada em 5 migrations
+  (0002:65 → 0003:58 → 0004:56 → 0007:72 + 0008:75) — endorse explícito em
+  0002:53 verbatim "ON DELETE CASCADE garante limpeza via deleteAccount
+  Server Action — Story 4.5". (3) Defense-in-depth no username match —
+  server-side case-insensitive em actions.ts:157 carrega profile.username
+  da session (não confia no client) + client mirror em
+  DeleteAccountSection.tsx:50-52 como UX (integration (c) prova: client mock
+  passa "errado-nope", server bloqueia). (4) Ordering deleteUser → signOut
+  → return ok respeitado em actions.ts:193-203 com decisão consciente DEV-9
+  de delegar redirect ao client (toast cross-nav). (5) RLS-aware export —
+  exportAccountData usa createClient() RLS-aware, zero admin no path de
+  leitura (arch §Middleware/Guards L1571 respeitado). (6) Auth guards
+  layered — middleware (1.7) + dashboard/layout (2.4) + page (4.5) +
+  Server Action getUser() — 4 camadas independentes. (7) Storage cleanup
+  explícito best-effort com try/catch + console.warn nos 3 fail points
+  (list/remove/throw) — orphan storage previne quota leak; integration (f)
+  prova end-to-end com upload PNG real → delete → list vazio. Constitution
+  Art. IV (no invention) respeitada — todas as 16 DEVs com fonte verbatim
+  (architecture.md §Server Actions L410-414 + §Components #9 L560-569 +
+  §Workflow 4 L767-792 + PRD §Story 4.5 L603-615 + 0002:53 endorse +
+  lib/supabase/admin.ts REUSE). Constitution Art. V (no premature
+  optimization) respeitada — DEV-3 rejeita DELETE manual em 5 tabelas
+  (cascade nativo é atômico); DEV-13 rejeita RPC SQL customizada para export.
+  **Zero migration nova, zero policy RLS nova** (cascade pré-existente
+  desde 1.4/2.2/2.3/4.1/4.2). **Epic 4 fechado** — MVP backbone completo
+  (4.1+4.2+4.3+4.4+4.5). 2 observações LOW informacionais (DOC-001
+  comentário enganoso sobre "ESLint guard" que é apenas convenção;
+  SMOKE-001 risco residual de smoke 9.2 pulado com permissão do operador)
+  + 1 observação MEDIUM herdada (PERF-001 — Lighthouse CI pendente PR;
+  esperado PASS facilmente porque account page é leve sem chart lib nova).
+reviewer: 'Aria'
+updated: '2026-05-28T19:00:00Z'
+
+top_issues:
+  - id: 'PERF-001'
+    severity: medium
+    finding: |
+      Lighthouse Performance score do `/dashboard/account` ainda não medido
+      empiricamente nesta validação local. Workflow `.github/workflows/
+      lighthouse.yml` (Story 3.5; estabilizado em 4.2 com runs:3 mediana
+      per [STORY-3.5-F3] Done) vai disparar no PR porque trigger
+      `paths: [app/**, components/**]` matchéia commits desta story
+      (app/dashboard/account/, components/account/). Diferença vs 4.4: a
+      account page é MUITO mais leve (1 query profiles.username + 2 client
+      components SEM chart lib — apenas alert-dialog/button/input/label
+      primitives já existentes; sonner + RHF + Zod já no bundle base).
+      Risco material < 4.4 (que tinha recharts ~30-50 KB gz).
+    suggested_action: |
+      Aceitar como gate-PASS-com-monitoramento (padrão idêntico ao 4.4).
+      @devops deve VALIDAR Lighthouse CI após push — se Performance score
+      do `/dashboard/account` < 0.85, escalar para @dev (improvável pelo
+      perfil leve da página). Se PASS (>= 0.85), nenhuma ação. Documentar
+      resultado no Change Log da story ao mover Status InReview → Done.
+
+  - id: 'DOC-001'
+    severity: low
+    finding: |
+      Comentário em `server/account/actions.ts:165` afirma "ESLint guard
+      recommend: importar createAdmin somente em server/account/actions.ts"
+      — entretanto não existe tal lint rule no projeto; trata-se apenas
+      de convenção arquitetural (arch §Middleware/Guards L1571). A
+      verificação foi feita manualmente via grep (4 paths legítimos
+      detectados: account/actions.ts + 2 trackers + lib/track.ts). O
+      comentário pode confundir um leitor futuro a procurar uma rule que
+      não existe.
+    suggested_action: |
+      Não-bloqueante. Possível ajuste em Phase 2: (a) editar comentário
+      para "convenção arquitetural verificada manualmente — arch §1571";
+      ou (b) criar uma ESLint rule customizada `no-restricted-imports`
+      restringindo `@/lib/supabase/admin` a paths específicos. Não criar
+      story dedicada; encaixar em qualquer follow-up de housekeeping.
+
+  - id: 'SMOKE-001'
+    severity: low
+    finding: |
+      Task 9.2 (smoke runtime manual do delete em conta descartável) foi
+      SKIPPED com permissão explícita do operador (interactive answer
+      durante develop) e alinhamento à MEMORY `feedback_skip_manual_smoke.md`.
+      Cobertura indireta: integration (d) prova cascade end-to-end em 5
+      tabelas + auth.users; (d.2) prova case-insensitive; (e) prova unauth
+      defense; (f) prova Storage cleanup com upload PNG real → list vazio.
+      Component tests cobrem AlertDialog open/close/disabled/submit/error
+      em 6 cenários. **Risco residual:** (a) blob download nativo via
+      URL.createObjectURL + <a download> não exercitado em browser real
+      (browser pode bloquear download, renderizar inline, ou sanitizar
+      filename); (b) AlertDialog focus trap (Base UI nativo) não validado
+      em screen-reader; (c) sonner toast cross-navigation (persist 4s
+      após router.push) não validado visualmente. Mitigações: (a) pattern
+      idêntico ao usado em projects comparáveis; (b) REUSE direto do
+      mesmo alert-dialog primitive já usado em LinkRow.tsx (Story 2.5/2.6
+      Done; focus trap testado lá indiretamente); (c) sonner default 4s
+      + pattern REUSE de UsernameForm.tsx (Story 2.4 Done).
+    suggested_action: |
+      Não-bloqueante. Operador pode opcionalmente fazer smoke 9.2 manual
+      com conta descartável (signup novo → criar 1 link → /dashboard/account
+      → delete → confirmar toast + redirect + login falha) antes de @devops
+      push. Se feito, atualizar story Completion Notes para remover o
+      "risco residual" status. Sem o smoke, gate continua PASS — cobertura
+      automatizada é robusta.
+
+waiver: { active: false }
+
+# ---------------------------------------------------------------------------
+# Detalhes do review (informacional — fora do schema mínimo do qa-gate)
+# ---------------------------------------------------------------------------
+
+review_evidence:
+  date: '2026-05-28'
+  branch: 'main (uncommitted — story implementada in-tree; @devops abrirá branch + PR)'
+  reviewer_role: |
+    @architect (Aria) — quality_gate explicitamente atribuído na story
+    Executor Assignment (`quality_gate: '@architect'`). Story Full-stack +
+    Security-critical justifica gate por arquiteto (vs @qa padrão em
+    Frontend-only): superficie sensível inclui service-role usage +
+    cascade orchestration + irreversibilidade. Gate manual via QA-001
+    workaround (CodeRabbit/WSL incompat. macOS; MEMORY
+    project_qa_review_hang.md), padrão validado em 1.4-4.4.
+
+  acceptance_criteria:
+    - id: AC1
+      verdict: PASS
+      evidence: |
+        `app/dashboard/account/page.tsx:11-68` Server Component com auth
+        guard (linha 16) + carrega `profile.username` (linha 20-24) +
+        renderiza 2 `<section>` semantic (export + delete) com headings
+        + descriptive paragraphs PT-BR. Botões "Exportar dados" e
+        "Excluir conta" presentes via `<ExportButton />` (linha 50) e
+        `<DeleteAccountSection username={profile.username} />` (linha 64).
+        Sidebar nav entry `Account → /dashboard/account` herdado de
+        `components/dashboard/nav-items.ts:24` desde Story 2.4.
+        Component test `DeleteAccountSection.test.tsx` cenário 1 confirma
+        botão "Excluir conta" rendered. Integration test (não-aplicável
+        a render — page é Server Component; route reach confirmado por
+        smoke 9.1 curl 307 → /login auth guard).
+
+    - id: AC2
+      verdict: PASS
+      evidence: |
+        `server/account/actions.ts:69-121` `exportAccountData()` retorna
+        `AccountExport` com 6 fields: `_meta {exported_at, warning}`,
+        `profile`, `page`, `links[]`, `click_events[]`, `page_views[]`.
+        Texto do warning é const EXPORT_WARNING (linha 61-64) verbatim
+        sobre pseudonimização SHA-256 + salt de Story 4.1 (DEV-12).
+        Cliente download blob: `components/account/ExportButton.tsx:18-43`
+        via `URL.createObjectURL(new Blob([json], {type:'application/json'}))`
+        + dynamic `<a download={filename}>` (DEV-7). Filename
+        `biolink-export-{username}-{YYYY-MM-DD}.json` (DEV-10) em linha 31.
+        Pretty-print indent 2 em linha 26.
+        Integration test (a) confirma shape completo com seed real
+        (2 links + 3 click_events + 2 page_views) — todos contados
+        corretamente. Integration (b) confirma user minimal retorna page
+        criada pelo trigger 1:1 + arrays vazios. Component test (2)
+        confirma createObjectURL chamado com Blob application/json,
+        revokeObjectURL com URL gerada, toast.success "Dados exportados
+        com sucesso". Component test (3) confirma error path com toast.error.
+
+    - id: AC3
+      verdict: PASS
+      evidence: |
+        `components/account/DeleteAccountSection.tsx:77-122` AlertDialog
+        (Base UI) com input controlado por `react-hook-form` + Zod resolver
+        de `lib/validators/account.ts:DeleteAccountInput`. canSubmit
+        (linha 51-52) requer match case-insensitive `confirmValue.trim()
+        .toLowerCase() === username.toLowerCase()`. Mirror do server-side
+        em `server/account/actions.ts:157` `parsed.data.confirmUsername
+        .trim().toLowerCase() !== profile.username.toLowerCase()` (defense-
+        in-depth — DEV-5). Cascade delete via `admin.auth.admin.deleteUser(
+        user.id)` em actions.ts:193 — cascade chain endorse em 0002:53
+        verbatim cobre 5 tabelas atomicamente.
+        Integration test (c) prova client passando "errado-nope" → server
+        retorna {ok:false, error:/não confere/i} e USER permanece. (d.2)
+        prova case-insensitive funciona com username.toUpperCase(). (e)
+        prova unauth → {ok:false, error:/sessão expirada/i} mesmo com
+        confirmUsername correto. Component test (4) prova client mantém
+        botão disabled com username errado. Component test (5) prova match
+        case-insensitive "CIFX-ALICE" → action invocada.
+
+    - id: AC4
+      verdict: PASS
+      evidence: |
+        `server/account/actions.ts:201` `await supabase.auth.signOut()`
+        APÓS `admin.auth.admin.deleteUser()` (linha 193) — ordering DEV-9
+        respeita arch §Workflow 4 L767-792. Server Action retorna
+        `{ ok: true, data: undefined }` (linha 203). Client em
+        `DeleteAccountSection.tsx:71-74` dispara `toast.success('Conta
+        excluída')` ANTES de `router.push('/')` + `router.refresh()` —
+        sonner persiste 4s default (DEV-16 ratificado @po).
+        Integration test (d) prova authUser null após delete via
+        `admin.auth.admin.getUserById(USER_A.id)`. Component test (5)
+        prova sequência completa: toast.success → router.push('/') →
+        router.refresh chamados em ordem.
+
+    - id: AC5
+      verdict: PASS
+      evidence: |
+        `tests/integration/server-actions/account.test.ts` cenário (d)
+        linhas 225-261 valida cascade end-to-end em 5 tabelas: profiles
+        (maybeSingle null), pages (maybeSingle null), links (length 0
+        eq page_id), click_events (length 0 in linkIds), page_views
+        (length 0 eq page_id) + auth.users (getUserById user null).
+        Seed alice com 1 page + 2 links + 3 click_events + 2 page_views;
+        após delete, todos os 8+ rows desaparecem em uma transação Postgres.
+        Cenário (f) linha 290-317 adiciona Storage cleanup: upload PNG
+        em avatars/{user.id}/ via admin → delete → list retorna []
+        (NÃO cascateia por design — storage.objects sem FK para
+        auth.users; cleanup explícito em actions.ts:171-188 é
+        responsabilidade da Server Action).
+
+  quality_gate_set:
+    - check: 'Local: pnpm typecheck'
+      result: PASS
+      notes: 'tsc --noEmit exit 0 (Dev Agent Record + re-run @architect 2026-05-28T18:55Z). Ajustes feitos durante develop: useWatch type narrowing em DeleteAccountSection, tipagem do mock URL.createObjectURL em ExportButton.test.tsx.'
+    - check: 'Local: pnpm lint'
+      result: PASS
+      notes: 'eslint exit 0 zero warnings (Dev Agent Record + re-run @architect). Único warning durante develop foi react-hooks/incompatible-library em form.watch — corrigido com useWatch (pattern SignupForm/UsernameForm).'
+    - check: 'Local: pnpm test:components (full suite)'
+      result: PASS
+      notes: '33 test files / 188 tests passing em 444.24s (full sweep do develop). 9 novos em features/account/ (3 ExportButton + 6 DeleteAccountSection). Zero regressão.'
+    - check: 'Local: pnpm test:integration (isolated suite + re-run @architect)'
+      result: PASS
+      notes: '1 test file / 7 tests passing em 25.47s (re-run @architect). Suite nova `account.test.ts` cobre cenários (a) export shape + (b) minimal + (c) wrong-username + (d) cascade 5 tabelas + auth.users + (d.2) case-insensitive + (e) unauth defense + (f) Storage cleanup PNG real.'
+    - check: 'Local: pnpm test:integration (full suite)'
+      result: PASS
+      notes: '18 test files / 160 tests passing em 211.43s (full sweep do develop). 1 novo (account.test.ts). Zero regressão.'
+    - check: 'Local: pnpm build'
+      result: PASS
+      notes: '✓ Compiled successfully in 2.4min (Next 16.2.5 Turbopack). 15 pages generated; `/dashboard/account` é ƒ (dynamic, server-rendered on demand — esperado para SC com auth + fetch). Zero errors. Apenas warning herdado pré-existente sobre "middleware" file convention deprecation (não-bloqueante; tracker separado de 4.5).'
+    - check: 'CI: Lighthouse workflow (paths trigger)'
+      result: PENDING-PR-CHECK
+      notes: '`.github/workflows/lighthouse.yml` vai disparar no PR via trigger `paths: [app/**, components/**]` matchéia commits desta story (app/dashboard/account/ + components/account/). Runs: 3 mediana per [STORY-3.5-F3]. Account page leve (1 query + 2 client components sem chart lib) — risco material < 4.4. Documentado em PERF-001 MEDIUM como monitoramento pós-push.'
+    - check: 'CI: gitleaks workflow'
+      result: PASS-deferred-to-CI
+      notes: 'Story consome `env.SUPABASE_SERVICE_ROLE_KEY` via createAdmin() (lib/env.ts validated facade — Story 1.1 lib/env.ts:Zod schema). Zero hardcoded secrets em código novo. gitleaks job no PR vai confirmar (idem 4.1-4.4).'
+    - check: 'Smoke runtime manual (Task 9.1 — export, não-destrutivo)'
+      result: PASS-server-side-only
+      notes: 'pnpm dev + curl /dashboard/account → 307 Temporary Redirect → /login?next=%2Fdashboard%2Faccount. Auth guard + SSR confirmados sem 500. Browser-side blob download não exercitado (sem playwright MCP); cobertura indireta via component test (URL.createObjectURL com Blob application/json) + filename pattern unit-verified.'
+    - check: 'Smoke runtime manual (Task 9.2 — delete em conta descartável)'
+      result: SKIPPED-by-operator-decision
+      notes: 'Pulado com permissão explícita do operador via interactive answer + alinhamento MEMORY feedback_skip_manual_smoke.md. Cobertura indireta robusta: integration (d) cascade real em 5 tabelas + (f) Storage real + component tests AlertDialog open/close/disabled/submit/error. Risco residual documentado em SMOKE-001 LOW.'
+    - check: 'Code review (patterns, readability, maintainability)'
+      result: PASS
+      notes: |
+        Server Action structure consistente com server/profile/actions.ts
+        + server/links/actions.ts (Zod safeParse → auth.getUser → DB ops →
+        ActionResult shape). Service-role import isolado a 1 path novo
+        (server/account/actions.ts; grep confirma zero vazamento). RLS-aware
+        export via createClient() — sem admin no path de leitura.
+        Storage cleanup wrapped em try/catch com console.warn em 3 fail
+        points (list/remove/throw). Client components separation correta —
+        ExportButton e DeleteAccountSection ambos 'use client'; page.tsx
+        Server Component. useTransition para Server Action async (pattern
+        AddLinkModal.tsx). useWatch (não form.watch) para React Compiler
+        compat (pattern SignupForm/UsernameForm). Filename DEV-10
+        determinístico + sem horário (privacidade). canSubmit mirror
+        case-insensitive ao server (defense-in-depth). Comentários
+        densamente referenciam DEV-X + arch/PRD/migrations linhas.
+        Tailwind classes consistentes com padrão (border-destructive/30,
+        bg-destructive/5, max-w-2xl, space-y-8).
+
+  nfr_validation:
+    - nfr: 'NFR1 RLS em user-data tables (security)'
+      status: PASS
+      notes: |
+        Server Action `exportAccountData` usa `createClient()` server.ts —
+        herda RLS via cookies forwarding (DEV-6). Zero `admin` import no
+        path de leitura. Auth guard em 3 layers (middleware + layout + page +
+        action getUser). pageId resolvido via user.id sem URL param (no
+        IDOR vector). `deleteAccount` usa createAdmin() APENAS após auth
+        check + username confirmation server-side (linha 145-162) — RLS
+        bypass justificado para cascade.
+    - nfr: 'NFR2 Lighthouse score >= 90 (4 categories)'
+      status: PENDING-CI
+      notes: |
+        Lighthouse CI vai disparar no PR (paths trigger). Runs:3 mediana
+        per [STORY-3.5-F3] Done. Account page MUITO leve (1 query + alert
+        dialog primitive já existente + RHF/Zod já no bundle base; sonner
+        já no bundle base) — risco material < 4.4 (que tinha chart lib).
+        Documentado em PERF-001 MEDIUM como monitoramento pós-push.
+    - nfr: 'NFR3 WCAG 2.1 AA (a11y)'
+      status: PASS
+      notes: |
+        Page semantic HTML: `<header>` + 2 `<section aria-labelledby>` com
+        headings hierárquicos h1 (Conta) + h2 (Exportar dados / Excluir
+        conta). Ícones com `aria-hidden="true"` (Download, Trash2 — DEV).
+        AlertDialog (Base UI) tem foco trap nativo + role=alertdialog +
+        ESC fecha (REUSE direto do mesmo primitive em LinkRow.tsx Story
+        2.5/2.6 — focus trap validado lá). Input com `<Label className=
+        "sr-only">` + placeholder visual + `aria-invalid` + `role="alert"`
+        no error message. Botão Cancel renderiza Base UI Close primitive
+        (auto-close + focus restore). Validação manual screen-reader Task
+        9.3 SKIPPED (out of 9.2 SKIPPED scope) — pattern WAI-ARIA canônico.
+    - nfr: 'NFR4 bundle First Load JS <200 KB gz (página pública)'
+      status: NOT-APPLICABLE
+      notes: |
+        NFR4 refere-se à página pública `/@username` per architecture.md
+        §Performance L2174-2177. Story 4.5 muda apenas app/dashboard/account/
+        + components/account/ + server/account/ + lib/validators/account.ts —
+        rota pública intocada. Account page authenticated não tem hard
+        bundle budget; Lighthouse Performance >= 0.85 é gate efetivo
+        (PERF-001).
+    - nfr: 'NFR6 cobertura test:impl (frontend ≥ 50%)'
+      status: PASS
+      notes: |
+        Implementação client ~150 LOC (52 ExportButton + 124 DeleteAccountSection
+        - imports/comments ≈ 110 código efetivo). Tests ~258 LOC (123 ExportButton
+        + 135 DeleteAccountSection). Ratio test:impl ≈ 2.35× (largamente acima
+        do baseline NFR6 ≥ 50%).
+    - nfr: 'NFR7 cobertura backend (≥ 70%)'
+      status: PASS
+      notes: |
+        Implementação server ~205 LOC (1 arquivo server/account/actions.ts —
+        ≈ 145 código efetivo descontando JSDoc/comentários). Integration test
+        319 LOC, 7 cenários cobrindo: shape do export + edge case minimal +
+        defense wrong-username + cascade verification em 5 tabelas + case-
+        insensitive match + unauth defense + Storage cleanup. Ratio test:impl
+        ≈ 2.2× (cenários robustos > implementação). Branches críticos cobertos:
+        auth check, Zod parse fail, profile load fail, username mismatch,
+        Storage list/remove path, deleteUser path, signOut path.
+    - nfr: 'NFR10 zero secrets versionados'
+      status: PASS-deferred-to-CI
+      notes: |
+        SUPABASE_SERVICE_ROLE_KEY consumido via lib/env.ts (Zod-validated
+        facade Story 1.1). Zero hardcoded secrets em código novo. gitleaks
+        no PR confirma (idem 4.1-4.4).
+    - nfr: 'NFR11 UI 100% PT-BR'
+      status: PASS
+      notes: |
+        Todas strings PT-BR: "Conta" (h1), "Gerencie seus dados pessoais...",
+        "Exportar dados", "Baixe um JSON com seu perfil...", "Excluir conta"
+        (h2 + button), "Esta ação é permanente e irreversível", "Tem certeza
+        absoluta?", "Para confirmar, digite seu username @{u} abaixo",
+        "Digite seu username para confirmar" (sr-only label), "Cancelar",
+        "Excluir permanentemente", "Excluindo...", "Gerando...", "Dados
+        exportados com sucesso" (toast), "Conta excluída" (toast), "Sessão
+        expirada. Faça login novamente.", "Username não confere. Digite
+        exatamente seu @ para confirmar.", "Erro ao excluir conta. Tente
+        novamente.". Filename "biolink-export-..." mantido (não-traduz nome
+        de produto).
+    - nfr: 'NFR12 LGPD compliance (FR15 + FR16)'
+      status: PASS
+      notes: |
+        FR15 (exclusão de conta) — hard-delete em cascade DB-side + signOut
+        + redirect; sem soft-delete (arch §schema-design.md L121 endorse).
+        FR16 (export de dados) — JSON completo owner-side com warning
+        explícito sobre pseudonimização SHA-256 + salt irreversível.
+        Dados exportados como armazenados — usuário pode auditar próprios
+        hashes (mantém valor analítico próprio). Sem 2FA/email pós-delete
+        (out of scope; Phase 2). Sem audit log de delete (LGPD
+        right-to-erasure é completo — arch §Database Schema não inclui).
+    - nfr: 'NFR13 browser support iOS 14+'
+      status: PASS-likely
+      notes: |
+        URL.createObjectURL + Blob + <a download> são APIs Web standard
+        (iOS Safari 14+ OK desde 2014). Base UI alert-dialog nativo via
+        portal — sem polyfill necessário. sonner toast moderno. RHF +
+        zodResolver standard. Sem APIs experimentais. Validação empírica
+        diferida para Lighthouse CI.
+
+  deviations_resolved:
+    - id: DEV-1
+      status: APPROVED
+      notes: 'Path `app/dashboard/account/page.tsx` per architecture.md §Components #9 L566 verbatim + nav-items.ts:24 já apontando. Confirmado em smoke 9.1 curl.'
+    - id: DEV-2
+      status: APPROVED
+      notes: '2 Server Actions com signatures verbatim arch §Server Actions L410-414 (`exportAccountData(): ActionResult<AccountExport>` + `deleteAccount({confirmUsername}): ActionResult<void>`). Zero deviation.'
+    - id: DEV-3
+      status: APPROVED
+      notes: 'Cascade chain DB-side confirmado em 5 migrations (0002:65, 0003:58, 0004:56, 0007:72, 0008:75) + endorse 0002:53. `admin.auth.admin.deleteUser(user.id)` em actions.ts:193 — DELETE manual em 5 tabelas rejeitado (premature optimization + race window). Integration (d) prova atomicidade.'
+    - id: DEV-4
+      status: APPROVED
+      notes: 'Storage cleanup explícito em actions.ts:171-188 try/catch best-effort. Storage.objects sem FK para auth.users — sem este cleanup, avatars/{uid}/* fica órfão. Integration (f) prova end-to-end com upload PNG real → list vazio após delete.'
+    - id: DEV-5
+      status: APPROVED
+      notes: 'Defense-in-depth server-side em actions.ts:157 (case-insensitive toLowerCase comparison contra profile.username citext). Client mirror em DeleteAccountSection.tsx:50-52 (UX, não trust). Integration (c) prova client mock "errado-nope" bloqueado; (d.2) prova case-insensitive aceito.'
+    - id: DEV-6
+      status: APPROVED
+      notes: 'exportAccountData usa createClient() (server.ts), RLS-aware. Service-role reservado para delete (DEV-3) + Storage cleanup (DEV-4). Arch §Middleware/Guards L1571 respeitado.'
+    - id: DEV-7
+      status: APPROVED
+      notes: 'page.tsx sem searchParams (ações button-triggered, não URL state). Sem loading.tsx dedicado (1 query trivial — render instantâneo). DEV ratificou — overkill skeleton para 1 row.'
+    - id: DEV-8
+      status: APPROVED
+      notes: 'DeleteAccountInput Zod schema mínimo (apenas confirmUsername.min(1)). Match real é server-side (DEV-5). Não reutiliza usernameSchema de profile.ts — input attacker-controlled.'
+    - id: DEV-9
+      status: APPROVED
+      notes: 'Ordering deleteUser → signOut → return ok em actions.ts:193-203. NÃO chama redirect() server-side — client em DeleteAccountSection.tsx:71-74 controla toast → push → refresh para sonner cross-nav. Arch §Workflow 4 L767-792 respeitado com decisão consciente de delegar redirect ao client.'
+    - id: DEV-10
+      status: APPROVED
+      notes: 'Filename `biolink-export-{username}-{YYYY-MM-DD}.json` em ExportButton.tsx:31. Pretty-print indent 2. Sem horário (privacidade). Component test asserta type=application/json.'
+    - id: DEV-11
+      status: APPROVED
+      notes: 'useTransition em ExportButton.tsx:16 (pattern Next 16 RSC; REUSE de AddLinkModal.tsx). isPending → disabled state + "Gerando..." text.'
+    - id: DEV-12
+      status: APPROVED
+      notes: '_meta.warning verbatim como const EXPORT_WARNING em actions.ts:61-64 (DEV-12 ratificado @po — manter export raw com warning, hashes já são pseudonimização irreversível por design de Story 4.1). Integration (a) confirma string não-vazia + exported_at parseable.'
+    - id: DEV-13
+      status: APPROVED
+      notes: 'linkIds round-trip em actions.ts:101-105 (PostgREST sem JOIN). 2 queries com índices PK + idx_click_events_link_id_clicked_at (Story 4.1). Pattern consistente com 4.4 DEV-8. Performance trivial (operação rara).'
+    - id: DEV-14
+      status: APPROVED
+      notes: 'Integration test beforeEach recria alice/bob via fullCleanup + createUser (não beforeAll) — cenário (d) destrói alice. Pattern já validado em auth.test.ts.'
+    - id: DEV-15
+      status: APPROVED
+      notes: 'Storage cleanup best-effort (try/catch + console.warn em 3 fail points). Não bloqueia delete principal. Orphan storage < orphan DB. Integration (f) cobre happy path; falha de Storage não exercitada (out of scope unit test, OK).'
+    - id: DEV-16
+      status: APPROVED
+      notes: 'Toast via router.push (não query param) — DeleteAccountSection.tsx:71-74 dispara toast.success ANTES de router.push("/"). REUSE de pattern UsernameForm.tsx (Story 2.4). Component test (5) prova ordem (toast.success → push → refresh).'
+
+  code_intel_advisory: null
+
+  ids_compliance:
+    reuse_count: 13
+    reused_artifacts:
+      - 'lib/supabase/server.ts createClient() (1.x)'
+      - 'lib/supabase/admin.ts createAdmin() (1.2)'
+      - 'lib/supabase/types.ts Database Tables (4.3 regen — profiles/pages/links/click_events/page_views)'
+      - 'lib/result.ts ActionResult<T> (1.x)'
+      - 'lib/toast.ts toast.success/.error facade (1.x)'
+      - 'components/ui/alert-dialog.tsx Base UI primitive (3.4 — segundo consumer após LinkRow)'
+      - 'components/ui/button.tsx + input.tsx + label.tsx shadcn primitives (1.8/3.4)'
+      - 'components/dashboard/nav-items.ts entry Account já configurada (2.4)'
+      - 'lucide-react Download + Trash2 icons (REUSE)'
+      - 'react-hook-form useForm + useWatch (pattern SignupForm/UsernameForm)'
+      - '@hookform/resolvers/zod (REUSE)'
+      - 'tests/integration/helpers/test-users.ts admin + TEST_USER_PASSWORD (1.4)'
+      - 'Cascade chain pré-existente (5 ON DELETE CASCADE em 0002/0003/0004/0007/0008)'
+    new_artifacts:
+      - 'lib/validators/account.ts (DeleteAccountInput Zod schema)'
+      - 'app/dashboard/account/page.tsx (Server Component)'
+      - 'server/account/actions.ts (exportAccountData + deleteAccount + AccountExport type)'
+      - 'components/account/ExportButton.tsx (Client Component blob download)'
+      - 'components/account/DeleteAccountSection.tsx (Client Component AlertDialog + RHF + Zod)'
+      - 'tests/components/features/account/ExportButton.test.tsx (3 tests)'
+      - 'tests/components/features/account/DeleteAccountSection.test.tsx (6 tests)'
+      - 'tests/integration/server-actions/account.test.ts (7 cenários a/b/c/d/d.2/e/f)'
+    justification: |
+      Capability nova (Account Module — FR15 + FR16). Zero duplicação —
+      module structure segue `app/dashboard/{feature}/` + `components/{feature}/`
+      + `server/{feature}/` patterns já estabelecidos. REUSE massivo de
+      primitives (alert-dialog, button, input, label, toast, admin client)
+      + helpers (test-users, validators pattern). Zero migration nova
+      (cascade chain pré-existente desde 1.4/2.2/2.3/4.1/4.2 endossado
+      verbatim em 0002:53 para esta story). Constitution Art. V respeitada
+      (DEV-3 rejeita DELETE manual; DEV-13 rejeita RPC custom; DEV-7
+      rejeita loading.tsx skeleton overkill).
+
+# ---------------------------------------------------------------------------
+# Handoff
+# ---------------------------------------------------------------------------
+handoff:
+  next_agent: '@devops'
+  next_command: '*push'
+  condition: |
+    Gate PASS com 1 MEDIUM (PERF-001 — Lighthouse pendente CI) +
+    2 LOW (DOC-001 comentário ESLint enganoso; SMOKE-001 smoke 9.2
+    pulado com cobertura indireta forte). @devops deve:
+    (1) Verificar baseRefName antes de merge (MEMORY
+        feedback_check_pr_base_before_merge.md) — PR esperado contra main.
+    (2) Criar branch `feat/4.5-conta-exportar-excluir` + commit
+        Conventional Commits com ref `[Story 4.5]` (padrão 4.1-4.4).
+    (3) Push do branch para origin + abrir PR contra main.
+    (4) Aguardar required status checks (install/lint/typecheck/test-unit/
+        test-components/test-integration/build/gitleaks/audit) + Lighthouse
+        CI workflow.
+    (5) MONITORAR Lighthouse Performance score do /dashboard/account —
+        esperado PASS (account page leve, sem chart lib); se < 0.85,
+        escalar (improvável).
+    (6) Após PR CLEAN + MERGEABLE → merge squash em main.
+    (7) Marcar Story 4.5 Status InReview → Done.
+    (8) Notar no Change Log da story (close-story commit): Epic 4 fechado;
+        MVP backbone completo (4.1+4.2+4.3+4.4+4.5).
+  alternatives:
+    - condition: 'Operador opcionalmente faz smoke 9.2 antes de @devops push'
+      action: 'Criar conta descartável via signup → criar 1 link → /dashboard/account → delete → confirmar toast + redirect + login falha. Se OK, atualizar story Completion Notes removendo "risco residual" + atualizar este gate file (SMOKE-001 → CLOSED).'
+    - condition: 'Lighthouse Performance < 0.85 no CI (improvável)'
+      action: '@dev *apply-qa-fixes 4.5 — investigar bundle do dashboard authenticated; mitigação preventiva via dynamic import se necessário. Re-medir.'
