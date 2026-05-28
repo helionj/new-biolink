@@ -1,6 +1,6 @@
 {
   "name": "biolink",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "BioLink — link-in-bio platform built on Next.js 16, Supabase, and Tailwind 4.",
   "license": "MIT",
