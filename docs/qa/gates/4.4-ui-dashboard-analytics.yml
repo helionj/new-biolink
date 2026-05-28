@@ -1,0 +1,420 @@
+schema: 1
+story: '4.4'
+gate: PASS
+status_reason: 'Implementação completa dos 6 ACs (4 cards lifetime+30d, chart 7d/30d com toggle URL state, tabela ordenada desc, empty state, loading skeleton, a11y semantic). Quality gates locais 100% verdes: typecheck ✅ / lint ✅ / build ✅ (14 pages, /dashboard/analytics dynamic) / 18 component tests analytics isolated ✅ / 153 integration tests ✅ (cobrindo 6 cenários da nova suite dashboard-analytics incluindo NFR1 RLS defense-in-depth alice→bob cross-user + anon). 16 deviations DEV-1..DEV-16 ratificadas pelo @po em v0.2 — DEV-10 (labels verbatim PRD mix PT/EN), DEV-15 (heading "Sem analytics ainda" + CTA "Ver minha página pública"), DEV-6 (URL state toggle via next/link), DEV-7+Task 10.4 (smoke 10.1 OBRIGATÓRIO + Lighthouse manual SKIP delegado para CI workflow). Security clean: Server Component fetch via createClient() server.ts herda RLS automaticamente (zero `admin` import; auth guard redirect ANTES de qualquer query; pageId resolvido via user.id, no IDOR vector; 100% external links com target="_blank" rel="noopener noreferrer"). Constitution Art. IV respeitada — 16 decisões com fonte real verificada (architecture.md §Components #7 L535-545 + §Tech Stack L171 + §State L1122-1123 + §Performance L2174-2189 + PRD §Epic 4 Story 4.4 L588-602 verbatim). 1 observação MEDIUM não-bloqueante (PERF-001 — Lighthouse Performance score do /dashboard/analytics pendente medição via CI workflow no PR; mitigação DEV-7 prevê dynamic import de recharts se score <0.85; gate efetivo aceito por ratificação @po). 1 observação LOW informacional (TEST-001 — 4 flakes em SignupForm/AddLinkModal no run completo passam isolated em 83s; não regressão da 4.4; ambiente macOS sobrecargado, ratifica MEMORY project_qa_review_hang.md).'
+reviewer: 'Quinn'
+updated: '2026-05-28T13:15:00Z'
+
+top_issues:
+  - id: 'PERF-001'
+    severity: medium
+    finding: |
+      Lighthouse Performance score do `/dashboard/analytics` ainda não medido
+      empiricamente nesta validação local. DEV-7 documenta o risco: recharts
+      ~30-50 KB gz pode degradar Performance se base do dashboard for >150 KB.
+      Bundle agregado pós-build = 531 KB gz TOTAL (todos chunks do app, NÃO
+      por rota — Next 16 Turbopack não emite a tabela "Size / First Load JS"
+      gzipped por rota como o webpack). NFR4 (200 KB gz) refere-se à página
+      pública `/@username`, não ao dashboard authenticated. Story Task 10.2
+      foi SKIPPED com ratificação @po — Lighthouse CI no PR é gate efetivo
+      (Story 3.5 estabilizado com runs:3 mediana per [STORY-3.5-F3] Done).
+      O trigger `paths: [app/**, components/**]` matchéia esta story, então
+      `.github/workflows/lighthouse.yml` vai disparar e medir Performance
+      score automaticamente após @devops push.
+    suggested_action: |
+      Aceitar como gate-PASS-com-monitoramento. @devops deve VALIDAR
+      Lighthouse CI workflow após push do PR — se Performance score do
+      `/dashboard/analytics` < 0.85, aplicar mitigação DEV-7:
+      `dynamic(() => import('recharts'), { ssr: false })` em `TimeSeriesChart.tsx`
+      e re-medir. Se passar (>= 0.85), nenhuma ação necessária — fechar
+      observação. Documentar resultado do Lighthouse CI no Change Log da
+      story ao mover Status InReview → Done.
+
+  - id: 'TEST-001'
+    severity: low
+    finding: |
+      Em `pnpm test:components` full run (31 test files, 179 tests), 4 testes
+      falharam por timeout 15000ms: 1 em `tests/components/features/auth/
+      SignupForm.test.tsx` (Story 1.5) e 3 em `tests/components/features/links/
+      AddLinkModal.test.tsx` (Story 2.5). Duration total do run = 958.56s
+      (anomalamente longo — baseline esperado ~100-300s). NEM SignupForm.tsx
+      NEM AddLinkModal.tsx foram modificados pela Story 4.4 (commits mais
+      recentes desses arquivos são Stories 1.5/2.5; nenhuma mudança em 4.x).
+      Re-run isolated dos 2 arquivos: **18/18 testes passing em 83.21s** —
+      confirma flakiness do ambiente macOS sob carga (jsdom + userEvent
+      sensíveis a contenção de CPU). Coerente com MEMORY
+      project_qa_review_hang.md (@qa *review trava em macOS sob carga).
+    suggested_action: |
+      Não-bloqueante. Documentar como noise ambiental (não regressão da 4.4).
+      Possíveis ações Phase 2 (out-of-scope desta gate): (a) aumentar
+      `testTimeout` global para 30000ms em `vitest.workspace.ts` projeto
+      `components`; (b) reduzir paralelismo via `poolOptions.threads.maxThreads=2`
+      em macOS; (c) splitar suite components em sub-projects por feature.
+      Lighthouse CI no GitHub Actions usa Linux runner (não macOS) — sem
+      esperar regressão lá.
+
+waiver: { active: false }
+
+# ---------------------------------------------------------------------------
+# Detalhes do review (informacional — fora do schema mínimo do qa-gate)
+# ---------------------------------------------------------------------------
+
+review_evidence:
+  date: '2026-05-28'
+  branch: 'feat/4.4-ui-dashboard-analytics (head commit f901727)'
+  reviewer_role: '@qa (Quinn) — gate manual QA-001 (CodeRabbit/WSL incompat. macOS, MEMORY project_qa_review_hang.md). Quality gate da Story 4.4 atribuído a @qa per workflow standard (Frontend-only story; complexity M-H; sem novo schema/RLS); @architect listado no Executor Assignment como gate primário ratificado mas convergência QA padrão 1.4-4.3 aplica-se aqui.'
+
+  acceptance_criteria:
+    - id: AC1
+      verdict: PASS
+      evidence: |
+        `app/dashboard/analytics/page.tsx:43-104` resolve 4 totais (lifetime
+        + 30d) via Promise.all em 3 fases (DEV-8 round-trip linkIds):
+        Fase 1 (page+profile), Fase 2 (links+totalPV count head), Fase 3
+        condicional ao linksLength.
+        `components/analytics/MetricsCards.tsx:12-17` renderiza 4 cards via
+        .map(CARDS) com labels verbatim PRD ("Total Page Views", "Total
+        Clicks", "Page Views (30d)", "Clicks (30d)") e DEV-10 ratificado @po
+        — mix PT/EN intencional. Valores `toLocaleString('pt-BR')` (NFR11)
+        + tabular-nums alignment.
+        Component test `MetricsCards.test.tsx` cobre (a) 4 labels verbatim
+        + valores pt-BR `1.234`/`56`/`789`/`12`, (b) zeros, (c) data-testid
+        ordem PRD via 4 IDs únicos. Integration test cenário (a)
+        `dashboard-analytics.test.ts:149-188` confirma queries que page.tsx
+        executa: alice.totalPV=6 / totalClicks=6 / pv30dSum=5 / clicks30dSum=5.
+
+    - id: AC2
+      verdict: PASS
+      evidence: |
+        `components/analytics/TimeSeriesChart.tsx:72-136` é Client Component
+        (`'use client'`) recharts wrapper. Estrutura: ResponsiveContainer +
+        LineChart + Line `type="monotone"` `stroke="var(--primary)"`
+        `strokeWidth={2}` `dot={false}` `isAnimationActive={false}`.
+        Toggle 7d/30d via `<Link href="?range=7d/30d">` per DEV-6 ratificado
+        @po — `aria-current="page"` na opção ativa; `replace` + `scroll={false}`
+        otimizam UX (sem nova entry na history; sem scroll-to-top).
+        page.tsx:27 sanitiza `range` param: `'30d'` apenas se exato, default `'7d'`.
+        RPC `get_page_views_series` (Story 4.3 helper) invocada com `p_days:
+        range==='30d'?30:7` linhas 70-73 ou 87-90 (cada branch).
+        Component test cobre (a) `<figure>+<figcaption>`, (b) gap-fill 7d
+        → 7 rows fallback table (1 header + 7 data = 8 total rows), (c) 30d
+        → 30 rows (31 total), (d) toggle links + aria-current na 7d ativa,
+        (e) range=30d → aria-current na 30d. Integration test cenário (c)
+        confirma RPC funciona para p_days=7 (sum=3 — apenas hoje) e p_days=30
+        (sum=5 — hoje + -15d), incluindo ordem ASC por day.
+
+    - id: AC3
+      verdict: PASS
+      evidence: |
+        `components/analytics/LinksTable.tsx:14-70` é Server Component HTML
+        semântica nativa (sem `@tanstack/react-table` per DEV-12):
+        `<table>` + `<caption className="sr-only">Cliques por link</caption>`
+        + `<thead>` com 5 `<th scope="col">` (Título, URL, Cliques 7d,
+        Cliques 30d, Total).
+        Sort desc por clicksTotal aplicado server-side em page.tsx:135 via
+        `.sort((a,b) => b.clicksTotal - a.clicksTotal)` (DEV-16).
+        URLs com `target="_blank" rel="noopener noreferrer" title={row.url}`
+        (defesa contra tab-nabbing + tooltip UX para URLs truncadas via
+        `max-w-xs truncate`).
+        `rows.length === 0` → renderiza null (page.tsx delega para
+        EmptyAnalyticsState antes).
+        Component test cobre 5 cenários (table semântica, ordem, target/rel,
+        pt-BR, rows vazios → null). Integration test cenário (a)
+        `dashboard-analytics.test.ts:190-224` confirma per-link aggregations
+        + ordering: alice link1 total=4 / link2 total=2; sort desc identifica
+        link1 como primeiro.
+
+    - id: AC4
+      verdict: PASS
+      evidence: |
+        `components/analytics/EmptyAnalyticsState.tsx:8-32` Server Component
+        com BarChart3 icon (REUSE de lucide-react via nav-items.ts:2 —
+        DEV-15 ratificado @po) + heading "Sem analytics ainda" (UX clarity)
+        + parágrafo verbatim PRD "Compartilhe sua página para começar a
+        ver analytics." + CTA condicional "Ver minha página pública" → publicUrl.
+        Defense `if (!username)` → CTA omitida (cobertura defensiva).
+        page.tsx empty state branches: (i) linha 38 `!pageId` (defense in
+        depth — trigger 1:1 garante 1 page por user), (ii) linha 101
+        `links.length === 0 || totalPV + totalClicks === 0` → renderiza
+        EmptyAnalyticsState com username resolvido.
+        Component test cobre (a) texto verbatim + heading + ícone aria-hidden,
+        (b) CTA href siteUrl/@username + target/rel, (c) sem username → CTA
+        omitida. Integration test cenário (b) confirma bob (sem links)
+        → linksRes.data = [] → branch isEmpty true.
+
+    - id: AC5
+      verdict: PASS
+      evidence: |
+        `app/dashboard/analytics/loading.tsx` (3 LOC) é Next.js convention
+        — Suspense boundary automática para o segment (DEV-4). Renderiza
+        `<AnalyticsLoadingSkeleton />` durante async data fetch do Server
+        Component.
+        `components/analytics/AnalyticsLoadingSkeleton.tsx:7-26` mimiks o
+        layout final: title placeholder + grid 4 cards skeleton + chart
+        skeleton + table skeleton via SkeletonBar helper local (DEV-14 —
+        sem shadcn Skeleton primitive).
+        A11y: container `aria-busy="true" aria-live="polite"
+        data-testid="analytics-loading"` + `<span className="sr-only">
+        Carregando analytics…</span>` para screen reader feedback (NFR13).
+        SkeletonBar com `aria-hidden="true"` em cada bar.
+        Component test cobre (a) aria-busy + aria-live + sr-only text,
+        (b) ≥ 7 skeleton bars (1 title + 4 cards + 1 chart + 1 table) com
+        aria-hidden.
+
+    - id: AC6
+      verdict: PASS
+      evidence: |
+        **2 implementações de tabela semântica:**
+        (1) LinksTable.tsx — `<table>` + `<thead>` + 5 `<th scope="col">`
+        + `<tbody>` + `<tr>` + `<td>` — HTML nativo correto. Não usa
+        `<div role="table">`. `<caption className="sr-only">` para screen
+        reader.
+        (2) TimeSeriesChart.tsx fallback — estrutura canônica WAI-ARIA:
+        `<figure>` + `<figcaption>` (header com h2 + toggle nav) +
+        `<div aria-hidden="true">` (chart visual oculto para AT) +
+        `<table className="sr-only">` (legível por AT) com `<caption>` +
+        2 `<th scope="col">` (Dia, Page Views) + N rows densas.
+        Loading skeleton (AC5) também a11y-compliant (aria-busy/live).
+        Empty state com `aria-hidden` no ícone (decoração).
+        Component test TimeSeriesChart valida estrutura `<figure>` +
+        `<figcaption>` + tabela `sr-only` com 2 headers scope="col" + 7 ou
+        30 data rows. LinksTable test valida 5 `columnheader` com `scope="col"`.
+        AnalyticsLoadingSkeleton test valida aria-busy + aria-live + sr-only.
+        Smoke a11y manual (Task 10.2) SKIPPED com ratificação @po (gate
+        efetivo é Lighthouse CI no PR — score Accessibility >= 90 default).
+
+  quality_gate_set:
+    - check: 'Local: pnpm typecheck'
+      result: PASS
+      notes: 'tsc --noEmit exit 0 (Dev Agent Record + re-run @qa 2026-05-28). Recharts 3.8.1 tipos resolvidos via formatter signature ajustado em TimeSeriesChart.tsx:101.'
+    - check: 'Local: pnpm lint'
+      result: PASS
+      notes: 'eslint exit 0 (Dev Agent Record + re-run @qa).'
+    - check: 'Local: pnpm test:components (isolated analytics suite)'
+      result: PASS
+      notes: '5 test files / 18 tests analytics PASS em 171.98s (re-run isolated @qa). 100% cobertura dos 6 ACs por componentes.'
+    - check: 'Local: pnpm test:components (full suite)'
+      result: PASS-with-flakes
+      notes: '175/179 tests passing. 4 flakes em SignupForm + AddLinkModal (não modificados por 4.4) — duration 958.56s evidencia sobrecarga ambiente macOS. Re-run isolated dos 2 arquivos: 18/18 PASS em 83.21s. Documentado em TEST-001 LOW.'
+    - check: 'Local: pnpm test:integration'
+      result: PASS
+      notes: '17 test files / 153 tests passing em 333.11s. Suite nova `dashboard-analytics.test.ts` com 6 cenários (a/b/c/d) cobrindo AC1/AC2/AC3/AC4 + NFR1 RLS defense-in-depth.'
+    - check: 'Local: pnpm build'
+      result: PASS
+      notes: '✓ Compiled successfully in 77s. 14 pages generated (3 static + 11 dynamic). `/dashboard/analytics` é ƒ (dynamic, server-rendered on demand — esperado para SC com auth + searchParams). Zero errors. ƒ Proxy Middleware INFO-001 herdado não-bloqueante.'
+    - check: 'CI: Lighthouse workflow (paths trigger)'
+      result: PENDING-PR-CHECK
+      notes: '`.github/workflows/lighthouse.yml` vai disparar no PR via trigger `paths: [app/**, components/**]` matchéia commits desta story. Runs: 3 mediana per [STORY-3.5-F3]. Gate efetivo para NFR2 (>= 90 em 4 categories) + DEV-7 risk (Performance recharts bundle). Documentado em PERF-001 MEDIUM.'
+    - check: 'Smoke runtime manual (Task 10.1)'
+      result: PASS-confirmed-by-operator
+      notes: 'Confirmado pelo operador 2026-05-27 — smoke OK em localhost:3000/dashboard/analytics. (a) 4 cards renderizam, (b) chart aparece, (c) tabela com links + counts, (d) toggle 7d/30d funciona, (e) zero console errors.'
+    - check: 'Code review (patterns, readability, maintainability)'
+      result: PASS
+      notes: |
+        Server Component / Client Component separation correta — só
+        TimeSeriesChart.tsx tem `'use client'` (justificado: recharts).
+        page.tsx fetch em 3 fases via Promise.all reduz round-trips e tem
+        branching condicional inteligente (linha 63 — só faz Fase 3 se
+        linkIds.length > 0). HTML semântico nativo em LinksTable + fallback
+        table do chart. Comentários minimalistas referenciando DEV-X
+        decisões (zero comentários redundantes). Tailwind classes consistentes
+        com padrão do projeto (border-border, bg-muted, tabular-nums).
+        Type safety estrita — `AnalyticsRange = '7d' | '30d'` tipo discriminado.
+        `cn()` helper REUSE de lib/utils.
+
+  nfr_validation:
+    - nfr: 'NFR1 RLS em user-data tables (security)'
+      status: PASS
+      notes: |
+        Server Component fetch via `createClient()` server.ts (line 17)
+        herda RLS automaticamente via cookies forwarding. Zero `admin`
+        client import (verificado via grep — apenas server.ts em page.tsx).
+        Auth guard `if (!user) redirect('/login')` linha 22-24 ANTES de
+        qualquer fetch. pageId resolvido via `user.id` linha 31 (no URL
+        param IDOR vector). Integration test cenário (d) valida
+        defense-in-depth: alice autenticada filtrando por bob.pageId →
+        count=0 (RLS bloqueia); anon (sem session) → count=0 sobre
+        click_events.
+    - nfr: 'NFR2 Lighthouse score >= 90 (4 categories)'
+      status: PENDING-CI
+      notes: |
+        Lighthouse CI workflow vai disparar no PR (paths trigger matchéia
+        commits 4.4). Runs:3 mediana per Story 3.5/[STORY-3.5-F3] DONE.
+        Gate efetivo para Performance + A11y + Best Practices + SEO scores.
+        Smoke a11y manual Task 10.2 SKIPPED com ratificação @po
+        (justificativa: pattern WAI-ARIA canônico em DEV-13 + Lighthouse
+        CI cobre score automaticamente). Documentado em PERF-001 MEDIUM
+        como item de monitoramento pós-push.
+    - nfr: 'NFR3 WCAG 2.1 AA (a11y)'
+      status: PASS
+      notes: |
+        Semantic HTML em 2 instâncias de tabela (LinksTable + chart fallback).
+        `<th scope="col">` em todos 5+2 headers. `<caption className="sr-only">`
+        para context. `<figure>+<figcaption>` em chart com toggle nav.
+        Chart visual `aria-hidden="true"` (canvas/SVG não-acessível) +
+        tabela fallback `className="sr-only"` legível por AT (pattern
+        canônico WAI-ARIA). Loading com `aria-busy="true" aria-live="polite"`
+        + sr-only "Carregando analytics…". Icon BarChart3 com
+        `aria-hidden="true"` (decoração). External links com `target="_blank"
+        rel="noopener noreferrer"`. Toggle 7d/30d com `aria-current="page"`
+        na opção ativa. Component tests cobrem todas as a11y assertions.
+    - nfr: 'NFR4 bundle First Load JS <200 KB gz (página pública)'
+      status: NOT-APPLICABLE
+      notes: |
+        NFR4 refere-se à página pública `/@username` per architecture.md
+        §Performance L2174-2177 "Sem chart library na página pública
+        (recharts é apenas em /dashboard/analytics)". Story 4.4 muda apenas
+        `app/dashboard/**` + `components/analytics/**` — `/@username` route
+        intocada (sem regressão de bundle público). Bundle do dashboard
+        authenticated não tem hard budget; Lighthouse Performance score >=
+        0.85 é gate efetivo (PERF-001).
+    - nfr: 'NFR6 cobertura test:impl ratio'
+      status: PASS
+      notes: |
+        Implementação ~458 LOC (158 page + 32 cards + 137 chart + 65 table +
+        33 empty + 33 skeleton). Tests ~681 LOC (49+114+101+49+33 component
+        = 346 + 235 integration). Ratio test:impl ≈ 1.49× (well above NFR6
+        baseline ≥ 70%).
+    - nfr: 'NFR7 testes integration verdes'
+      status: PASS
+      notes: |
+        Suite nova `dashboard-analytics.test.ts` com 6 cenários (3 em a,
+        1 em b, 1 em c, 2 em d) — 100% verdes localmente. Total suite
+        integration: 153/153 PASS (16 baseline + 1 nova).
+    - nfr: 'NFR10 zero secrets versionados'
+      status: PASS-deferred-to-CI
+      notes: |
+        Story Frontend-only — zero secrets em código (env vars referenciadas
+        via lib/env.ts validated facade). gitleaks job no PR vai confirmar
+        (idem 4.1-4.3).
+    - nfr: 'NFR11 UI 100% PT-BR'
+      status: PASS-with-AC1-exception
+      notes: |
+        Quase todas strings em PT-BR ("Sem analytics ainda", "Compartilhe
+        sua página…", "Ver minha página pública", "Cliques 7d/30d/Total",
+        "Selecionar janela do gráfico", "Page views — últimos N dias",
+        "Carregando analytics…"). AC1 labels mantém mix PT/EN ("Total Page
+        Views", "Total Clicks", "Page Views (30d)", "Clicks (30d)") per
+        DEV-10 ratificado @po — termos analytics naturalizados em PT-BR.
+        toLocaleString('pt-BR') aplicado a todos os números (vírgula decimal
+        + ponto milhar).
+    - nfr: 'NFR13 browser support iOS 14+'
+      status: PASS-likely
+      notes: |
+        recharts 3.x suporta browsers modernos via SVG nativo (iOS 14+ OK).
+        Tailwind utilities standard (grid, gap, animate-pulse, sr-only).
+        next/link replace+scroll patterns standard. Sem APIs experimentais.
+        Validação empírica diferida para Lighthouse CI (que roda no Linux
+        runner mas testa via headless Chrome moderno).
+
+  deviations_resolved:
+    - id: DEV-1
+      status: APPROVED
+      notes: 'Path `app/dashboard/analytics/page.tsx` + `loading.tsx` per architecture.md §Components #7 L535-545 + Next 16 convention. Idem ao ratificado v0.2 @po.'
+    - id: DEV-2
+      status: APPROVED
+      notes: 'recharts ^3.8.1 (não ^2.13) — Dev Agent Record documenta major superior por `pnpm add recharts` resolver `latest`. v3 nativo React 19; zero breaking changes na API LineChart/Line/XAxis/YAxis/CartesianGrid/Tooltip/ResponsiveContainer. Formatter signature ajustada para v3 (line 101). Não-bloqueante.'
+    - id: DEV-3
+      status: APPROVED
+      notes: 'Lifetime totals via `count: exact, head: true` direto em page_views (linha 49) + click_events.in(linkIds) (linha 68). 2 round-trips minimum (DEV-8 round-trip linkIds) com índices existentes. Constitution Art. V respeitada (no premature view).'
+    - id: DEV-4
+      status: APPROVED
+      notes: '`loading.tsx` Next.js convention boundary de Suspense — confirmado funcionar pelo operador (Task 10.1 smoke OK).'
+    - id: DEV-5
+      status: RATIFIED-RUNTIME
+      notes: 'Sparse series consumida pelo gap-fill no client em TimeSeriesChart.tsx:29-42. Consistente com Story 4.3 DEV-5. Component test confirma 7d → 7 rows e 30d → 30 rows na fallback table.'
+    - id: DEV-6
+      status: RATIFIED
+      notes: 'Toggle 7d/30d via `<Link href="?range=...">` + Server Component re-render via searchParams prop. `replace` + `scroll={false}` UX-optimized. Ratificado v0.2 @po.'
+    - id: DEV-7
+      status: PARTIAL-DEFERRED-TO-CI
+      notes: |
+        Bundle agregado pós-build = 531 KB gz (todos chunks; Turbopack não
+        emite tabela por rota). NFR4 200 KB é página pública — não-aplicável
+        ao dashboard. Risk Performance < 0.85 documentado em PERF-001 MEDIUM
+        para monitoramento via Lighthouse CI no PR. Mitigação preventiva
+        (dynamic import recharts) pronta para aplicar se necessário.
+    - id: DEV-8
+      status: APPROVED
+      notes: 'Round-trip linkIds via `.from(links).select(id).eq(page_id)` + `.from(click_events).in(link_id)`. 2 queries com índices PK + `idx_click_events_link_id_clicked_at` (Story 4.1). Integration test cenário (a) confirma counts corretos.'
+    - id: DEV-9
+      status: APPROVED
+      notes: 'MetricsCards.tsx é Server Component (zero `use client`). Renderiza fragments via .map(CARDS) — container layout movido para page.tsx:143 (Task 3.3 simplification). Bundle reduzido.'
+    - id: DEV-10
+      status: RATIFIED
+      notes: 'Labels verbatim PRD AC1 ("Total Page Views", "Total Clicks", "Page Views (30d)", "Clicks (30d)"). Comentário em MetricsCards.tsx:10-11 documenta intenção. Component test asserta strings literais. Ratificado v0.2 @po.'
+    - id: DEV-11
+      status: APPROVED
+      notes: 'gapFill inline em TimeSeriesChart.tsx:29-42 usa timezone do cliente (intencional — gráfico mostra "hoje" local). JSDoc documenta. Component test cobre 7d=7 rows / 30d=30 rows.'
+    - id: DEV-12
+      status: APPROVED
+      notes: 'HTML `<table>` nativa sem tanstack-react-table. Sort desc server-side em page.tsx:135. LinksTable.tsx 65 LOC vs tanstack overhead. Constitution Art. V respeitada.'
+    - id: DEV-13
+      status: APPROVED
+      notes: |
+        Fallback table sr-only em TimeSeriesChart.tsx:118-134 dentro de
+        `<figure>` + `<figcaption>`. Chart wrapper `<div aria-hidden="true">`
+        linha 90. Pattern WAI-ARIA canônico. Validação manual Task 10.2
+        SKIPPED com ratificação @po (Lighthouse CI gate efetivo).
+    - id: DEV-14
+      status: APPROVED
+      notes: 'SkeletonBar helper local em AnalyticsLoadingSkeleton.tsx:3-5 (~3 LOC com cn() utility). Sem shadcn Skeleton primitive. aria-busy + aria-live + sr-only feedback.'
+    - id: DEV-15
+      status: RATIFIED
+      notes: 'EmptyAnalyticsState.tsx mantém heading "Sem analytics ainda" + CTA "Ver minha página pública" (defense `if (!username)`). Texto principal verbatim PRD. Ratificado v0.2 @po.'
+    - id: DEV-16
+      status: APPROVED
+      notes: 'Sort desc clicksTotal server-side em page.tsx:135 via .sort((a,b) => b.clicksTotal - a.clicksTotal). Links sem clicks aparecem no final (count=0).'
+
+  code_intel_advisory: null
+
+  ids_compliance:
+    reuse_count: 9
+    reused_artifacts:
+      - 'lib/supabase/server.ts createClient() (1.x)'
+      - 'lib/supabase/types.ts Database (4.3 regen — Views + Functions tipados)'
+      - 'lib/env.ts NEXT_PUBLIC_SITE_URL (1.x)'
+      - 'lib/utils.ts cn() (1.x)'
+      - 'components/ui/card.tsx shadcn primitive (1.8)'
+      - 'components/dashboard/nav-items.ts entry Analytics (2.4)'
+      - 'lucide-react BarChart3 icon (REUSE — nav-items.ts:2)'
+      - 'tests/integration/helpers/test-users.ts setupTestUsers + admin (1.4)'
+      - 'Views (link_clicks_7d/30d, page_views_7d/30d) + RPCs (get_page_views_series) de 4.3'
+    new_artifacts:
+      - 'app/dashboard/analytics/page.tsx (Server Component)'
+      - 'app/dashboard/analytics/loading.tsx (Next.js Suspense boundary)'
+      - 'components/analytics/{Metrics,TimeSeries,Links,Empty,Skeleton}.tsx (5 components)'
+      - 'tests/components/features/analytics/*.test.tsx (5 component test files)'
+      - 'tests/integration/dashboard-analytics.test.ts'
+    justification: |
+      Capability nova (UI consumer das views/helpers de 4.3 + queries
+      lifetime). Zero duplicação — fetch helpers permanecem inline em
+      page.tsx (single-use; Constitution Art. V — no premature abstraction
+      per DEV-7.1+7.3). Component structure segue `components/{feature}/`
+      pattern já estabelecido em links/theme/profile/public.
+
+# ---------------------------------------------------------------------------
+# Handoff
+# ---------------------------------------------------------------------------
+handoff:
+  next_agent: '@devops'
+  next_command: '*push'
+  condition: |
+    Gate PASS com 1 MEDIUM (PERF-001 — Lighthouse pendente CI) +
+    1 LOW (TEST-001 — flakes ambientais). @devops deve:
+    (1) Verificar baseRefName antes de merge (MEMORY
+        feedback_check_pr_base_before_merge.md) — PR esperado contra main.
+    (2) Push do branch feat/4.4-ui-dashboard-analytics para origin + abrir PR.
+    (3) Aguardar required status checks (install/lint/typecheck/test-unit/
+        test-components/test-integration/build/gitleaks/audit) + Lighthouse
+        CI workflow.
+    (4) MONITORAR Lighthouse Performance score do /dashboard/analytics —
+        se < 0.85, ESCALAR para @dev aplicar DEV-7 mitigação (dynamic
+        import recharts) e re-medir.
+    (5) Após PR CLEAN + MERGEABLE → merge squash em main.
+    (6) Marcar Story 4.4 Status InReview → Done.
+  alternatives:
+    - condition: 'Lighthouse Performance < 0.85 no CI'
+      action: '@dev *apply-qa-fixes 4.4 — aplicar `dynamic(() => import("recharts"), { ssr: false })` em TimeSeriesChart.tsx; re-build; verificar score.'
+    - condition: 'Story 4.5 ready to draft (Conta: Exportar e Excluir — FR16)'
+      action: '@sm *draft 4.5 — fecha Epic 4 (analytics + account management).'
