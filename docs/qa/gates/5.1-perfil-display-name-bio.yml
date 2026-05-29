@@ -279,17 +279,20 @@ review_evidence:
         Story não toca em variáveis de ambiente ou secrets. Sem hardcoded
         secrets em código novo. gitleaks no PR confirma (idem 1.4-4.5).
     - check: 'Smoke runtime manual'
-      result: SKIPPED-with-residual-risk-noted
+      result: PASS-validated-in-prod-2026-05-29
       notes: |
-        SKIPPED per MEMORY `feedback_skip_manual_smoke.md`. Cobertura
-        indireta robusta: 6 component tests + reuse 100% do padrão
-        UsernameForm + build verde. Risco residual documentado em Dev
-        Agent Record da story: render de `<Textarea>` em Safari < 17 sem
-        suporte a `field-sizing-content` (Tailwind v4) cai para `min-h-16`
-        fixo — degradação visual aceitável, sem regressão funcional.
-        Não-bloqueante; @devops pode optar por smoke manual antes de push
-        (interativo: criar mensagem de teste + verificar persist + verificar
-        PublicPage `/@<username>`).
+        **Validado end-to-end em prod pós-merge (2026-05-29).** Owner do
+        projeto logou como `demo` em prod via /login, editou
+        `display_name="Demostenes"` (10/50) + `bio="Meu nome é Demostenes"`
+        (21/280) em /dashboard/profile, clicou "Salvar perfil", confirmou
+        toast "Perfil atualizado". Verificação @devops via service-role
+        REST: row atualizada (`updated_at=2026-05-29T22:09:41.65973+00:00`).
+        Verificação SSR /@demo: HTTP 200 em 1.19s, HTML contém
+        `<h1>Demostenes</h1>` + `<p>Meu nome é Demostenes</p>` (fallback
+        `@demo` NÃO ativo → DEV-8 normalização funcional + revalidateUserSurface
+        propagou mudança imediatamente). Cobre SMOKE-001 acima. Risco
+        residual de Safari < 17 permanece teórico (não exercitado, mas
+        degradação é cosmética per Tailwind progressive enhancement).
     - check: 'Code review (patterns, readability, maintainability, security)'
       result: PASS
       notes: |
@@ -595,3 +598,6 @@ handoff:
         e p = "Teste do form 5.1". Se OK, atualizar story Completion Notes
         removendo SKIPPED smoke + atualizar este gate file (Smoke runtime
         manual → PASS-manual).
+      status: SUPERSEDED-by-post-merge-prod-smoke-2026-05-29 — validado
+        diretamente em prod com `demo`/Demostenes (ver quality_gate_set
+        "Smoke runtime manual" acima).

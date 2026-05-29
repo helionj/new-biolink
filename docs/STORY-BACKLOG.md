@@ -42,7 +42,7 @@ _Nenhum item ativo._
   - [x] UI segue padrão shadcn Form + RHF (precedente: `UsernameForm`); nova primitive `components/ui/textarea.tsx`
   - [x] Persistência respeita RLS `profiles_update_own` (Story 2.2)
   - [x] Component test cobre validação + submit happy path + erro (6 testes)
-  - [ ] Atualizar perfil `demo` em prod (display*name + bio) após implementação *(post-deploy, fora do escopo desta story)\_
+  - [x] Atualizar perfil `demo` em prod (display_name + bio) após implementação — concluído 2026-05-29: `display_name="Demostenes"` + `bio="Meu nome é Demostenes"` validado via REST + SSR `/@demo` (Gage/devops)
 - **Risk if not done**: MEDIUM — gap UX claro (usuários não conseguem se apresentar além do `@handle`). Não bloqueia ACs de outras stories, mas vazaria como "feature incompleta" no produto. Demo profile em prod fica menos rico para Lighthouse measurement realista (h1 sempre `@demo`, sem bio).
 - **Acceptance**: Usuário consegue editar `display_name` + `bio` em `/dashboard/profile`; mudanças refletidas em `/@username` após `router.refresh()` + `revalidateUserSurface`; testes verdes.
 
