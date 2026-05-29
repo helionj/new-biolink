@@ -3,7 +3,7 @@ title: Story Backlog
 description: Follow-up tasks, technical debt e oportunidades de otimização identificadas durante stories, dev e QA
 owner: '@po (Pax)'
 created: 2026-05-15
-last_updated: 2026-05-28 (Story 4.5 implemented by @dev — Account Module fechado; MVP backbone completo: 4.1+4.2+4.3+4.4+4.5)
+last_updated: 2026-05-29 (Story 5.1 implementada por @dev — STORY-3.5-F2 ✅ DONE)
 ---
 
 # Story Backlog
@@ -24,25 +24,27 @@ _Nenhum item._
 
 ## 🟡 MEDIUM Priority
 
-#### [STORY-3.5-F2] UI de edição de `display_name` e `bio` no dashboard
+_Nenhum item ativo._
+
+#### [STORY-3.5-F2] UI de edição de `display_name` e `bio` no dashboard ✅ DONE
 
 - **Source**: Story 3.5 Task 5 — gap identificado durante criação do perfil `demo` em produção (Dex/dev + reporte do dono do projeto) — 2026-05-25
 - **Priority**: 🟡 MEDIUM
 - **Effort**: ~0.5-1 story (complexity S/M — form RHF + Zod + Server Action; segue padrão da `UsernameForm`)
-- **Status**: 📋 TODO
-- **Assignee**: @sm (draft) → @dev (implement) — gate @qa
-- **Sprint**: _A definir (`*backlog-schedule`)_
+- **Status**: ✅ **DONE** — Implementada como **Story 5.1** (Epic 5 — Polish & Gaps Pós-MVP) por @dev em 2026-05-29. Limites finais reconciliados ao PRD §FR13: `display_name ≤ 50` (não 80 como sugerido aqui) + `bio ≤ 280`. Padrão de implementação idêntico à `updateUsername`/`UsernameForm` (REUSE). Sem mudança de schema (colunas + CHECK constraints já existiam em `0002_profiles.sql:68-69` desde Story 1.4).
+- **Assignee**: ~~@pm (formalizar Epic 5 + Story 5.1 no PRD)~~ ✅ → ~~@sm (draft)~~ ✅ → ~~@po (validate-story-draft)~~ ✅ → ~~@dev (implement)~~ ✅ — gate @qa pendente
+- **Sprint**: **v1.1** (primeira story pós-v1.0.0 release)
 - **Description**: O schema `profiles` (Story 2.2+) tem `display_name TEXT` e `bio TEXT` nullable, e ambos são renderizados em `components/public/PublicPage.tsx` (L33 `displayName = profile.display_name ?? \`@${profile.username}\``; L61 `{profile.bio && <p>...}`). Porém **não há UI** para editar nenhum dos dois: `/dashboard/profile`só edita`username` (`UsernameForm`) + `avatar` (`AvatarUpload`); `SignupForm`só pede email/username/password/terms. Resultado: usuários reais (não-seed) sempre têm h1 =`@username`(sem display name rico) e sem bio. Detectado quando o dono do projeto tentou popular o perfil`demo` em prod para Task 5 da Story 3.5 e descobriu que a bio "não tinha campo para preencher".
 - **Success Criteria**:
-  - [ ] Adicionar campos `display_name` (max 80 chars sugerido) e `bio` (textarea, max 280 chars sugerido) ao form de `/dashboard/profile`
-  - [ ] Validators Zod em `lib/validators/profile.ts` (limites, trim, opcional)
-  - [ ] Server Action `updateProfileMeta` em `server/profile/actions.ts` (padrão da `updateUsername`)
-  - [ ] UI segue padrão shadcn Form + RHF (precedente: `UsernameForm`)
-  - [ ] Persistência respeita RLS `profiles_update_own` (Story 2.2)
-  - [ ] Component test cobre validação + submit happy path + erro
-  - [ ] Atualizar perfil `demo` em prod (display_name + bio) após implementação
+  - [x] Adicionar campos `display_name` (max **50** chars per FR13) e `bio` (textarea, max 280 chars) ao form de `/dashboard/profile`
+  - [x] Validators Zod em `lib/validators/profile.ts` (limites, trim, opcional; helper `emptyToNull` normaliza `''` → `null`)
+  - [x] Server Action `updateProfileMeta` em `server/profile/actions.ts` (padrão da `updateUsername` + `revalidateUserSurface`)
+  - [x] UI segue padrão shadcn Form + RHF (precedente: `UsernameForm`); nova primitive `components/ui/textarea.tsx`
+  - [x] Persistência respeita RLS `profiles_update_own` (Story 2.2)
+  - [x] Component test cobre validação + submit happy path + erro (6 testes)
+  - [ ] Atualizar perfil `demo` em prod (display*name + bio) após implementação *(post-deploy, fora do escopo desta story)\_
 - **Risk if not done**: MEDIUM — gap UX claro (usuários não conseguem se apresentar além do `@handle`). Não bloqueia ACs de outras stories, mas vazaria como "feature incompleta" no produto. Demo profile em prod fica menos rico para Lighthouse measurement realista (h1 sempre `@demo`, sem bio).
-- **Acceptance**: Usuário consegue editar `display_name` + `bio` em `/dashboard/profile`; mudanças refletidas em `/@username` após `router.refresh()`; testes verdes.
+- **Acceptance**: Usuário consegue editar `display_name` + `bio` em `/dashboard/profile`; mudanças refletidas em `/@username` após `router.refresh()` + `revalidateUserSurface`; testes verdes.
 
 #### [STORY-1.9-F1] Story de CI dedicada — Lighthouse CI automatizado (`lighthouse.yml`) ✅ DONE
 
@@ -179,30 +181,34 @@ _Nenhum item._
 
 | Métrica                  | Valor      |
 | ------------------------ | ---------- |
-| Total de itens ativos    | 7          |
+| Total de itens ativos    | 6          |
 | 🔴 HIGH                  | 0          |
-| 🟡 MEDIUM                | 1          |
+| 🟡 MEDIUM                | 0          |
 | 🟢 LOW                   | 6          |
-| ✅ DONE (não arquivados) | 1          |
-| Última atualização       | 2026-05-27 |
+| ✅ DONE (não arquivados) | 2          |
+| Última atualização       | 2026-05-29 |
 
 ---
 
 ## 📜 Change Log
 
-| Date       | Action | Item                                                                                                                                                                                                                                                                                                                             | Author           |
-| ---------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| 2026-05-15 | ADD    | `[STORY-1.9-F1]` Lighthouse CI automatizado (diferido de Story 1.9 DP-1)                                                                                                                                                                                                                                                         | Pax (po)         |
-| 2026-05-20 | ADD    | `[STORY-3.1-F1]` Refactor `@custom-variant dark` para eliminar `.dark` (DEV-1 Story 3.1)                                                                                                                                                                                                                                         | Pax (po)         |
-| 2026-05-21 | ADD    | `[STORY-3.2-F1]` Refactor `scripts/check-contrast.mjs` para parser CSS automatizado (DEV-3 + DEV-5 Story 3.2)                                                                                                                                                                                                                    | Dex (dev)        |
-| 2026-05-25 | ADD    | `[STORY-3.5-F1]` Monitorar margem apertada de bundle da página pública (Finding MEDIUM Story 3.5 §1)                                                                                                                                                                                                                             | Dex (dev)        |
-| 2026-05-25 | ADD    | `[STORY-3.5-F2]` UI de edição de `display_name` e `bio` no dashboard (gap funcional Story 3.5 Task 5)                                                                                                                                                                                                                            | Dex (dev)        |
-| 2026-05-25 | DONE   | `[STORY-1.9-F1]` Lighthouse CI workflow — materializado via Story 3.5 Task 6 (lighthouse.yml + .lighthouserc.json)                                                                                                                                                                                                               | Gage (devops)    |
-| 2026-05-26 | ADD    | `[STORY-4.1-F1]` Batch fix `auth_rls_initplan` em 8 policies (PERF-001 do QA gate Story 4.1)                                                                                                                                                                                                                                     | Pax (po)         |
-| 2026-05-26 | ADD    | `[STORY-3.5-F3]` Estabilizar Lighthouse CI (`runs: 1` → 3 + mediana) — evidência de flake no PR #18                                                                                                                                                                                                                              | Gage (devops)    |
-| 2026-05-26 | NOTE   | Story 4.2 `[STORY-4.2-prep]` — AC5 forward-looking: schema `page_views` habilita agregações 4.3 + dashboard 4.4                                                                                                                                                                                                                  | Dex (dev)        |
-| 2026-05-27 | UPDATE | `[STORY-4.1-F1]` expandido de 8 → 9 policies (inclui `page_views_select_own`) ao close-story 4.2 — PERF-001 gate                                                                                                                                                                                                                 | Pax (po)         |
-| 2026-05-27 | ADD    | `[STORY-4.3-F1]` Batch fix `function_search_path_mutable` em 3 funções (SEC-001 do QA gate Story 4.3 — set_updated_at + 2 helpers novas) — consolidar com STORY-4.1-F1                                                                                                                                                           | Aria (architect) |
-| 2026-05-27 | NOTE   | Story 4.3 AC2 — estratégia "regular views + materialized deferida" registrada por referência a arch.md §L356-365 + schema-design.md §4 L655-657 (não duplica decisão; DEV-6)                                                                                                                                                     | Dex (dev)        |
-| 2026-05-27 | NOTE   | Story 4.4 implementada — UI `/dashboard/analytics` (Frontend-only) consome views 4.3 + queries lifetime; Epic 4 backbone analítico (4.1+4.2+4.3+4.4) fechado, exceto 4.5 (Conta)                                                                                                                                                 | Dex (dev)        |
-| 2026-05-28 | NOTE   | Story 4.5 implementada — Account Module (FR15+FR16): page `/dashboard/account` + 2 Server Actions (`exportAccountData` + `deleteAccount`) + 2 Client Components + cascade delete em 5 tabelas via `auth.users` ON DELETE CASCADE (zero migration nova) + Storage cleanup `avatars/{uid}/`. Epic 4 fechado; MVP backbone completo | Dex (dev)        |
+| Date       | Action    | Item                                                                                                                                                                                                                                                                                                                                               | Author           |
+| ---------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| 2026-05-15 | ADD       | `[STORY-1.9-F1]` Lighthouse CI automatizado (diferido de Story 1.9 DP-1)                                                                                                                                                                                                                                                                           | Pax (po)         |
+| 2026-05-20 | ADD       | `[STORY-3.1-F1]` Refactor `@custom-variant dark` para eliminar `.dark` (DEV-1 Story 3.1)                                                                                                                                                                                                                                                           | Pax (po)         |
+| 2026-05-21 | ADD       | `[STORY-3.2-F1]` Refactor `scripts/check-contrast.mjs` para parser CSS automatizado (DEV-3 + DEV-5 Story 3.2)                                                                                                                                                                                                                                      | Dex (dev)        |
+| 2026-05-25 | ADD       | `[STORY-3.5-F1]` Monitorar margem apertada de bundle da página pública (Finding MEDIUM Story 3.5 §1)                                                                                                                                                                                                                                               | Dex (dev)        |
+| 2026-05-25 | ADD       | `[STORY-3.5-F2]` UI de edição de `display_name` e `bio` no dashboard (gap funcional Story 3.5 Task 5)                                                                                                                                                                                                                                              | Dex (dev)        |
+| 2026-05-25 | DONE      | `[STORY-1.9-F1]` Lighthouse CI workflow — materializado via Story 3.5 Task 6 (lighthouse.yml + .lighthouserc.json)                                                                                                                                                                                                                                 | Gage (devops)    |
+| 2026-05-26 | ADD       | `[STORY-4.1-F1]` Batch fix `auth_rls_initplan` em 8 policies (PERF-001 do QA gate Story 4.1)                                                                                                                                                                                                                                                       | Pax (po)         |
+| 2026-05-26 | ADD       | `[STORY-3.5-F3]` Estabilizar Lighthouse CI (`runs: 1` → 3 + mediana) — evidência de flake no PR #18                                                                                                                                                                                                                                                | Gage (devops)    |
+| 2026-05-26 | NOTE      | Story 4.2 `[STORY-4.2-prep]` — AC5 forward-looking: schema `page_views` habilita agregações 4.3 + dashboard 4.4                                                                                                                                                                                                                                    | Dex (dev)        |
+| 2026-05-27 | UPDATE    | `[STORY-4.1-F1]` expandido de 8 → 9 policies (inclui `page_views_select_own`) ao close-story 4.2 — PERF-001 gate                                                                                                                                                                                                                                   | Pax (po)         |
+| 2026-05-27 | ADD       | `[STORY-4.3-F1]` Batch fix `function_search_path_mutable` em 3 funções (SEC-001 do QA gate Story 4.3 — set_updated_at + 2 helpers novas) — consolidar com STORY-4.1-F1                                                                                                                                                                             | Aria (architect) |
+| 2026-05-27 | NOTE      | Story 4.3 AC2 — estratégia "regular views + materialized deferida" registrada por referência a arch.md §L356-365 + schema-design.md §4 L655-657 (não duplica decisão; DEV-6)                                                                                                                                                                       | Dex (dev)        |
+| 2026-05-27 | NOTE      | Story 4.4 implementada — UI `/dashboard/analytics` (Frontend-only) consome views 4.3 + queries lifetime; Epic 4 backbone analítico (4.1+4.2+4.3+4.4) fechado, exceto 4.5 (Conta)                                                                                                                                                                   | Dex (dev)        |
+| 2026-05-28 | NOTE      | Story 4.5 implementada — Account Module (FR15+FR16): page `/dashboard/account` + 2 Server Actions (`exportAccountData` + `deleteAccount`) + 2 Client Components + cascade delete em 5 tabelas via `auth.users` ON DELETE CASCADE (zero migration nova) + Storage cleanup `avatars/{uid}/`. Epic 4 fechado; MVP backbone completo                   | Dex (dev)        |
+| 2026-05-28 | NOTE      | **v1.0.0 released** — tag + GitHub Release publicados (https://github.com/helionj/new-biolink/releases/tag/v1.0.0). CHANGELOG.md criado. Marco: encerramento do escopo PRD (Epics 1-4). 22 stories, 51 commits, 22 PRs                                                                                                                             | Gage (devops)    |
+| 2026-05-28 | SCHEDULE  | `[STORY-3.5-F2]` agendado como **Story 5.1** (Epic 5 — Polish & Gaps Pós-MVP) — única story MEDIUM no backlog pós-v1.0.0; gap UX (usuários reais não editam display_name/bio). **Pré-requisito de processo:** @pm precisa formalizar Epic 5 no PRD antes do @sm draftar (Constitution Art. IV — No Invention)                                      | Pax (po)         |
+| 2026-05-28 | FORMALIZE | **Epic 5 formalizado** em `docs/prd.md` v0.4 (Change Log + Lista de Epics + nova seção §Epic 5 com Story 5.1). AC1 ancorado em FR13 (≤50/≤280) — sugestão "80 chars" do backlog reconciliada como advisory. Pré-requisito atendido; pronto para `@sm *draft 5.1`                                                                                   | Morgan (pm)      |
+| 2026-05-29 | DONE      | `[STORY-3.5-F2]` ✅ implementada como **Story 5.1** (display_name + bio editáveis em `/dashboard/profile`): nova primitive `Textarea`, `UpdateProfileMetaInput` Zod schema, Server Action `updateProfileMeta` + `revalidateUserSurface`, Client Component `ProfileMetaForm` (RHF), 6 component tests verdes. Limites reconciliados a FR13 (50/280) | Dex (dev)        |

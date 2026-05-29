@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 import type { Tables } from '@/lib/supabase/types';
 import {
   CheckUsernameInput,
+  UpdateProfileMetaInput,
   UpdateUsernameInput,
   UploadAvatarInput,
 } from '@/lib/validators/profile';
@@ -104,6 +105,62 @@ export async function checkUsernameAvailability(
   }
 
   return { ok: true, data: { available: !existing } };
+}
+
+// ---------------------------------------------------------------------------
+// updateProfileMeta — Story 5.1 (FR13)
+// ---------------------------------------------------------------------------
+//
+// Padrão idêntico ao updateUsername: parse Zod -> auth -> UPDATE sob RLS
+// `profiles_update_own` (0002_profiles.sql:107-115). Sem mapeamento 23505
+// (não há UNIQUE em display_name/bio). CHECK constraints (linhas 68-69)
+// garantem length <= 50/280 server-side. Normalização '' -> null acontece
+// inline (DEV-8) para preservar fallback `display_name ?? '@username'` em
+// components/public/PublicPage.tsx:34.
+export async function updateProfileMeta(input: unknown): Promise<ActionResult<Profile>> {
+  const parsed = UpdateProfileMetaInput.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: 'Entrada inválida',
+      fieldErrors: flattenFieldErrors(parsed.error),
+    };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Defense in depth — dashboard/layout.tsx + Server Component da page guardam.
+  if (!user) {
+    return { ok: false, error: 'Sessão expirada. Faça login novamente.' };
+  }
+
+  // DEV-2 + DEV-8: normalizar '' | undefined -> null para preservar fallback
+  // `display_name ?? '@username'` em components/public/PublicPage.tsx:34.
+  // (Moved from Zod transform — ver lib/validators/profile.ts DEV-8.)
+  const emptyToNull = (v: string | undefined): string | null => (v && v.length > 0 ? v : null);
+
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .update({
+      display_name: emptyToNull(parsed.data.display_name),
+      bio: emptyToNull(parsed.data.bio),
+    })
+    .eq('id', user.id)
+    .select()
+    .single();
+
+  if (error || !profile) {
+    return { ok: false, error: 'Erro ao atualizar perfil. Tente novamente' };
+  }
+
+  // DEV-3: revalidar /@<username> (SSR) além de /dashboard layout, senão a
+  // mudança só aparece na página pública no próximo deploy/ISR-revalidate.
+  revalidateUserSurface(profile.username);
+
+  return { ok: true, data: profile };
 }
 
 // ---------------------------------------------------------------------------

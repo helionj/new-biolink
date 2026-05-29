@@ -25,11 +25,12 @@ Comercialmente, o mercado é saturado e maduro — não há urgência de mercado
 
 ### Change Log
 
-| Data       | Versão | Descrição                                                                                                                                                                   | Autor        |
-| ---------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| 2026-05-06 | 0.1    | Draft inicial do PRD a partir de `brief.md` (modo YOLO)                                                                                                                     | @pm (Morgan) |
-| 2026-05-07 | 0.2    | Ajustes: adoção de Next.js 15; remoção de testes E2E (Playwright); remoção de stack Supabase local (testes via Supabase Branching); padronização total das stories em PT-BR | @pm (Morgan) |
-| 2026-05-07 | 0.3    | Correção da versão do Next.js para a última estável (16.x) — substitui menções a Next.js 15 introduzidas em 0.2                                                             | @pm (Morgan) |
+| Data       | Versão | Descrição                                                                                                                                                                                                                                                                        | Autor        |
+| ---------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| 2026-05-06 | 0.1    | Draft inicial do PRD a partir de `brief.md` (modo YOLO)                                                                                                                                                                                                                          | @pm (Morgan) |
+| 2026-05-07 | 0.2    | Ajustes: adoção de Next.js 15; remoção de testes E2E (Playwright); remoção de stack Supabase local (testes via Supabase Branching); padronização total das stories em PT-BR                                                                                                      | @pm (Morgan) |
+| 2026-05-07 | 0.3    | Correção da versão do Next.js para a última estável (16.x) — substitui menções a Next.js 15 introduzidas em 0.2                                                                                                                                                                  | @pm (Morgan) |
+| 2026-05-28 | 0.4    | Formalização do **Epic 5 — Polish & Gaps Pós-MVP** com Story 5.1 (UI de edição de `display_name` + `bio` em `/dashboard/profile`) materializando `[STORY-3.5-F2]` do `docs/STORY-BACKLOG.md` (gap UX detectado em prod durante Story 3.5 Task 5). AC1 ancorado em FR13 (Art. IV) | @pm (Morgan) |
 
 ---
 
@@ -209,6 +210,7 @@ biolink/
 2. **Epic 2 — Perfil Público e Core de Links:** Entregar a feature core do produto — slug único por usuário, CRUD de links com drag-drop, e página pública `/@<username>` renderizada via SSR funcionando em produção.
 3. **Epic 3 — Temas e Refino de UX:** Disponibilizar 3 temas presets (light/dark/brand), completar design system (Card, Avatar, Modal), refinar responsividade e performance (Lighthouse ≥ 90).
 4. **Epic 4 — Analytics e Insights:** Tracking de cliques e page views, agregações 7/30 dias e dashboard de métricas para o dono da página.
+5. **Epic 5 — Polish & Gaps Pós-MVP:** Materializar gaps funcionais e refinos detectados durante operação pós-v1.0.0 e demos em produção. **Epic aberto** (incremental, não-bloqueador do release v1.0.0); stories vão sendo agendadas conforme `docs/STORY-BACKLOG.md` é priorizado via `@po *backlog-schedule`. Primeiro item: UI de edição de `display_name`/`bio` no `/dashboard/profile` (FR13 — gap detectado em Story 3.5 Task 5).
 
 ---
 
@@ -613,6 +615,33 @@ Para que eu retenha controle sobre meus dados (LGPD-mindful).
 3. Delete pede confirmação por digitação do username; executa cascade delete em todas as tabelas user-data + auth.users via Server Action com service role.
 4. Delete encerra sessão e redireciona para `/` com toast de confirmação.
 5. Testes integration validam que após delete, nenhum dado do usuário permanece em qualquer tabela.
+
+---
+
+## Epic 5 — Polish & Gaps Pós-MVP
+
+**Objetivo Expandido:** Encerrar gaps funcionais e refinos detectados durante operação pós-v1.0.0 e demos em produção, em ciclos pequenos e incrementais. Diferente dos Epics 1–4 (escopo do MVP do `docs/brief.md`), Epic 5 é **aberto** — vai sendo populado conforme `docs/STORY-BACKLOG.md` é priorizado (`@po *backlog-schedule`). Stories aqui devem ser pequenas (complexity S/M), traçáveis a FRs/NFRs existentes ou a gaps documentados em backlog, e não devem introduzir novos requisitos sem amend ao PRD (Constitution Art. IV — No Invention). Não há prazo agregado — cada story entra/sai em ciclo SDC normal.
+
+O primeiro item é o gap de identidade rica: o schema `profiles` (Story 2.2, migration `0002_profiles.sql`) já tem `display_name TEXT` e `bio TEXT` nullable, e `components/public/PublicPage.tsx` (Story 2.7) já renderiza ambos. Porém Stories 1.5 (signup) e 2.1 (slug edit) deixaram apenas `username` editável em `/dashboard/profile` — resultado: usuários reais (não-seed) sempre exibem `@handle` sem nome ou apresentação. Gap detectado em Story 3.5 Task 5 quando o dono do projeto popular o perfil `demo` em prod para Lighthouse measurement.
+
+### Story 5.1 — UI de Edição de Display Name e Bio no Dashboard
+
+Como usuário,
+Quero editar meu `display_name` e minha `bio` em `/dashboard/profile`,
+Para que minha página pública `/@<username>` exiba minha identidade rica (nome + apresentação) e não apenas o handle `@username`.
+
+#### Critérios de Aceitação
+
+1. Form em `/dashboard/profile` adiciona campos `display_name` (text input, **≤ 50 chars** per FR13) e `bio` (textarea, **≤ 280 chars** per FR13), ambos opcionais (null/empty permitidos — coluna `display_name TEXT` e `bio TEXT` nullable per `0002_profiles.sql`).
+2. Validação Zod em `lib/validators/profile.ts` aplica os limites de FR13 + `trim`; mensagens de erro em PT-BR (NFR11).
+3. Server Action `updateProfileMeta` em `server/profile/actions.ts` persiste mudanças sob RLS `profiles_update_own` (Story 2.2), seguindo o padrão da `updateUsername` (Story 2.1) — auth check, validate, update, retornar `{ success | error }`.
+4. UI segue padrão **shadcn Form + RHF**, espelhando o precedente `UsernameForm` (mesmas convenções de controles, mensagens de erro, estado de submitting e toast on success).
+5. Após submit bem-sucedido, `router.refresh()` propaga mudanças para `/@<username>` (re-render SSR); nenhum rebuild ISR exigido.
+6. Component test cobre validação (limites e trim, ambos campos opcionais), submit happy path e erro do Server Action.
+
+> **Origem:** `docs/STORY-BACKLOG.md` → `[STORY-3.5-F2]` (agendado por `@po *backlog-schedule` 2026-05-28; primeira story pós-v1.0.0 release).
+> **No-Invention reconciliation:** o backlog sugere `display_name` ≤ 80 chars ("sugerido") mas a fonte canônica é **FR13** (≤ 50). AC1 segue FR13. Bio (280) bate em ambas as fontes.
+> **Out-of-scope (deferido):** atualização do perfil `demo` em prod com novos valores é tarefa operacional pós-merge (não-AC); avatar upload (já implementado em Story 2.1 `AvatarUpload`) permanece intocado.
 
 ---
 

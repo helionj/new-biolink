@@ -44,3 +44,28 @@ export const UploadAvatarInput = z.object({
 });
 
 export type UploadAvatarInput = z.infer<typeof UploadAvatarInput>;
+
+// ---------------------------------------------------------------------------
+// Profile metadata (Story 5.1) — FR13
+// ---------------------------------------------------------------------------
+// display_name TEXT nullable, length <= 50 (0002_profiles.sql:68 CHECK).
+// bio          TEXT nullable, length <= 280 (0002_profiles.sql:69 CHECK).
+//
+// DEV-8 (deviation do snippet original da story): mantemos o schema SEM
+// `.transform` para preservar `Input === Output` — o shim shadcn `FormField`
+// (components/ui/form.tsx) tipa o Controller como `Control<TFieldValues, any,
+// TFieldValues>` (sem 3º generic), e RHF 7.75 + @hookform/resolvers 5 rejeitam
+// `useForm<TInput, _, TOutput>` quando os tipos divergem. A normalização
+// `'' | undefined -> null` (DEV-2, necessária para `display_name ?? '@username'`
+// em components/public/PublicPage.tsx:34) é movida para a Server Action
+// `updateProfileMeta`, com efeito funcional idêntico.
+export const UpdateProfileMetaInput = z.object({
+  display_name: z
+    .string()
+    .trim()
+    .max(50, 'Nome de exibição deve ter no máximo 50 caracteres')
+    .optional(),
+  bio: z.string().trim().max(280, 'Bio deve ter no máximo 280 caracteres').optional(),
+});
+
+export type UpdateProfileMetaInput = z.infer<typeof UpdateProfileMetaInput>;
