@@ -25,12 +25,13 @@ Comercialmente, o mercado é saturado e maduro — não há urgência de mercado
 
 ### Change Log
 
-| Data       | Versão | Descrição                                                                                                                                                                                                                                                                        | Autor        |
-| ---------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| 2026-05-06 | 0.1    | Draft inicial do PRD a partir de `brief.md` (modo YOLO)                                                                                                                                                                                                                          | @pm (Morgan) |
-| 2026-05-07 | 0.2    | Ajustes: adoção de Next.js 15; remoção de testes E2E (Playwright); remoção de stack Supabase local (testes via Supabase Branching); padronização total das stories em PT-BR                                                                                                      | @pm (Morgan) |
-| 2026-05-07 | 0.3    | Correção da versão do Next.js para a última estável (16.x) — substitui menções a Next.js 15 introduzidas em 0.2                                                                                                                                                                  | @pm (Morgan) |
-| 2026-05-28 | 0.4    | Formalização do **Epic 5 — Polish & Gaps Pós-MVP** com Story 5.1 (UI de edição de `display_name` + `bio` em `/dashboard/profile`) materializando `[STORY-3.5-F2]` do `docs/STORY-BACKLOG.md` (gap UX detectado em prod durante Story 3.5 Task 5). AC1 ancorado em FR13 (Art. IV) | @pm (Morgan) |
+| Data       | Versão | Descrição                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Autor        |
+| ---------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| 2026-05-06 | 0.1    | Draft inicial do PRD a partir de `brief.md` (modo YOLO)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | @pm (Morgan) |
+| 2026-05-07 | 0.2    | Ajustes: adoção de Next.js 15; remoção de testes E2E (Playwright); remoção de stack Supabase local (testes via Supabase Branching); padronização total das stories em PT-BR                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | @pm (Morgan) |
+| 2026-05-07 | 0.3    | Correção da versão do Next.js para a última estável (16.x) — substitui menções a Next.js 15 introduzidas em 0.2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | @pm (Morgan) |
+| 2026-05-28 | 0.4    | Formalização do **Epic 5 — Polish & Gaps Pós-MVP** com Story 5.1 (UI de edição de `display_name` + `bio` em `/dashboard/profile`) materializando `[STORY-3.5-F2]` do `docs/STORY-BACKLOG.md` (gap UX detectado em prod durante Story 3.5 Task 5). AC1 ancorado em FR13 (Art. IV)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | @pm (Morgan) |
+| 2026-05-29 | 0.5    | **Ratificação da identidade visual** (§UX/Branding) consumindo a delegação prevista em v0.3 L132. Seed `#7C3AED` violet substituído por palette **Soft Studio** (`#5B3A8C` deep plum + `#FFB5A7` peach accent + `#FAF8FF` lavender mist). Tipografia: **DM Sans Variable** (substitui Inter; -6KB woff2 vs Inter, mais warm). Wordmark `biolink` all-lowercase + placeholder ★ asterisco (logomark real diferido para Phase 2). FR12 (3 temas presets) mantido — tema "Brand" rebranded como "Vibrante" em UI copy (token interno `brand` preservado). Source-of-truth pós-amend: `docs/frontend-spec.md` v0.2. Materialização via 8 stories Epic 5 (5.2-5.9, MEDIUM priority). Stories 1.4-5.1 já Done permanecem válidas (paleta antiga é shipped baseline; migration documentada em frontend-spec.md §5). Sem mudança de FRs/NFRs. | @pm (Morgan) |
 
 ---
 
@@ -120,16 +121,46 @@ A linguagem visual segue tradição "linktree-like" mas com refinamento: tipogra
 
 ### Branding
 
-**Status:** placeholder no MVP — refino delegado a `@ux-design-expert` durante criação do `docs/frontend-spec.md`.
+> **Status:** **Ratificado (PRD v0.5, 2026-05-29).** Source-of-truth canônico: [`docs/frontend-spec.md`](frontend-spec.md) — leia o doc completo antes de qualquer decisão visual. Esta seção resume os pontos canônicos.
 
-**Seed para MVP:**
+#### Identidade Refinada — Soft Studio
 
-- **Mood:** moderno-minimalista, mobile-first, "indie tech".
-- **Paleta tentativa:** brand color seed `#7C3AED` (violeta), neutros `slate` Tailwind, branco/preto puros para light/dark.
-- **Tipografia:** sans-serif sistema (Inter ou system stack) — sem custom fonts no MVP para preservar bundle.
-- **Componentes presets:** **shadcn/ui** como referência (Tailwind-first, owned por nós, sem lock-in).
+| Aspecto                     | Decisão canônica                                                                                                                                                                                          |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Mood**                    | "warm creator studio" — friendly, generoso, emocional. Move-se away de "tech indie generic".                                                                                                              |
+| **Brand primary**           | `#5B3A8C` deep plum (substitui o seed `#7C3AED` violet de v0.1-v0.4)                                                                                                                                      |
+| **Accent**                  | `#FFB5A7` peach — decorative surfaces, hovers, badges (NUNCA body text)                                                                                                                                   |
+| **Light surface dominante** | `#FAF8FF` lavender mist (off-white warm, não `#FFFFFF` puro)                                                                                                                                              |
+| **Dark surface dominante**  | `#14102A` deep plum-night (warm, não carbon black)                                                                                                                                                        |
+| **3 temas (FR12)**          | `light` / `dark` / `brand` mantidos — tema `brand` rebranded como **"Vibrante"** em UI copy (token interno preservado para compatibilidade com shipped DB rows). Cada um com paleta WCAG 2.1 AA validada. |
+| **Tipografia**              | **DM Sans Variable** (Google Fonts, OFL, self-hosted via `next/font` — sem runtime CDN). Substitui Inter; -6KB woff2 com latin-ext subset.                                                                |
+| **Wordmark**                | `biolink` all-lowercase, DM Sans Bold, tracking `-0.04em`, primary color                                                                                                                                  |
+| **Logomark (símbolo)**      | `★` asterisco placeholder para MVP refresh — logomark real diferido para Phase 2                                                                                                                          |
+| **Border radius**           | Scale 8→12→16→24, default `16` para cards                                                                                                                                                                 |
+| **Componentes**             | **shadcn/ui** como base (mantido de v0.3) com 13 primitives auditados em Story 5.3                                                                                                                        |
 
-> **Decisão final de identidade visual** (logo, paleta definitiva, tom voice) é responsabilidade do `@ux-design-expert` após este PRD.
+#### Materialização (Epic 5)
+
+Refresh visual operacionalizado via 8 stories sequenciais/paralelas:
+
+| Story | Title                                        | Critical path? |
+| ----- | -------------------------------------------- | -------------- |
+| 5.2   | Token swap → Soft Studio palette + DM Sans   | ★ sim          |
+| 5.3   | Primitives audit (13 shadcn)                 | ★ sim          |
+| 5.4   | Landing + Auth pages Soft Studio             | paralelizável  |
+| 5.5   | Dashboard core (layout + links)              | paralelizável  |
+| 5.6   | Profile + Theme + Account                    | paralelizável  |
+| 5.7   | Analytics + Public page                      | paralelizável  |
+| 5.8   | Motion + polish (micro-interactions, easing) | paralelizável  |
+| 5.9   | Logo + favicon (wordmark + ★ favicon)        | paralelizável  |
+
+Detalhes (5 phases mapping, files affected, effort estimates): `docs/frontend-spec.md` §5.
+
+#### Baseline shipped (pré-refresh)
+
+Stories 1.4-5.1 (Done) usam paleta seed v0.1-v0.4 (`#7C3AED` violet + slate/zinc). Esta baseline **permanece válida em produção até Stories 5.2-5.9 mergearem**. A migração é incremental — cada story do refresh substitui surfaces específicas sem quebrar o shipped (zero migration SQL, zero RLS change, ~15% dos arquivos tocam).
+
+> Quaisquer decisões visuais futuras (logo final, tom de voz, novos temas) seguem o mesmo padrão: proposta em `frontend-spec.md` → amend PRD com Change Log v0.6+ → @po validate → Epic 5+ stories.
 
 ### Dispositivos e Plataformas Alvo: Web Responsive
 
