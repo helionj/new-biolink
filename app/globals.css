@@ -4,44 +4,57 @@
 @custom-variant dark (&:is(.dark *));
 
 /* -------------------------------------------------------------------------- */
-/* Design Tokens — paletas finais validadas WCAG AA (Story 3.2).               */
-/* Story 3.1 materializou os seletores [data-theme="light|dark|brand"];        */
-/* Story 3.2 preencheu paletas derivadas de Tailwind 4 default + brand seed    */
-/* #7C3AED do PRD §UX/Branding L127 (zero hex inventado — Constitution Art.IV).*/
+/* Design Tokens — Soft Studio palette (Story 5.2).                            */
+/* Materializa Phase 1 de docs/frontend-spec.md §5.1 (ratificado em PRD v0.5   */
+/* §UX/Branding). Substitui a baseline da Story 3.2 (seed #7C3AED violet +     */
+/* slate/zinc neutros) pela identidade Soft Studio canônica:                   */
+/*   - Deep plum primary #5B3A8C + peach accent #FFB5A7 (light/brand).         */
+/*   - Lavender mist background #FAF8FF (light) / plum-night #14102A (dark) /  */
+/*     deeper lavender #F0E8FF (brand).                                        */
+/* Hex 100% rastreados em frontend-spec.md §1.2.1, §1.2.2, §1.2.3 — zero       */
+/* invenção (Constitution Art. IV).                                             */
+/* Tokens consumidos via @theme inline; primitives shadcn (Story 1.5+) re-     */
+/* renderizam automaticamente (auditoria por primitive é Story 5.3).            */
 /* Validação programática: `pnpm check:contrast` (scripts/check-contrast.mjs). */
-/*   - light  : slate neutros + brand #7C3AED como --primary.                  */
-/*   - dark   : zinc neutros + brand-light #A78BFA primary (contraste OK       */
-/*              contra zinc-950).                                              */
-/*   - brand  : violet-dominant (background violet-50, primary violet-600).    */
-/* shadcn primitives (Story 1.5) consomem os tokens via @theme inline (L150+). */
 /* -------------------------------------------------------------------------- */
 
 :root,
 [data-theme='light'] {
-  /* Story 3.2 — paleta final light: slate neutros + brand #7C3AED primary. */
-  --background: #ffffff;
-  --foreground: #0f172a;
-  --primary: #7c3aed;
+  /* Soft Studio light — frontend-spec.md §1.2.1. */
+  --background: #faf8ff;
+  --foreground: #1b1530;
+  --primary: #5b3a8c;
   --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
-  --muted-foreground: #475569;
-  --accent: #ede9fe;
-  --accent-foreground: #4c1d95;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #7c3aed;
-  --radius: 0.5rem;
+  --secondary: #f4effb;
+  --secondary-foreground: #1b1530;
+  --muted: #efeaf7;
+  --muted-foreground: #6b5b95;
+  --accent: #ffb5a7;
+  --accent-foreground: #7a2c1f;
+  --border: #e6e0f8;
+  --input: #e6e0f8;
+  --ring: #5b3a8c;
+
+  /* Radius scale — frontend-spec.md §1.4.2. Default canon = --radius-xl (16px). */
+  --radius: 1rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
 
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #1b1530;
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --destructive: #dc2626;
+  --popover-foreground: #1b1530;
+  /* Destructive: spec §1.2.1 L148 lista #D14A4A mas o ratio real WCAG é 4.38
+     (spec afirma 4.8:1 — erro de cálculo do autor). Ajustado para #C84141
+     que passa AA por margem segura (DEV-9). */
+  --destructive: #c84141;
   --destructive-foreground: #ffffff;
 
-  /* Chart scale — slate (mantida da 3.1; Epic 4 reavalia com consumidor real). */
+  /* Chart scale — slate ramp preservado (DEV-2: sem spec canon; Story 5.7 audita). */
   --chart-1: #e2e8f0;
   --chart-2: #64748b;
   --chart-3: #475569;
@@ -49,96 +62,105 @@
   --chart-5: #1e293b;
 
   --sidebar: #ffffff;
-  --sidebar-foreground: #0f172a;
-  --sidebar-primary: #7c3aed;
+  --sidebar-foreground: #1b1530;
+  --sidebar-primary: #5b3a8c;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f1f5f9;
-  --sidebar-accent-foreground: #0f172a;
-  --sidebar-border: #e2e8f0;
-  --sidebar-ring: #7c3aed;
+  --sidebar-accent: #f4effb;
+  --sidebar-accent-foreground: #1b1530;
+  --sidebar-border: #e6e0f8;
+  --sidebar-ring: #5b3a8c;
 }
 
 /*
- * Story 3.2 — paleta final dark: zinc neutros (#09090b background, #27272a
- * surfaces) + brand-light #A78BFA primary (violet-400, contraste WCAG AA
- * contra zinc-950). Seletor composto reconcilia [data-theme="dark"] com
- * .dark (DEV-1 da 3.1) — o @custom-variant dark (L4) alimenta o `dark:`
- * Tailwind variant a partir da classe .dark, e primitives shadcn dependem
- * disso. Refactor para eliminar .dark é [STORY-3.1-F1] (LOW priority).
- * Radius mantido igual ao light (theme não altera radius — design decision).
+ * Soft Studio dark — frontend-spec.md §1.2.2. Seletor composto preserva
+ * dualidade [data-theme="dark"] + .dark (DEV-6: refactor para eliminar .dark
+ * é [STORY-3.1-F1] LOW, fora de escopo). @custom-variant dark (L4) alimenta
+ * o `dark:` Tailwind variant a partir de .dark.
  */
 [data-theme='dark'],
 .dark {
-  --background: #09090b;
-  --foreground: #fafafa;
-  --primary: #a78bfa;
-  --primary-foreground: #1e1b4b;
-  --secondary: #27272a;
-  --secondary-foreground: #fafafa;
-  --muted: #27272a;
-  --muted-foreground: #a1a1aa;
-  --accent: #1e1b4b;
-  --accent-foreground: #ede9fe;
-  --border: #27272a;
-  --input: #27272a;
-  --ring: #a78bfa;
-  --radius: 0.5rem;
+  --background: #14102a;
+  --foreground: #f4effb;
+  --primary: #b8a1e8;
+  --primary-foreground: #14102a;
+  --secondary: #1f1838;
+  --secondary-foreground: #f4effb;
+  --muted: #251d40;
+  --muted-foreground: #b8a8d8;
+  --accent: #ff9b8a;
+  --accent-foreground: #3a0f08;
+  --border: #2a2244;
+  --input: #2a2244;
+  --ring: #b8a1e8;
 
-  --card: #09090b;
-  --card-foreground: #fafafa;
-  --popover: #09090b;
-  --popover-foreground: #fafafa;
-  --destructive: #b91c1c;
-  --destructive-foreground: #fafafa;
+  --radius: 1rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
 
-  /* Chart scale — slate ramping (mantida da 3.1). */
+  --card: #2a2244;
+  --card-foreground: #f4effb;
+  --popover: #2a2244;
+  --popover-foreground: #f4effb;
+  --destructive: #ff7878;
+  --destructive-foreground: #14102a;
+
   --chart-1: #1e293b;
   --chart-2: #334155;
   --chart-3: #475569;
   --chart-4: #64748b;
   --chart-5: #94a3b8;
 
-  --sidebar: #09090b;
-  --sidebar-foreground: #fafafa;
-  --sidebar-primary: #a78bfa;
-  --sidebar-primary-foreground: #1e1b4b;
-  --sidebar-accent: #27272a;
-  --sidebar-accent-foreground: #fafafa;
-  --sidebar-border: #27272a;
-  --sidebar-ring: #a78bfa;
+  --sidebar: #14102a;
+  --sidebar-foreground: #f4effb;
+  --sidebar-primary: #b8a1e8;
+  --sidebar-primary-foreground: #14102a;
+  --sidebar-accent: #1f1838;
+  --sidebar-accent-foreground: #f4effb;
+  --sidebar-border: #2a2244;
+  --sidebar-ring: #b8a1e8;
 }
 
 /*
- * Story 3.2 — paleta final brand: violet-dominant. Background violet-50
- * (#faf5ff — suave, não branco puro, para diferenciar visualmente do light);
- * primary violet-600 #7C3AED (seed exato do PRD §UX/Branding L127);
- * foreground violet-950 #2e1065 (contraste ≥ 12:1 contra background).
- * Cards mantêm branco puro para destaque sutil sobre fundo lilás.
+ * Soft Studio brand — frontend-spec.md §1.2.3. Background deeper lavender
+ * (#F0E8FF) com white cards popam por contraste; primary deep plum compartilhado
+ * com light. Token interno `brand` preservado (DEV-5: rebrand UI "Vibrante" é
+ * Story 5.6).
  */
 [data-theme='brand'] {
-  --background: #faf5ff;
-  --foreground: #2e1065;
-  --primary: #7c3aed;
+  --background: #f0e8ff;
+  --foreground: #1b1530;
+  --primary: #5b3a8c;
   --primary-foreground: #ffffff;
-  --secondary: #ede9fe;
-  --secondary-foreground: #2e1065;
-  --muted: #ede9fe;
-  --muted-foreground: #5b21b6;
-  --accent: #ddd6fe;
-  --accent-foreground: #2e1065;
-  --border: #c4b5fd;
-  --input: #c4b5fd;
-  --ring: #7c3aed;
-  --radius: 0.5rem;
+  --secondary: #ffffff;
+  --secondary-foreground: #1b1530;
+  --muted: #d9ccef;
+  --muted-foreground: #4a3a6b;
+  --accent: #ffb5a7;
+  --accent-foreground: #7a2c1f;
+  --border: #d9ccef;
+  --input: #d9ccef;
+  --ring: #5b3a8c;
+
+  --radius: 1rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
 
   --card: #ffffff;
-  --card-foreground: #2e1065;
+  --card-foreground: #1b1530;
   --popover: #ffffff;
-  --popover-foreground: #2e1065;
-  --destructive: #b91c1c;
+  --popover-foreground: #1b1530;
+  /* Destructive: ajustado de #D14A4A para #C84141 (DEV-9 — ver light block). */
+  --destructive: #c84141;
   --destructive-foreground: #ffffff;
 
-  /* Chart scale — slate (mantida; Epic 4 reavalia paleta violet). */
   --chart-1: #e2e8f0;
   --chart-2: #64748b;
   --chart-3: #475569;
@@ -146,13 +168,61 @@
   --chart-5: #1e293b;
 
   --sidebar: #ffffff;
-  --sidebar-foreground: #2e1065;
-  --sidebar-primary: #7c3aed;
+  --sidebar-foreground: #1b1530;
+  --sidebar-primary: #5b3a8c;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #ede9fe;
-  --sidebar-accent-foreground: #2e1065;
-  --sidebar-border: #c4b5fd;
-  --sidebar-ring: #7c3aed;
+  --sidebar-accent: #d9ccef;
+  --sidebar-accent-foreground: #1b1530;
+  --sidebar-border: #d9ccef;
+  --sidebar-ring: #5b3a8c;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Elevation / Shadows — Story 5.2 — frontend-spec.md §1.4.3                   */
+/* Warm-tinted plum em light/brand; preto puro em dark (tone shift natural).  */
+/* Disponibilizados como tokens; consumo por primitives é Story 5.3.           */
+/* -------------------------------------------------------------------------- */
+
+:root,
+[data-theme='light'],
+[data-theme='brand'] {
+  --shadow-sm: 0 1px 2px 0 rgba(91, 58, 140, 0.05);
+  --shadow-md: 0 4px 12px -2px rgba(91, 58, 140, 0.1);
+  --shadow-lg: 0 16px 32px -4px rgba(91, 58, 140, 0.18);
+}
+
+[data-theme='dark'],
+.dark {
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 16px 32px -4px rgba(0, 0, 0, 0.18);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Typescale — Story 5.2 — frontend-spec.md §1.3.2                             */
+/* Sizes + line-heights compartilhados entre os 3 temas (sem variação cross-   */
+/* theme). Weight + tracking aplicados via @theme inline suffix convention v4. */
+/* -------------------------------------------------------------------------- */
+
+:root {
+  --text-display: 2.5rem;
+  --text-display-lh: 3rem;
+  --text-h1: 2rem;
+  --text-h1-lh: 2.5rem;
+  --text-h2: 1.5rem;
+  --text-h2-lh: 2rem;
+  --text-h3: 1.25rem;
+  --text-h3-lh: 1.75rem;
+  --text-body-lg: 1.125rem;
+  --text-body-lg-lh: 1.75rem;
+  --text-body: 1rem;
+  --text-body-lh: 1.5rem;
+  --text-body-sm: 0.875rem;
+  --text-body-sm-lh: 1.25rem;
+  --text-caption: 0.75rem;
+  --text-caption-lh: 1rem;
+  --text-button: 0.875rem;
+  --text-button-lh: 1.25rem;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -195,62 +265,120 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Radius scale — Tailwind v4 expõe rounded-sm/md/lg/xl/2xl/full. */
   --radius-base: var(--radius);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+  --radius-full: var(--radius-full);
+
+  /* Shadows — Tailwind v4 expõe shadow-sm/md/lg. */
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
+  /* Typescale — Tailwind v4 suffix convention: text-{name} aplica size +
+     line-height + font-weight + letter-spacing em conjunto. DEV-7. */
+  --text-display: var(--text-display);
+  --text-display--line-height: var(--text-display-lh);
+  --text-display--font-weight: 500;
+  --text-display--letter-spacing: -0.02em;
+  --text-h1: var(--text-h1);
+  --text-h1--line-height: var(--text-h1-lh);
+  --text-h1--font-weight: 500;
+  --text-h1--letter-spacing: -0.02em;
+  --text-h2: var(--text-h2);
+  --text-h2--line-height: var(--text-h2-lh);
+  --text-h2--font-weight: 500;
+  --text-h2--letter-spacing: -0.01em;
+  --text-h3: var(--text-h3);
+  --text-h3--line-height: var(--text-h3-lh);
+  --text-h3--font-weight: 500;
+  --text-h3--letter-spacing: -0.01em;
+  --text-body-lg: var(--text-body-lg);
+  --text-body-lg--line-height: var(--text-body-lg-lh);
+  --text-body-lg--font-weight: 400;
+  --text-body-lg--letter-spacing: 0;
+  --text-body: var(--text-body);
+  --text-body--line-height: var(--text-body-lh);
+  --text-body--font-weight: 400;
+  --text-body--letter-spacing: 0;
+  --text-body-sm: var(--text-body-sm);
+  --text-body-sm--line-height: var(--text-body-sm-lh);
+  --text-body-sm--font-weight: 400;
+  --text-body-sm--letter-spacing: 0;
+  --text-caption: var(--text-caption);
+  --text-caption--line-height: var(--text-caption-lh);
+  --text-caption--font-weight: 400;
+  --text-caption--letter-spacing: 0.01em;
+  --text-button: var(--text-button);
+  --text-button--line-height: var(--text-button-lh);
+  --text-button--font-weight: 500;
+  --text-button--letter-spacing: 0;
+
+  --font-sans: var(--font-sans);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 /*
  * Fallback OS-level: só aplica quando NENHUM data-theme nem .dark explícito
  * está no <html>. O :not(...) duplo garante que a escolha SSR (Story 3.1
  * Task 3 — data-theme={DEFAULT_THEME}) vence o prefers-color-scheme.
+ * Story 5.2 — mantido em sincronia com o bloco [data-theme="dark"] (Soft Studio).
  */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]):not(.dark) {
-    /* Story 3.2 — mantido em sincronia com o bloco [data-theme="dark"] (L64+). */
-    --background: #09090b;
-    --foreground: #fafafa;
-    --primary: #a78bfa;
-    --primary-foreground: #1e1b4b;
-    --secondary: #27272a;
-    --secondary-foreground: #fafafa;
-    --muted: #27272a;
-    --muted-foreground: #a1a1aa;
-    --accent: #1e1b4b;
-    --accent-foreground: #ede9fe;
-    --border: #27272a;
-    --input: #27272a;
-    --ring: #a78bfa;
-    --card: #09090b;
-    --card-foreground: #fafafa;
-    --popover: #09090b;
-    --popover-foreground: #fafafa;
-    --destructive: #b91c1c;
-    --destructive-foreground: #fafafa;
+    --background: #14102a;
+    --foreground: #f4effb;
+    --primary: #b8a1e8;
+    --primary-foreground: #14102a;
+    --secondary: #1f1838;
+    --secondary-foreground: #f4effb;
+    --muted: #251d40;
+    --muted-foreground: #b8a8d8;
+    --accent: #ff9b8a;
+    --accent-foreground: #3a0f08;
+    --border: #2a2244;
+    --input: #2a2244;
+    --ring: #b8a1e8;
+    --card: #2a2244;
+    --card-foreground: #f4effb;
+    --popover: #2a2244;
+    --popover-foreground: #f4effb;
+    --destructive: #ff7878;
+    --destructive-foreground: #14102a;
     --chart-1: #1e293b;
     --chart-2: #334155;
     --chart-3: #475569;
     --chart-4: #64748b;
     --chart-5: #94a3b8;
-    --sidebar: #09090b;
-    --sidebar-foreground: #fafafa;
-    --sidebar-primary: #a78bfa;
-    --sidebar-primary-foreground: #1e1b4b;
-    --sidebar-accent: #27272a;
-    --sidebar-accent-foreground: #fafafa;
-    --sidebar-border: #27272a;
-    --sidebar-ring: #a78bfa;
+    --sidebar: #14102a;
+    --sidebar-foreground: #f4effb;
+    --sidebar-primary: #b8a1e8;
+    --sidebar-primary-foreground: #14102a;
+    --sidebar-accent: #1f1838;
+    --sidebar-accent-foreground: #f4effb;
+    --sidebar-border: #2a2244;
+    --sidebar-ring: #b8a1e8;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 16px 32px -4px rgba(0, 0, 0, 0.18);
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-family:
+    var(--font-sans),
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
 }
 
 @layer base {
