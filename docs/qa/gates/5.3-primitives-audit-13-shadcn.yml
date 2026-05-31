@@ -1,0 +1,959 @@
+schema: 1
+story: '5.3'
+gate: PASS
+status_reason: |
+  Implementação completa dos 13 ACs da Story 5.3 (primitives audit Soft Studio
+  — 13 shadcn em components/ui/ + 2 status tokens novos --success/--warning
+  em globals.css per Task 8.0 pré-flight). Auditoria por primitive vs spec
+  §5.2 L1252-1267 (matriz canônica) materializada conforme: Button ghost
+  `bg-muted` → `bg-accent` (peach hover, DEV-A1 descoberto durante audit —
+  estado pré-5.3 NÃO consumia --accent, divergência material corrigida); Card
+  +shadow-sm warm-tinted plum; Input/Textarea destructive ring alpha /20 →
+  /30 per AC3; Dialog/AlertDialog rounded-xl → rounded-2xl + shadow-lg; Sheet
+  radius condicional por side via data-[side=*]:rounded-{t/b/l/r}-2xl;
+  DropdownMenu content rounded-lg → rounded-xl; Switch data-checked:bg-primary
+  → data-checked:bg-accent (DEV-A2 — selector pattern Base UI mapping vs Radix
+  da story); Avatar/Label diff vazio (já compliant pré-5.3, AC9/AC10
+  satisfeitas por consumo automático); Form FormMessage +AlertCircleIcon
+  inline com a11y aria-hidden; Sonner overrides (position responsiva
+  matchMedia + per-type border-l-4 com status tokens). Quality gates locais
+  re-rodados independentemente pelo @qa: typecheck exit 0 ✅ / lint zero
+  warnings ✅. Gates pesados (test:components 194/194 em 545s,
+  build Next 16.2.5 Turbopack 101s compile + 86s TS + 15/15 static pages)
+  validados pelo @dev em sessão develop — outputs capturados em
+  Debug Log References da story; 4 snapshots atualizados conscientemente
+  (card/dialog/form/input — todos className-only, zero DOM/ARIA/role/structure
+  changes); PublicPage snapshot intacto per Task 13.4. DEV-A1..A4 + DEV-B..E
+  materializadas e documentadas em Completion Notes. DEV-D (Task 8.0
+  pré-flight) aplicado em 5 locais de globals.css (light/dark/brand/@media
+  prefers-color-scheme fallback/@theme inline map) com tokens spec verbatim
+  §1.2 L150-204. Article IV (No Invention) preservada — todos hex spec
+  verbatim; foreground pairs status (#FFFFFF light/brand, #0E2418/#2E1D0A
+  dark) justificados como pattern parity com primary-foreground/destructive-
+  foreground (não-invention, deterministic high-contrast text). Article III
+  (Story-Driven) preservada — escopo restrito ao Source Tree listado; zero
+  page-level toques. Backward compat ✓ — zero API change nos primitives;
+  consumers re-renderam automaticamente via className mudanças. Security
+  clean: story toca apenas className/className-conditional + CSS variables
+  status + 1 import lucide (AlertCircleIcon) — zero env vars, zero RLS,
+  zero auth, zero hardcoded secrets; pre-commit hooks (gitleaks/lint-staged)
+  PASS no commit 855130f. 3 observações: **OBS-001 LOW** (DEV-A4 confirmado
+  — spec L151 + L204 warning ratios INFLATED: real WCAG ratios light/brand
+  `#B8742A vs #FFFFFF = 3.770` vs spec claims 4.6/4.4 — discrepância similar
+  a DEV-9 5.2 destructive); **OBS-002 LOW** (AC8 minor inaccuracy: Story
+  claim thumb-vs-track 1.92:1; real 1.691:1; rationale "shadow + 1px
+  border" não materializa no código — thumb usa `ring-0` sem shadow visível;
+  WCAG §1.4.11 ainda satisfeito via shape-based identification thumb
+  circular + position transition, mas spec wording deve ser revisitado);
+  **OBS-003 LOW** (cosmético: @dev importou `AlertCircleIcon` alias em vez
+  de `AlertCircle` literal da story spec — ambos válidos lucide-react,
+  zero impact funcional, typecheck PASS); **PERF-001 PENDING-CI**
+  (Lighthouse CI dispara via trigger `paths: [components/ui/**]` ou via
+  `app/**` — gate threshold ≥0.85 mantido; bundle delta ≈ 0 KB esperado
+  pois mudanças são CSS-only via Tailwind classnames + 2 tokens novos sem
+  consumer adicional além de Sonner).
+reviewer: 'Quinn'
+updated: '2026-05-31T22:30:00Z'
+
+top_issues:
+  - id: 'OBS-001'
+    severity: low
+    finding: |
+      **DEV-A4 confirmado por recalc independente WCAG W3C @qa.** Spec
+      `frontend-spec.md` §1.2.1 L151 reivindica `warning #B8742A vs
+      #FFFFFF = 4.6:1 AA` mas recalc independente confirma **3.770:1**
+      (FAIL AA por 0.730, similar a DEV-9 destructive Story 5.2). Spec
+      §1.2.3 L204 reivindica brand `warning #B8742A vs background ...`
+      claims 4.4:1 — mesma fonte do hex, mesmo cálculo, mesmo resultado
+      real 3.770. Spec autor errou cálculo de luminância para warning
+      (padrão idêntico do DEV-9 destructive — autor parece ter usado
+      fórmula incorreta de luminância para esta família de hex amber/red).
+
+      **Sem impacto material na Story 5.3:** AC7(b) usa `--warning` como
+      `border-left 4px` em Sonner toast — elemento gráfico UI, NÃO texto.
+      WCAG §1.4.11 (non-text contrast) threshold é **3.0:1**, satisfeito
+      por margem 0.770 (3.770 ≥ 3.0). Eventual uso futuro de `--warning`
+      como bg com texto branco em cima FALHARIA AA por 0.730 — atualmente
+      zero usage, mas pré-emptive concern.
+
+      Issue **descoberto** no gate (durante recalc Task 8.0.2), **não
+      regressão** da story. Foreground `--warning-foreground: #FFFFFF`
+      adicionado pré-emptive (NH-4 do @po validate) está consistente com
+      pattern parity, mas materializa essa falha se warning bg with white
+      text for usado futuramente.
+
+      Discoveries adicionais durante recalc independente:
+      - light/brand success #2B7A5E vs #FFFFFF = **5.188** (spec L150
+        claims 5.2 — accurate ✓)
+      - dark success #7AC9A0 vs #0E2418 = **8.324** (spec L177 claims 6.8
+        vs unspecified fg — fg foi @dev decision pattern parity)
+      - brand success #2B7A5E vs #FFFFFF = **5.188** (spec L203 claims
+        5.0 — accurate ✓)
+      - dark warning #E8B978 vs #2E1D0A = **8.981** (high contrast ✓)
+    suggested_action: |
+      Não-bloqueante para Story 5.3 (AC7(b) usage é graphical, WCAG
+      §1.4.11 satisfeito). Recomendações:
+      (1) Registrar **`[STORY-5.3-F1]` LOW** no `docs/STORY-BACKLOG.md`:
+          "Amend `frontend-spec.md` §1.2.1 L151 + §1.2.3 L204 com ratios
+          warning corretos pós-recalc WCAG W3C (`#B8742A vs #FFFFFF =
+          3.77` light/brand FAIL como text bg; OK como border 3.0
+          threshold). Considerar (a) manter `#B8742A` e adicionar nota
+          spec "warning usable apenas como bg graphical / border / large
+          text"; OU (b) escurecer mais (ex.: `#9D5F1F` ~4.8 vs white)
+          para passar AA também como text bg. Decisão impacta futuras
+          stories que usem `--warning` em bg/text components (warning
+          Alert badge, etc.). Owner: `@ux-design-expert` (consolidar
+          com `[STORY-5.2-F1]` LOW destructive amend numa única passada
+          de spec hygiene)." Effort: ~30min (doc-only).
+      (2) Em **Story 5.6** quando "Vibrante" rebrand for executada
+          (Profile/Theme/Account): se algum surface adicionar `bg-warning
+          text-warning-foreground` (warning Alert, badge, etc.), validar
+          que `--warning-foreground: #FFFFFF` é o branco correto vs `bg-
+          warning #B8742A` light/brand — atualmente falha AA 3.77 < 4.5.
+          Solução: mudar foreground para um dark (#2E1D0A?) OU mudar bg
+          para escurecer (per ponto 1.b).
+      (3) Sem ação obrigatória pré-merge. Documentar OBS-001 no Change
+          Log da Story 5.3 ao mover Status InReview → Done (post-push).
+
+  - id: 'OBS-002'
+    severity: low
+    finding: |
+      **AC8 (Switch peach ON state) minor spec inaccuracy.** Story AC8
+      nota: "thumb #FFFFFF sobre #FFB5A7 peach light = 1.92:1 (baixo,
+      mas thumb é elemento gráfico com sombra, não texto — passa por
+      contornos visuais + state border per WCAG 2.1 §1.4.11 non-text
+      contrast 3:1 ✓ via `--shadow-sm` warm tint + 1px border)."
+
+      Recalc independente @qa: real ratio é **1.691:1** (não 1.92 como
+      claimed). Mais importante: o código atual do Switch thumb
+      (`components/ui/switch.tsx:26`) tem `ring-0` (zero ring) e
+      **nenhum** `shadow-*` class — ou seja, "shadow + 1px border"
+      rationale da story NÃO materializa no código.
+
+      **Avaliação técnica WCAG §1.4.11 (Non-text Contrast):** A norma
+      requer 3:1 entre "visual information required to identify user
+      interface components and states from adjacent colors". Para Switch:
+      - Componente identificável por SHAPE (track horizontal + thumb
+        circular)
+      - State indicator é POSIÇÃO do thumb (left=off, right=on), não
+        cor do thumb
+      - Distinção thumb-vs-track via shape (circular vs retangular) +
+        transition-transform animation; cor é decorativa
+
+      Per WCAG 2.1 understanding doc + W3C examples (radio button, switch
+      patterns), shape-based identification SATISFIES §1.4.11 sem
+      necessidade de 3:1 contrast colorimétrico. Spec wording da Story
+      AC8 mistura conceitos (cita `--shadow-sm` que existe como token
+      mas NÃO é aplicado no thumb; cita "1px border" que também não está
+      no thumb className). Implementação está accessible per WCAG, mas
+      rationale da story está parcialmente desatualizado.
+    suggested_action: |
+      Não-bloqueante. A11y real está OK (WCAG §1.4.11 via shape +
+      position). Recomendações:
+      (1) Tightening cosmético opcional: em refresh futuro do
+          `frontend-spec.md` §5.2 L1263 (Switch description), atualizar
+          rationale para citar shape-based identification + transition
+          + dark border (que existe via `border border-transparent` na
+          Root + `dark:data-unchecked:bg-foreground` dark thumb). Custo
+          ~10min, doc-only. Não criar follow-up dedicado — pode ser
+          incluído no `[STORY-5.3-F1]` LOW se for amendado.
+      (2) Em **Story 5.8 (Motion + polish)** quando spring transition
+          for adicionada ao Switch (per spec §5.2 L1263 "spring
+          transition"), considerar adicionar `shadow-sm ring-1 ring-
+          foreground/10` ao thumb para reforçar separação visual peach
+          ON state — eleva contraste perceptual sem mudar tokens.
+          Decisão @ux-design-expert.
+
+  - id: 'OBS-003'
+    severity: low
+    finding: |
+      **Cosmético — import name divergence.** Story 5.3 spec (Task 12.2
+      + Task 12.3) usa nome `AlertCircle` para o ícone de FormMessage.
+      @dev importou `AlertCircleIcon` (alias com suffix `Icon`). Ambos
+      são exports válidos do `lucide-react` (a lib expõe ambos os nomes
+      desde v0.6+; `AlertCircleIcon` é o pattern mais novo com suffix
+      explícito para evitar colisão com globals/types).
+
+      Typecheck PASS (zero erros). Funcionalidade idêntica. Story spec
+      poderia ter sido mais permissiva ("`AlertCircle` ou alias com
+      suffix `Icon`").
+    suggested_action: |
+      Nenhuma. Aceitar a divergência cosmética. Padrão de import com
+      suffix `Icon` é melhor para clareza em greps futuros
+      (`AlertCircleIcon` é unambíguo; `AlertCircle` pode colidir com
+      type names ou outros patterns). Validar consistency em stories
+      futuras (5.4-5.7 que usarão mais ícones lucide).
+
+  - id: 'PERF-001'
+    severity: low
+    finding: |
+      Lighthouse Performance score do `/` e `/[username]` ainda não
+      medido empiricamente nesta validação local — vai ser medido pelo
+      workflow `.github/workflows/lighthouse.yml` (Story 3.5 Task 6,
+      estabilizado em runs:3 + mediana per [STORY-3.5-F3] Done)
+      disparado no PR via trigger `paths: [app/**, components/**]`.
+      Match definitivo: story modifica `app/globals.css` + 13 files
+      em `components/ui/`. Bundle expected delta ≈ **0 KB** (mudanças
+      são CSS classnames via Tailwind v4; 2 status tokens novos
+      ocupam ~150 bytes gz uma vez compilados; lucide-react
+      AlertCircleIcon adicionado em form.tsx já é re-export do mesmo
+      bundle pois lucide é tree-shakeable e form.tsx já importava
+      lucide via consumers indiretos — verificar no analisador
+      bundle). Margem AC3 da Story 3.5 (< 200 KB) mantida.
+    suggested_action: |
+      Aceitar como gate-PASS-com-monitoramento (padrão idêntico Story
+      5.2 PERF-001). @devops deve:
+      (1) Verificar Lighthouse CI no PR como housekeeping. Se workflow
+          falhar por flake, re-run; se 1 das 3 runs falhar mas median
+          passar, OK (mediana é o critério canônico per
+          [STORY-3.5-F3]).
+      (2) Capturar First Load JS de `/` e `/[username]` reportados pelo
+          workflow. Confirmar **mantém ou melhora** vs baseline pós-5.2
+          (~180-185 KB esperado pós-DM Sans swap). Se piorar
+          inesperadamente (>200 KB), investigar antes do merge.
+      (3) Documentar resultado real no Change Log da story ao mover
+          Status Ready for Review → Done.
+
+waiver: { active: false }
+
+# ---------------------------------------------------------------------------
+# Detalhes do review (informacional — fora do schema mínimo do qa-gate)
+# ---------------------------------------------------------------------------
+
+review_evidence:
+  date: '2026-05-31'
+  branch: 'feat/5.3-primitives-audit-13-shadcn (1 commit ahead of main: 855130f feat — @devops abrirá PR contra main)'
+  reviewer_role: |
+    @qa (Quinn) — `quality_gate: '@qa'` per Executor Assignment da story
+    (`quality_gate_tools: [typecheck, lint, build, test:components]`).
+    Story Frontend-primary (audit de primitives Soft Studio) — escopo padrão
+    @qa, idêntico Story 5.2. Gate manual via QA-001 workaround
+    (CodeRabbit/WSL incompat. macOS; MEMORY `project_qa_review_hang.md`;
+    precedente validado 1.4-5.2).
+
+  acceptance_criteria:
+    - id: AC1
+      verdict: PASS
+      evidence: |
+        Button ghost variant em `components/ui/button.tsx:17` reescrito
+        de `hover:bg-muted hover:text-foreground aria-expanded:bg-muted
+        aria-expanded:text-foreground dark:hover:bg-muted/50` para
+        `hover:bg-accent hover:text-accent-foreground aria-expanded:
+        bg-muted aria-expanded:text-foreground`. Mudança JSX material:
+        DEV-A1 descoberto durante audit revelou que estado pré-5.3 NÃO
+        consumia `--accent` peach (era `--muted`) — story AC1 spec
+        "verify peach `--accent` em ghost hover" era na verdade um
+        gap, não verify. Foco visible base `focus-visible:border-ring
+        focus-visible:ring-3 focus-visible:ring-ring/50` preservado
+        (button.tsx:7). Radius `rounded-lg` preservado. Outline variant
+        (button.tsx:13) corretamente preservou `hover:bg-muted` —
+        outline ≠ ghost, design intent diferente. Re-validação @qa via
+        grep: `grep -n hover:bg-accent components/ui/button.tsx` retorna
+        linha 17 (ghost). Snapshot button.test.tsx.snap intacto (só
+        captura variant=default per button.test:18). Snapshot
+        dialog.test.tsx.snap atualizado transitively (DialogClose render
+        usa ghost button) — verificado em @dev Debug Log References.
+
+    - id: AC2
+      verdict: PASS
+      evidence: |
+        Card root className em `components/ui/card.tsx:15` adicionado
+        `shadow-sm` (entre `text-card-foreground` e `ring-1
+        ring-foreground/10`). Token --shadow-sm resolve para warm-tinted
+        plum em light/brand (`0 1px 2px 0 rgba(91, 58, 140, 0.05)`,
+        per Story 5.2 Done globals.css:189) ou preto puro em dark
+        (`rgba(0, 0, 0, 0.05)`, globals.css:196) — token-native, sem
+        invenção. Hover state shadow-md NÃO adicionado (correto per
+        Task 2.3 — Card não é interativo default). `bg-card
+        text-card-foreground` preservado (token-native, sem hex inline).
+        Snapshot card.test.tsx.snap atualizado conscientemente per @dev
+        Task 13.2 review (única mudança: +`shadow-sm` no Card root
+        className — zero DOM/ARIA changes).
+
+    - id: AC3
+      verdict: PASS
+      evidence: |
+        Input (`components/ui/input.tsx:11`) e Textarea
+        (`components/ui/textarea.tsx:10`) ambos atualizados
+        `aria-invalid:ring-destructive/20` → `aria-invalid:ring-
+        destructive/30` (mais visível). `rounded-lg` preservado,
+        `focus-visible:border-ring focus-visible:ring-3 focus-visible:
+        ring-ring/50` preservado, `field-sizing-content` Textarea-only
+        preservado (textarea.tsx:10). Divergência cross-primitive
+        documentada per @po SF-1 amend v0.2 + AC3 nota: Button mantém
+        `/20` (button.tsx:7) por hierarquia visual pragmática (button
+        feedback mais sutil que input — input é form validation focal).
+        Snapshot input.test.tsx.snap + form.test.tsx.snap atualizados
+        conscientemente per @dev Task 13.2 (alpha-only change, zero
+        DOM).
+
+    - id: AC4
+      verdict: PASS
+      evidence: |
+        Dialog (`components/ui/dialog.tsx:53`) DialogContent
+        `rounded-xl bg-popover ... ring-1 ring-foreground/10` →
+        `rounded-2xl bg-popover ... shadow-lg ring-1 ring-foreground/
+        10` (16 → 24px + shadow-lg adicionado). DialogFooter
+        (`dialog.tsx:91`) `rounded-b-xl` → `rounded-b-2xl` (preserve
+        bottom corner radius alignment com content rounded-2xl).
+        AlertDialog (`components/ui/alert-dialog.tsx:48`)
+        AlertDialogContent idem `rounded-xl → rounded-2xl + shadow-lg`.
+        AlertDialogFooter (`alert-dialog.tsx:75`) `rounded-b-xl` →
+        `rounded-b-2xl`. DialogOverlay/AlertDialogOverlay mantém
+        `bg-black/10 supports-backdrop-filter:backdrop-blur-xs`
+        (intacto, per AC4 spec). Snapshot dialog.test.tsx.snap
+        atualizado (3 hunks: outer Popup rounded-2xl + shadow-lg;
+        DialogClose render Button ghost peach hover transitivo).
+        Snapshot alert-dialog: tests/components/ui/__snapshots__/ NÃO
+        contém alert-dialog.test.tsx.snap (não há snapshot test para
+        AlertDialog standalone — confirmado via `ls`). Mudanças
+        cobertas via grep visual + typecheck/lint/build PASS.
+
+    - id: AC5
+      verdict: PASS
+      evidence: |
+        DropdownMenu (`components/ui/dropdown-menu.tsx:42`)
+        DropdownMenuContent `rounded-lg` → `rounded-xl` (12 → 16px).
+        Items mantém `rounded-md` (8px) em DropdownMenuItem (L91),
+        DropdownMenuCheckboxItem (L165), DropdownMenuRadioItem (L201),
+        DropdownMenuSubTrigger (L116) — escala correta content > items.
+        Background `bg-popover text-popover-foreground` mantém (token
+        mapeado para "surface elevated" do spec — sem token novo;
+        documentação em story Task 6.4). Focus state items
+        `focus:bg-accent focus:text-accent-foreground` já correto
+        pré-5.3 (DropdownMenuItem L91 — peach ready desde 5.2). DEV-A3
+        conservative decision: SubContent (L139) mantém `rounded-lg`
+        (hierarquia visual nested) — não é spec violation porque spec
+        §5.2 L1260 cita apenas "dropdown-menu radius 16" sem
+        distinguir nested. Sem snapshot test para dropdown-menu
+        (confirmado via ls dos __snapshots__).
+
+    - id: AC6
+      verdict: PASS
+      evidence: |
+        Sheet (`components/ui/sheet.tsx:56`) SheetContent className
+        atualizado com 4 modifiers condicionais por data-side:
+        `data-[side=bottom]:rounded-t-2xl`, `data-[side=top]:rounded-
+        b-2xl`, `data-[side=left]:rounded-r-2xl`,
+        `data-[side=right]:rounded-l-2xl`. Pattern segue convenção
+        existente do Sheet (já tinha `data-[side=*]:border-{r/l/t/b}`,
+        `data-[side=*]:translate-{x/y}` etc. — DEV-C: zero invenção de
+        nova abstração, mantém arquitetura existente). Default side
+        permanece `right` (sheet.tsx:42), renderiza `rounded-l-2xl`
+        como default (lado interno do sheet right-anchored).
+        SheetOverlay (`sheet.tsx:31`) mantém `bg-black/10
+        supports-backdrop-filter:backdrop-blur-xs` (intacto per AC6
+        spec). SheetClose ghost button herda peach hover automatic
+        from Task 1. Sem snapshot test para sheet (confirmado via ls).
+
+    - id: AC7
+      verdict: PASS
+      evidence: |
+        Sonner (`components/ui/sonner.tsx`) reescrito conforme AC7:
+        (a) **Position responsiva**: `useState<ToasterProps['position']>
+        ('top-right')` + `useEffect` com `window.matchMedia('(min-
+        width: 768px)')` listener — atualiza state on resize, cleanup
+        on unmount. SSR fallback `top-right` (desktop assumido até
+        hidratar). DEV-B aplicado inline (hook criado direto no
+        sonner.tsx, sem reuso pois `useIsMobile` não existe em
+        lib/hooks/ — confirmado por grep independente @qa).
+        (b) **Border-left 4px por type via toastOptions.classNames
+        mapping** spec-compliant: `toast: 'cn-toast border-l-4'`,
+        `success: 'border-l-[var(--success)]'`,
+        `error: 'border-l-destructive'`,
+        `warning: 'border-l-[var(--warning)]'`,
+        `info: 'border-l-primary'`. Tokens `--success` + `--warning`
+        resolvidos pela Task 8.0 pré-flight (validados via grep
+        independente @qa: ambos presentes em globals.css light/dark/
+        brand/@media/@theme inline = 5 locais). Mapping rationale per
+        spec §1.5 L1132 "Border-left 4px: success green / warning
+        amber / destructive red / info plum" — verbatim. Spec ratio
+        recalc para warning revela ratio 3.770 (vs spec claim 4.6) —
+        OBS-001 LOW flag (WCAG §1.4.11 graphical 3.0 threshold ✓ para
+        este usage). (c) Radius mantém `--border-radius: var(--radius)`
+        intact (`sonner.tsx:29`). Snapshot sonner.test.tsx.snap intacto
+        (só captura `<section aria-label="Notifications">` portal
+        mount empty; Toaster wrapper rewrite não afeta DOM inicial).
+
+    - id: AC8
+      verdict: PASS-with-low-observation
+      evidence: |
+        Switch (`components/ui/switch.tsx:19`) reescrito
+        `data-checked:bg-primary` → `data-checked:bg-accent`
+        (DEV-A2: selector Base UI `data-checked:` mapping vs Radix
+        `data-[state=checked]:` da story spec — intent traduz
+        corretamente). Track ON state agora renderiza peach
+        (`--accent: #FFB5A7` light / `#FF9B8A` dark). Thumb
+        (switch.tsx:26) `bg-background` light + `dark:data-checked:
+        bg-primary-foreground` dark preservado per AC8 spec. Track
+        unchecked `data-unchecked:bg-input` preservado. Focus ring
+        `focus-visible:ring-3 focus-visible:ring-ring/50` preservado
+        (switch.tsx:19). `transition-transform` linear preservado
+        (spring é Story 5.8). Spec divergence menor: AC8 claims
+        thumb-vs-track contrast 1.92:1 + rationale "shadow + 1px
+        border"; recalc @qa real ratio 1.691:1 + rationale NÃO
+        materializa (thumb usa `ring-0` sem shadow visível). WCAG
+        §1.4.11 ainda satisfeito via shape-based identification
+        (thumb circular + position transition) per W3C Switch
+        accessibility patterns — a11y real está OK. Sem snapshot
+        test para switch (confirmado via ls). OBS-002 LOW flag para
+        tightening spec wording em refresh futuro.
+
+    - id: AC9
+      verdict: PASS
+      evidence: |
+        Avatar (`components/ui/avatar.tsx`) auditoria confirmou
+        diff vazio. Root (L20) `rounded-full` ✅; AvatarImage (L32)
+        `rounded-full` ✅; AvatarFallback (L43) `rounded-full` ✅;
+        AvatarGroup (L72) `*:data-[slot=avatar]:ring-2 *:data-[slot=
+        avatar]:ring-background` ✅ (ring-background per spec); fallback
+        `bg-muted text-muted-foreground` ✅ (token-native). Nenhuma
+        edit necessária — AC9 satisfeita por consumo automático /
+        estado pré-existente. Snapshot avatar.test.tsx.snap intacto
+        (confirmado via diff vazio @dev File List + git diff stat).
+
+    - id: AC10
+      verdict: PASS
+      evidence: |
+        Label (`components/ui/label.tsx:12`) auditoria confirmou
+        diff vazio: `font-medium` já presente pré-5.3 ("flex items-
+        center gap-2 text-sm leading-none **font-medium** select-none
+        group-data-[disabled=true]:pointer-events-none ..."). Story
+        Task 11.1 instruía "Adicionar `font-medium` se ausente" — não
+        aplicável (já presente). Peer/group disabled selectors intactos
+        (`peer-disabled:cursor-not-allowed peer-disabled:opacity-50
+        group-data-[disabled=true]:opacity-50`). Sem hex inline (color
+        herda --foreground via CSS cascade per Task 11.3). AC10
+        satisfeita por estado pré-existente. Sem snapshot test para
+        label.
+
+    - id: AC11
+      verdict: PASS
+      evidence: |
+        Form (`components/ui/form.tsx`) FormMessage atualizado per
+        AC11. Import adicionado: `import { AlertCircleIcon } from
+        'lucide-react'` (form.tsx:3 — OBS-003 LOW: alias com suffix
+        `Icon` em vez de `AlertCircle` literal da story spec; ambos
+        válidos lucide-react, typecheck PASS). FormMessage body wrap
+        atualizado: render `<p ... className="inline-flex items-center
+        gap-1.5 text-sm font-medium text-destructive">` + ícone
+        `<AlertCircleIcon className="size-4 shrink-0" aria-hidden=
+        "true" />` + `<span>{body}</span>` (form.tsx:122-138). Wrapper
+        `<p>` preserva: (a) `text-destructive text-sm font-medium`
+        ✅; (b) `id={formMessageId}` ✅ (crucial para `aria-describedby`
+        automatic via FormControl L101); (c) render condicional
+        `if (!body) return null` ✅. ARIA: `aria-hidden="true"` no
+        ícone é correto (decorativo — texto já comunica erro;
+        screen readers leem o body). Snapshot form.test.tsx.snap
+        atualizado (Input alpha change visible; FormMessage não
+        rasga snapshot pois test "renderiza o label associado ao
+        input" não exercita error state — body é null, AlertCircle
+        não renderiza). FormMessage com error state seria coberto
+        por behavior tests separados (form-validation pattern).
+
+    - id: AC12
+      verdict: PASS
+      evidence: |
+        Suíte completa de gates locais validada pelo @qa em paralelo +
+        cross-check com outputs do @dev:
+        - **`pnpm typecheck`** (re-run @qa): exit 0 (zero erros TS,
+          incluindo AlertCircleIcon import). @dev capturado em sessão
+          (Debug Log References): exit 0.
+        - **`pnpm lint`** (re-run @qa): exit 0 zero warnings ESLint.
+          @dev capturado: exit 0.
+        - **`pnpm build`** (validado @dev em sessão develop): exit 0,
+          Next 16.2.5 Turbopack, ✓ Compiled em 101s + TS verify 86s +
+          15/15 static pages. Warning `middleware → proxy` pré-existente
+          Next 16 deprecation (não tocado pela story; tracker separado).
+        - **`pnpm test:components`** (validado @dev em sessão develop +
+          re-run final pós-update -u capturado em /private/tmp/.../tasks/
+          bmnhs1ire.output): **194/194 PASS** em 34 test files, 545s
+          total. Baseline Story 5.1 mantida verde. **4 snapshots
+          atualizados conscientemente per Task 13.2:** card (Card root
+          +shadow-sm), dialog (DialogContent rounded-2xl + shadow-lg +
+          DialogFooter rounded-b-2xl + transitive ghost button hover-
+          accent), form (Input alpha /30), input (alpha /30). Diff
+          review confirma todos className-only — zero DOM/ARIA/role/
+          structure changes. Snapshots intactos validados: avatar
+          (AC9 diff vazio), button (só captura variant=default),
+          sonner (só captura portal mount empty), PublicPage (Task
+          13.4 — sempre intacto pois story não toca page-level).
+
+    - id: AC13
+      verdict: PENDING-CI
+      evidence: |
+        Lighthouse CI (`.github/workflows/lighthouse.yml`) vai disparar
+        no PR via trigger `paths: [app/**, components/**]` — match
+        em `app/globals.css` (status tokens) + 13 files em
+        `components/ui/*.tsx`. Workflow estável após [STORY-3.5-F3]
+        Done (runs:3 + mediana). Threshold ≥ 0.85 (Performance/
+        Accessibility/Best Practices/SEO) mantido. Bundle expected
+        delta **≈ 0 KB**: status tokens ~150 bytes gz CSS;
+        AlertCircleIcon adicionado em form.tsx é tree-shakeable
+        lucide-react; sonner.tsx Toaster rewrite mantém imports
+        existentes + adiciona `React` import + 1 hook inline (~50
+        bytes gz JS). Tokens novos em `@theme inline` map são
+        compiladas a CSS estático (no runtime cost). Sem nova
+        dependência (`next/font/google` DM Sans já adicionado Story
+        5.2; lucide-react já no bundle via outros consumers). PERF-001
+        rastreia validação no PR como housekeeping.
+
+  quality_gate_set:
+    - check: 'Local: pnpm typecheck'
+      result: PASS
+      notes: |
+        `tsc --noEmit` exit 0 (re-run @qa). Zero erros TS — AlertCircleIcon
+        import resolve corretamente; `ToasterProps['position']` type
+        narrowing válido; Switch `data-checked:` selector pattern Base UI
+        type-safe via `@base-ui/react/switch` typings.
+    - check: 'Local: pnpm lint'
+      result: PASS
+      notes: 'eslint exit 0 zero warnings (re-run @qa 2026-05-31).'
+    - check: 'Local: pnpm test:components (full suite)'
+      result: PASS
+      notes: |
+        **194/194 tests passing em 34 files em 545s** (validado @dev em
+        sessão develop; outputs capturados em Debug Log References).
+        Baseline Story 5.1/5.2 mantida. 4 snapshots atualizados
+        conscientemente per Task 13.2 (card/dialog/form/input — todos
+        className-only intencionais per AC1/2/3/4). Snapshots intactos:
+        avatar (AC9 diff vazio), button (variant=default only), sonner
+        (portal mount only), PublicPage (Task 13.4 — page-level scope
+        Story 5.7). Warning JSDOM "Not implemented: navigation to
+        another Document" pré-existente Story 5.1 (não regressão).
+    - check: 'Local: pnpm build'
+      result: PASS
+      notes: |
+        ✓ Compiled successfully em **101s** (Next 16.2.5 Turbopack) +
+        TS verify 86s + 15/15 static pages. Zero errors. Rotas
+        inalteradas (15 routes: /, /[username], /dashboard/*, /auth/*,
+        /login, /signup, /reset-password, etc.). Warning pré-existente
+        "middleware → proxy" deprecation Next 16 (não-bloqueante;
+        tracker separado, atinge todas as stories 4.x+).
+    - check: 'CI: Lighthouse workflow (paths trigger)'
+      result: PENDING-PR-CHECK
+      notes: |
+        `.github/workflows/lighthouse.yml` vai disparar via trigger
+        `paths: [app/**, components/**]` (match em `app/globals.css` +
+        13 files em `components/ui/*.tsx`). Workflow estável após
+        [STORY-3.5-F3] Done (runs:3 + mediana). Bundle expected delta
+        ≈ 0 KB (CSS tokens + tree-shakeable lucide + hook inline).
+        @devops verifica resultado real no PR como housekeeping
+        (PERF-001).
+    - check: 'CI: gitleaks workflow'
+      result: PASS
+      notes: |
+        Pre-commit gitleaks scan PASS no commit `855130f` (output
+        capturado: `0 commits scanned. scanned ~114060 bytes in
+        697ms. no leaks found`). Story não toca env vars ou secrets;
+        zero hardcoded secrets em código novo (verificado por code
+        review). gitleaks no CI PR confirma idem (padrão 1.4-5.2).
+    - check: 'Smoke runtime manual'
+      result: SKIPPED-user-approved
+      notes: |
+        Task 14 SKIPPED com decisão usuário durante develop (per MEMORY
+        `feedback_skip_manual_smoke.md`). Cobertura indireta válida:
+        test:components 194/194 + snapshot diff review + build PASS.
+        Risco residual documentado em story Task 14.3: regressões
+        visuais Switch peach + Sheet top corners + Toast classNames
+        não detectáveis por snapshot quando CSS-only mudou. @qa
+        opcionalmente validar pós-merge em prod (idem Story 5.1/5.2).
+    - check: 'Code review (patterns, readability, maintainability, security)'
+      result: PASS
+      notes: |
+        **Patterns:** 13 primitives auditados rastreiam 100% para spec
+        §5.2 L1252-1267 (verificado @qa via grep direto). Mudanças
+        mecânicas (className-only) preservam APIs públicas dos
+        primitives — zero breaking change para consumers (Stories 1.5-
+        5.1). Sonner reescrita usa `useState`/`useEffect`/`matchMedia`
+        idiomatic pattern (DEV-B inline hook, cleanup correto via
+        `removeEventListener`). Sheet radius condicional via
+        `data-[side=*]:rounded-{direção}-2xl` mantém pattern
+        existente do componente (Sheet já usa data-side modifiers para
+        translate/border — DEV-C zero invenção de abstração).
+        FormMessage `<span>` wrap preserva accessibility (id, ARIA
+        hidden on decorative icon). **Security:** zero env vars, zero
+        RLS, zero auth, zero service-role. CSS variables são
+        declarative (no exec). lucide-react AlertCircleIcon é
+        statically imported (tree-shakeable). Switch ON state peach
+        contrast a11y validado via shape-based identification per
+        WCAG §1.4.11 (OBS-002). Gitleaks PASS. **Maintainability:**
+        Story Dev Agent Record extenso (Debug Log + Completion Notes
+        + File List 535 linhas) — auditoria futura preserved. DEV-A1..
+        A4 + DEV-B..E todas documentadas com fonte/rationale.
+        DEV-A4 follow-up recomendado como `[STORY-5.3-F1]` LOW.
+        **Validations independentes @qa:** typecheck/lint re-run
+        independent; grep spot-checks de Button ghost + Switch bg-
+        accent + Form import; recalc WCAG W3C para success/warning
+        ratios (confirmou DEV-A4); recalc Switch thumb-vs-track
+        (confirmou OBS-002).
+
+  nfr_validation:
+    - nfr: 'NFR1 RLS em user-data tables (security)'
+      status: NOT-APPLICABLE
+      notes: |
+        Story modifica apenas className em primitives shadcn + CSS
+        variables status + 1 import lucide. Zero impacto em RLS,
+        auth, DB, service-role, env vars. Nenhuma tabela tocada.
+
+    - nfr: 'NFR2 Lighthouse score >= 90 (4 categories)'
+      status: PENDING-CI-EXPECTED-MAINTAIN
+      notes: |
+        Workflow vai disparar no PR (trigger `paths: [app/**,
+        components/**]` matchea todos os files modificados). Cobre
+        `/` + `/[username]`. Bundle expected delta ≈ 0 KB (CSS
+        tokens + tree-shakeable lucide + hook inline). Margem AC3
+        da Story 3.5 (< 200 KB) mantida — não há motivo para
+        regressão. PERF-001 LOW rastreia validação no PR.
+
+    - nfr: 'NFR3 WCAG 2.1 AA (a11y)'
+      status: PASS
+      notes: |
+        Focus rings preservados/melhorados (Input/Textarea destructive
+        ring /30 mais visível). FormMessage AlertCircleIcon decorativo
+        com `aria-hidden="true"` (correto — texto comunica erro
+        completo via id={formMessageId} + aria-describedby automatic
+        via FormControl). Switch peach ON state a11y validado via
+        shape-based identification per WCAG §1.4.11 (thumb circular +
+        position transition; OBS-002 nota spec inaccuracy mas a11y
+        real OK). Dialog/AlertDialog rounded-2xl + shadow-lg preserva
+        focus management base-ui Dialog primitives. Sheet radius
+        condicional preserva ARIA dialog patterns. Status tokens
+        success/warning ratios verbatim spec (success accurate;
+        warning OBS-001 LOW — atual usage AC7(b) border-left graphical
+        per WCAG §1.4.11 3.0 ✓). Card +shadow-sm não afeta a11y
+        (decorativo).
+
+    - nfr: 'NFR4 bundle First Load JS < 200 KB gz (página pública)'
+      status: PENDING-CI-EXPECTED-MAINTAIN
+      notes: |
+        Mesma análise PERF-001. Story mudanças são CSS classnames
+        (zero bundle delta) + lucide AlertCircleIcon (tree-shakeable)
+        + Sonner hook inline ~50 bytes gz. Status tokens ~150 bytes
+        gz CSS estático. Lighthouse CI no PR vai medir baseline
+        real.
+
+    - nfr: 'NFR6 cobertura test:components (frontend ≥ 50%)'
+      status: PASS
+      notes: |
+        194/194 PASS mantém baseline Story 5.1. Mudanças mecânicas
+        em primitives exercitadas indiretamente por suite completa.
+        4 snapshots atualizados conscientemente per Task 13.2 —
+        diff review confirmou className-only changes intencionais.
+
+    - nfr: 'NFR7 cobertura backend (≥ 70%)'
+      status: NOT-APPLICABLE
+      notes: 'Story não toca backend (Server Actions, queries, RLS).'
+
+    - nfr: 'NFR9 sem novas dependências'
+      status: PASS
+      notes: |
+        Zero `pnpm install` necessário. `lucide-react` já no bundle
+        (importado por outros consumers, ex.: sonner.tsx tinha
+        CircleCheckIcon/InfoIcon/etc. desde Story 5.1). DM Sans já
+        adicionado Story 5.2. `package.json` não modificado.
+
+    - nfr: 'NFR10 zero secrets versionados'
+      status: PASS
+      notes: |
+        Story não toca variáveis de ambiente. Zero hardcoded secrets
+        em código novo. Pre-commit gitleaks scan PASS (commit
+        `855130f`: 0 commits scanned, 114060 bytes, no leaks).
+
+    - nfr: 'NFR11 UI 100% PT-BR'
+      status: NOT-APPLICABLE
+      notes: |
+        Story modifica apenas className em primitives + CSS variables
+        status + comment headers. Sem strings UI tocadas. Comentários
+        em PT-BR/EN mistos (precedente Story 3.2/5.2).
+
+    - nfr: 'NFR13 browser support iOS 14+'
+      status: PASS
+      notes: |
+        Tailwind utility classes (rounded-2xl, shadow-lg, border-l-4,
+        data-[side=*]:rounded-{t/b/l/r}-2xl) são CSS standard
+        suportadas em iOS 14+. `matchMedia` API (Sonner position
+        responsiva) é Web API universal (iOS 5+, browsers shipping).
+        AlertCircleIcon SVG (lucide-react) é SVG inline, suporte
+        universal. CSS custom properties --success/--warning
+        suportadas em todos browsers modernos. `@theme inline`
+        suffix convention é Tailwind v4 build-time (zero runtime).
+
+  deviations_resolved:
+    - id: DEV-A1
+      status: APPROVED-RATIFIED
+      notes: |
+        **NEW deviation discovered durante audit** — não estava
+        antecipada no draft @sm. Button ghost variant pré-5.3 usava
+        `hover:bg-muted hover:text-foreground` (cinza/neutral) em vez
+        de `hover:bg-accent hover:text-accent-foreground` (peach
+        Soft Studio). Story AC1(a) text era "verify peach `--accent`
+        em ghost hover" assumindo já compliant — descoberta @dev
+        durante implementação revelou que era um gap real, não verify.
+        Correção: 1 linha JSX em button.tsx:17 (`hover:bg-muted
+        hover:text-foreground` → `hover:bg-accent hover:text-accent-
+        foreground`; +removed `dark:hover:bg-muted/50` pois `--accent`
+        token já diferencia per theme). Impact transitive: DialogClose
+        button render usa ghost, snapshot dialog.test.tsx.snap
+        atualizado capturando hover-accent string. OBS: outline
+        variant (button.tsx:13) MANTÉM `hover:bg-muted` corretamente
+        (outline ≠ ghost, design intent diferente).
+    - id: DEV-A2
+      status: APPROVED-RATIFIED
+      notes: |
+        **Selector mapping correction.** Story Task 9.1 cita
+        `data-[state=checked]:bg-primary` (pattern Radix) mas Switch
+        atual usa Base UI primitives (`@base-ui/react/switch`) que
+        emit `data-checked` (sem `state=` prefix). Tradução de intent:
+        mesma semântica (ON state), selector diferente. Implementação
+        correta: `data-checked:bg-primary` → `data-checked:bg-accent`.
+        Thumb dark mode `dark:data-checked:bg-primary-foreground` =
+        `#14102A` deep plum sobre `#FF9B8A` peach dark track = 9.063:1
+        ratio (validado por recalc @qa) — high contrast ✓.
+    - id: DEV-A3
+      status: APPROVED-CONSERVATIVE
+      notes: |
+        **Conservative decision.** DropdownMenuSubContent (L139)
+        mantém `rounded-lg` (12px) enquanto DropdownMenuContent
+        (L42) muda para `rounded-xl` (16px). Spec §5.2 L1260 menciona
+        apenas "dropdown-menu radius 16" sem distinguir nested levels.
+        Sub-content visualmente nested = signal hierárquico via
+        radius menor é defensável (hierarquia content > items > sub-
+        content via radius). Se design system preferir uniformidade,
+        mudar 1 linha em dropdown-menu.tsx:139 (sugerido como
+        `[STORY-5.3-F2]` LOW backlog item @dev).
+    - id: DEV-A4
+      status: APPROVED-AS-OBSERVATION
+      notes: |
+        **NEW spec hygiene issue discovered.** Recalc independente
+        @qa via algoritmo W3C WCAG 2.1 (JS puro, ratio formula
+        (L1+0.05)/(L2+0.05)) confirma DEV-A4 da story:
+        ```
+        light/brand warning #B8742A vs #FFFFFF = 3.770 (spec L151/L204
+          claims 4.6/4.4 — FAIL por 0.730/0.630)
+        light/brand success #2B7A5E vs #FFFFFF = 5.188 (spec L150/L203
+          claims 5.2/5.0 — accurate ✓)
+        dark warning #E8B978 vs #2E1D0A = 8.981 (high contrast ✓)
+        dark success #7AC9A0 vs #0E2418 = 8.324 (high contrast ✓)
+        ```
+        Spec autor errou cálculo para warning light/brand (mesmo
+        padrão DEV-9 destructive 5.2 — luminância calc inflated).
+        **Sem impacto material na Story 5.3** (AC7(b) usage é border-
+        left graphical UI element, WCAG §1.4.11 threshold 3.0:1
+        satisfeito por margem 0.770). Status tokens added correctly
+        verbatim per spec — fix do ratio é spec-side, não código.
+        `[STORY-5.3-F1]` LOW follow-up recomendado (consolidar com
+        `[STORY-5.2-F1]` numa única passada de spec hygiene
+        amend). Owner: `@ux-design-expert`.
+    - id: DEV-B
+      status: APPROVED-RATIFIED
+      notes: |
+        **`useIsMobile` reuse não materializou.** Confirmado por grep
+        independente @qa: `lib/hooks/` contém apenas `use-username-
+        availability.ts`. Sem hook reutilizável. @dev criou inline em
+        `components/ui/sonner.tsx` com `useState` + `useEffect` +
+        `window.matchMedia('(min-width: 768px)')` + cleanup
+        `removeEventListener`. SSR fallback `top-right`. 5 linhas
+        adicionais — aceitável (custo de criar hook reutilizável
+        seria sobre-engenharia para 1 consumer).
+    - id: DEV-C
+      status: APPROVED-RATIFIED
+      notes: |
+        **Sheet radius condicional via className inline** (não CVA).
+        Razão: Sheet não tinha `sheetVariants` CVA existente; className
+        é template literal estático com `data-[side=*]:` modifiers já
+        presentes (position/border/translate). Adicionar 4 modifiers
+        `data-[side=*]:rounded-{direção}-2xl` mantém arquitetural
+        consistency. Zero invenção de abstração nova. CVA seria
+        sobre-engenharia para 4 valores estáticos.
+    - id: DEV-D
+      status: APPROVED-RATIFIED
+      notes: |
+        **Task 8.0 PRÉ-FLIGHT aplicado em 5 locais de globals.css**
+        per amend @sm v0.2 + @po validate v0.3. Tokens spec verbatim
+        §1.2.1 L150-151 + §1.2.2 L177-178 + §1.2.3 L203-204:
+        ```
+        light/brand (3 paletas + @media OS fallback):
+          --success: #2b7a5e (verbatim L150/L203)
+          --success-foreground: #ffffff (pattern parity @dev decision)
+          --warning: #b8742a (verbatim L151/L204)
+          --warning-foreground: #ffffff (pattern parity @dev decision)
+        dark (1 paleta + @media OS fallback):
+          --success: #7ac9a0 (verbatim L177)
+          --success-foreground: #0e2418 (warm-dark per pattern parity)
+          --warning: #e8b978 (verbatim L178)
+          --warning-foreground: #2e1d0a (warm-dark per pattern parity)
+        @theme inline map (1 location):
+          --color-success: var(--success)
+          --color-success-foreground: var(--success-foreground)
+          --color-warning: var(--warning)
+          --color-warning-foreground: var(--warning-foreground)
+        ```
+        25 grep matches para success/warning confirmados independent.
+        Foreground pairs (#FFFFFF light/brand, #0E2418/#2E1D0A dark)
+        são @dev pattern parity decision (não spec verbatim) — NH-4
+        do @po validate accepted as pre-emptive pattern parity. NÃO
+        consumidos por AC7(b) (Sonner border-left usa só `--success`
+        / `--warning` puros). Materializa OBS-001 risk se warning bg
+        with white text for usado futuramente (3.77 FAIL AA 4.5).
+    - id: DEV-E
+      status: APPROVED-RATIFIED
+      notes: |
+        **4 snapshots atualizados conscientemente** per Task 13.2.
+        Diff review @dev + cross-validation @qa via output capturado
+        (/private/tmp/.../tasks/b8bd7lrtx.output 1ª run + bat59ybly
+        -u run): card (+shadow-sm), dialog (rounded-2xl + shadow-lg +
+        footer rounded-b-2xl + transitive ghost button hover-accent),
+        form (Input alpha /30), input (Input alpha /30). Todos
+        className-only, zero DOM/ARIA/role/structure changes.
+        Snapshots intactos confirmados: avatar (AC9 diff vazio),
+        button (variant=default only), sonner (portal mount only),
+        PublicPage (Task 13.4 — page-level scope Story 5.7).
+    - id: OBS-002-AC8
+      status: APPROVED-AS-OBSERVATION
+      notes: |
+        **AC8 minor inaccuracy.** Recalc @qa: Switch thumb-vs-track
+        contrast ratio real **1.691:1** (não 1.92 como story AC8
+        claims). Rationale "passa por contornos visuais + state
+        border per WCAG §1.4.11 via `--shadow-sm` warm tint + 1px
+        border" NÃO materializa no código atual (thumb `switch.tsx:26`
+        tem `ring-0` + zero `shadow-*` class). A11y real está OK por
+        outro caminho: WCAG §1.4.11 permite shape-based identification
+        para UI components (thumb circular + position transition
+        animation conveys state). Spec wording da story AC8 precisa
+        ser tightened em refresh futuro (incluir em `[STORY-5.3-F1]`
+        amend se executado). Story 5.8 (Motion + polish) pode adicionar
+        `shadow-sm ring-1 ring-foreground/10` ao thumb para reforçar
+        separação visual peach ON state — decisão @ux-design-expert.
+    - id: OBS-003-import-alias
+      status: APPROVED-COSMETIC
+      notes: |
+        **Cosmetic import name divergence.** Story 5.3 spec (Task 12.2/
+        12.3) cita `AlertCircle`; @dev importou `AlertCircleIcon`
+        alias (form.tsx:3). Ambos são exports válidos lucide-react.
+        Typecheck PASS. Funcionalidade idêntica. Padrão suffix `Icon`
+        é melhor para grep clarity (unambíguo vs type/global colisão).
+        Validar consistency em stories futuras (5.4-5.7).
+
+  code_intel_advisory: null
+
+  ids_compliance:
+    reuse_count: 11
+    reused_artifacts:
+      - 'Tailwind v4 `@theme inline` pattern (status tokens map — Story 5.2 pattern)'
+      - 'CSS custom variables convention (Story 3.1/3.2/5.2)'
+      - 'OS-level @media (prefers-color-scheme) fallback sync (DEV-6 Story 3.2 + 5.2)'
+      - 'shadcn primitive className pattern (CVA + cn() utility — Story 1.5+)'
+      - '@base-ui/react primitives (Button, Dialog, AlertDialog, DropdownMenu, Switch, Sheet, Avatar — Story 1.5+)'
+      - 'lucide-react icons (AlertCircleIcon, sonner icons — Story 1.5+/5.1+)'
+      - 'sonner Toaster library (Story 5.1 +)'
+      - 'react-hook-form Controller pattern (form.tsx — Story 1.5+)'
+      - 'data-[side=*] modifier pattern (Sheet position/border — extended para radius)'
+      - 'data-checked / data-unchecked Base UI selectors (Switch — Story 1.5+)'
+      - 'matchMedia API (web standard — Sonner position responsive)'
+    new_artifacts:
+      - 'Status tokens --success + --warning + foreground pairs (4 hex novos × 3 paletas × 5 locais = 60 hex declarations; valores spec §1.2 verbatim; foreground pattern parity)'
+    justification: |
+      Capability incremental (refresh visual primitives Soft Studio —
+      Phase 2 do path crítico Epic 5 per spec §5.2). REUSE extensivo
+      (11 artifacts): @theme inline pattern, CSS variables, OS-level
+      fallback, shadcn CVA pattern, @base-ui primitives, lucide
+      icons, sonner library, react-hook-form, data-side pattern,
+      data-checked selectors, matchMedia API. Único NEW artifact é
+      o conjunto de 4 hex status tokens (spec verbatim — não
+      invention; foregrounds pattern parity @dev decision sem
+      invention de novos hex baseado em formula determinística).
+      Zero migration, zero RLS, zero policy, zero Server Action,
+      zero novo componente, zero novo hook reutilizável (Sonner
+      hook inline pois 1 consumer apenas). 14 arquivos modificados
+      (13 primitives + globals.css) + 4 snapshots + 1 backlog + 1
+      story = 20 files (+ 1 commit) — match exato com effort
+      declarado na story (complexity M frontend-primary). Constitution
+      Art. III, IV, V respeitadas (story-driven, no-invention,
+      no-premature-optimization — DEV-C reusa data-side pattern,
+      DEV-B inline hook ao invés de criar reusable hook para 1
+      consumer).
+
+# ---------------------------------------------------------------------------
+# Handoff
+# ---------------------------------------------------------------------------
+handoff:
+  next_agent: '@devops'
+  next_command: '*push'
+  condition: |
+    Gate PASS com 3 LOW observations + 1 PENDING-CI:
+    - OBS-001 LOW: DEV-A4 confirmado spec L151+L204 warning ratios
+      inflated (real 3.77 vs claimed 4.6/4.4); tracking via
+      [STORY-5.3-F1] LOW (consolidar com [STORY-5.2-F1] num único
+      amend spec hygiene pass);
+    - OBS-002 LOW: AC8 Switch thumb-vs-track contrast spec inaccuracy
+      (real 1.691 vs claimed 1.92); a11y real está OK via shape-based
+      identification; tightening cosmético opcional em refresh spec
+      futuro;
+    - OBS-003 LOW: import name cosmetic (AlertCircleIcon vs
+      AlertCircle), zero impact funcional;
+    - PERF-001 PENDING: Lighthouse CI no PR (bundle expected to
+      maintain ≈ 0 KB delta).
+
+    @devops deve:
+    (1) Verificar baseRefName antes de merge (MEMORY
+        `feedback_check_pr_base_before_merge.md`) — PR esperado contra
+        `main` (Story 5.3 segue Story 5.2 que mergeou em main; branch
+        base = main; sem stack sobre outro feature branch).
+    (2) Branch `feat/5.3-primitives-audit-13-shadcn` já existe local
+        (1 commit ahead: `855130f` feat). Push do branch para origin
+        via `git push -u origin feat/5.3-primitives-audit-13-shadcn`.
+    (3) Abrir PR contra main via `gh pr create --base main --title
+        "feat: primitives audit Soft Studio (13 shadcn) [Story 5.3]"
+        --body ...`.
+    (4) Aguardar required status checks: install/lint/typecheck/
+        test-unit/test-components/test-integration/build/gitleaks/
+        audit/lighthouse.
+    (5) MONITORAR Lighthouse CI no PR (PERF-001). Capturar First Load
+        JS de `/` e `/[username]` reportados — esperado manter
+        baseline pós-5.2 (~180-185 KB). Se workflow falhar por flake,
+        re-run (mediana é critério canônico [STORY-3.5-F3]); se piorar
+        inesperadamente, investigar antes do merge.
+    (6) Após PR CLEAN + MERGEABLE → merge squash em main.
+    (7) Marcar Story 5.3 Status `Ready for Review → Done`.
+    (8) Notar no Change Log da story (close-story commit): segunda
+        story do refresh visual Epic 5 (Soft Studio Phase 2)
+        materializada; `[EPIC-5-S3]` ✅ DONE no backlog (já marcado
+        @dev Task 15.1); path crítico Epic 5 completo (5.2 + 5.3 DONE);
+        Stories 5.4-5.7 desbloqueadas visualmente para paralelo via
+        `@sm *draft`.
+    (9) **Backlog action (housekeeping):** registrar `[STORY-5.3-F1]`
+        LOW em `docs/STORY-BACKLOG.md` — "Amend `frontend-spec.md`
+        §1.2.1 L151 + §1.2.3 L204 com ratios warning corretos
+        (real `#B8742A vs #FFFFFF = 3.77` light/brand FAIL AA como
+        text bg; OK como border 3.0 threshold). Consolidar com
+        `[STORY-5.2-F1]` destructive amend numa única passada de
+        spec hygiene. Decisão: manter `#B8742A` + nota spec OR
+        escurecer para passar AA também como text bg. Owner:
+        `@ux-design-expert`." Effort: ~30min doc-only.
+        Opcional: `[STORY-5.3-F2]` LOW @dev — "Considerar
+        uniformizar DropdownMenuSubContent radius (atual rounded-lg
+        = 12px; content é rounded-xl = 16px). Decisão de design
+        system, não-urgente. Effort: 1 linha em dropdown-menu.tsx:
+        139 + snapshot update."
+  alternatives:
+    - condition: 'Operador opcionalmente faz smoke runtime manual antes de @devops push'
+      action: |
+        pnpm dev → abrir http://localhost:3000/, /dashboard (login com
+        seed), /@demo em cada um dos 3 temas. Validar 4 cenários sem
+        snapshot coverage:
+        (1) Switch ON state peach (`/dashboard/links` toggle visibility
+            ou `/dashboard/theme` toggle) — confirma `--accent` peach
+            renderiza no track ON;
+        (2) Sheet rounded top corners em mobile (dashboard mobile nav
+            se aplicável) — confirma `data-[side=bottom]:rounded-t-2xl`
+            renderiza;
+        (3) Toast border-left + position responsivo (`toast.success
+            ('test')`, `toast.error`, `toast.warning`, `toast.info` via
+            DevTools console) — confirma per-type colors + position
+            top-center mobile / top-right desktop;
+        (4) FormMessage AlertCircle (`/signup` com email inválido) —
+            confirma ícone inline antes da mensagem destructive.
+        Se OK, atualizar story Completion Notes removendo SKIPPED +
+        atualizar este gate file (OBS smoke → PASS-validated-runtime).
+      status: OPTIONAL-pre-merge OR validated-post-merge-in-prod
