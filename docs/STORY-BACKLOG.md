@@ -3,7 +3,7 @@ title: Story Backlog
 description: Follow-up tasks, technical debt e oportunidades de otimização identificadas durante stories, dev e QA
 owner: '@po (Pax)'
 created: 2026-05-15
-last_updated: 2026-05-30 (Story 5.2 implementada — Soft Studio palette + DM Sans Variable + radius/shadow/typescale tokens; [EPIC-5-S2] → DONE)
+last_updated: 2026-05-31 (Story 5.2 mergeada em main via PR #28; [STORY-5.2-F1] LOW adicionado — amend spec destructive ratios)
 ---
 
 # Story Backlog
@@ -147,6 +147,22 @@ _Nenhum item._
 
 ## 🟢 LOW Priority
 
+#### [STORY-5.2-F1] Amend `frontend-spec.md` §1.2.1 L148 + §1.2.3 L201 — destructive ratios
+
+- **Source**: Story 5.2 DEV-9 + QA OBS-001 (gate file `docs/qa/gates/5.2-token-swap-soft-studio-dm-sans.yml`) — 2026-05-31
+- **Priority**: 🟢 LOW
+- **Effort**: XS — doc amend only (1 file, ~4 linhas de tabela)
+- **Status**: 📋 TODO
+- **Assignee**: @ux-design-expert (Uma) — owner do `frontend-spec.md`
+- **Spec ref**: `docs/frontend-spec.md` §1.2.1 L148 (light destructive) + §1.2.3 L201 (brand destructive)
+- **Description**: Spec autor cometeu erro de cálculo WCAG nas tabelas §1.2.1 e §1.2.3. Recalc independente W3C (via JS puro + `scripts/check-contrast.mjs`) confirmou:
+  - §1.2.1 L148 reivindica `#D14A4A vs #FFFFFF = 4.8:1 AA` — real é **4.385 FAIL AA**.
+  - §1.2.3 L201 reivindica `#D14A4A vs #FFFFFF = 4.6:1 AA` — mesmo cálculo retorna 4.385 (par é idêntico ao light); par real relevante seria `text-destructive #D14A4A vs background #F0E8FF = 3.694 FAIL`.
+  - Story 5.2 DEV-9 já aplicou fix mínimo em `globals.css` + `check-contrast.mjs`: `#D14A4A → #C84141` (passa em light: 4.897; mas brand `text-destructive` sobre bg ainda 4.126 FAIL por 0.37).
+- **Decisão pendente**: (a) Apenas amend ratios da spec com valores corretos pós-DEV-9 (mantém `#C84141` assumindo `text-destructive` é raro em brand — uso material só em FormMessage destrutivo dentro de Card branco); OU (b) escurecer destructive mais (ex.: `#B83838` ~4.8 brand) para passar AA em ambos os usos. Decisão impacta Story 5.3 (primitives audit) — se (b), precisa swap correspondente em `globals.css` + `check-contrast.mjs`.
+- **Risk if not done**: spec permanece com ratios incorretos; futura referência por outros devs/AI agents pode perpetuar o bug. Baixíssimo impacto material no produto (DEV-9 já corrige no código; spec é doc).
+- **Acceptance**: `frontend-spec.md` §1.2.1 L148 + §1.2.3 L201 atualizados com ratios pós-DEV-9 verificados via `pnpm check:contrast`; commit conventional `docs(frontend-spec): amend destructive ratios [STORY-5.2-F1]`; cross-ref ao gate file 5.2 + DEV-9.
+
 #### [EPIC-5-PHASE2-LOGO] Logomark real (substitui ★ asterisco placeholder)
 
 - **Source**: `docs/frontend-spec.md` resolução Q4 §6 (2026-05-29) — placeholder ★ aprovado para Story 5.9 (MVP refresh); logomark customizado diferido
@@ -271,12 +287,12 @@ _Nenhum item._
 
 | Métrica                  | Valor      |
 | ------------------------ | ---------- |
-| Total de itens ativos    | 14         |
+| Total de itens ativos    | 15         |
 | 🔴 HIGH                  | 0          |
 | 🟡 MEDIUM                | 7          |
-| 🟢 LOW                   | 7          |
+| 🟢 LOW                   | 8          |
 | ✅ DONE (não arquivados) | 2          |
-| Última atualização       | 2026-05-30 |
+| Última atualização       | 2026-05-31 |
 
 ---
 
@@ -305,4 +321,6 @@ _Nenhum item._
 | 2026-05-30 | VALIDATE  | `docs/frontend-spec.md` v0.3 (amend §0.5 Personas/IA/Flows + §9 Handoff Checklist) — PO validate APPROVED 94% (GO); zero blocking issues; Constitution Art. IV preservado (todo elemento rastreia para PRD v0.5/FRs/stories shipped)                                                                                                                                                         | Pax (po)         |
 | 2026-05-30 | ADD       | `[EPIC-5-S2..S9]` 8 stories MEDIUM consolidam refresh Soft Studio ratificado em PRD v0.5 — path crítico 5.2 → 5.3 (tokens swap + primitives audit); 5.4-5.9 paralelizáveis; source-of-truth canônico = `docs/frontend-spec.md`                                                                                                                                                               | Pax (po)         |
 | 2026-05-30 | DONE      | `[EPIC-5-S2]` → **Story 5.2** implementada (Soft Studio palette light/dark/brand + DM Sans Variable + radius/shadow/typescale tokens). Gates: `check:contrast` 27/27 PASS WCAG AA, typecheck/lint/test:components (194/194)/build PASS. DEV-9 documentado (destructive ajustado `#D14A4A → #C84141` — spec L148/L201 ratio errado, real 4.38 vs 4.5). Path crítico desbloqueado: 5.3 pronta. | Dex (dev)        |
+| 2026-05-31 | MERGE     | **Story 5.2 mergeada em main via PR #28** (commit `3f73c0c`). CI 12/12 SUCCESS (lighthouse 2m6s, test-integration 5m10s). Status `Ready for Review → Done`. Path crítico Epic 5 destravado.                                                                                                                                                                                                  | Gage (devops)    |
+| 2026-05-31 | ADD       | `[STORY-5.2-F1]` LOW — Amend `frontend-spec.md` §1.2.1 L148 + §1.2.3 L201 com ratios destructive corretos pós-DEV-9 (recalc WCAG W3C). Decisão pendente: manter `#C84141` ou escurecer para passar AA em `text-destructive` sobre brand bg também.                                                                                                                                           | Quinn (qa)       |
 | 2026-05-30 | ADD       | `[EPIC-5-PHASE2-LOGO]` LOW — logomark real diferido para Phase 2 post v1.x stabilization (resolução Q4 §6 do spec; ★ asterisco placeholder OK para MVP refresh em Story 5.9)                                                                                                                                                                                                                 | Pax (po)         |
