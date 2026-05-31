@@ -1,6 +1,6 @@
 import { Analytics } from '@vercel/analytics/next';
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { DM_Sans } from 'next/font/google';
 
 import { Toaster } from '@/components/ui/sonner';
 import { env } from '@/lib/env';
@@ -8,14 +8,11 @@ import { DEFAULT_THEME } from '@/lib/theme';
 
 import './globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
+const dmSans = DM_Sans({
+  subsets: ['latin', 'latin-ext'],
+  display: 'swap',
+  variable: '--font-sans',
+  weight: 'variable',
 });
 
 export const metadata: Metadata = {
@@ -36,7 +33,7 @@ export default function RootLayout({
     <html
       lang="pt-BR"
       data-theme={DEFAULT_THEME}
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${dmSans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}

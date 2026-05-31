@@ -30,6 +30,84 @@ Este documento NÃO descreve o estado atual do projeto. Descreve uma **proposta 
 
 ---
 
+## 0.5 Contexto herdado — Personas, IA, Flows
+
+> Esta seção fecha o gap estrutural com `front-end-spec-tmpl.yaml` v2.0 (seções `ux-goals-principles` + `information-architecture` + `user-flows`) **por referência**: o refresh visual Epic 5 opera sobre IA e flows já validados em produção via Epics 1-4 (Stories 1.1-5.1 Done). Não há mudança de FR/NFR; apenas substituição da camada visual.
+
+### 0.5.1 Target Personas (derivadas do PRD v0.5)
+
+**Persona primária — "Criador casual/profissional lusófono"** (`docs/prd.md:22-24`):
+
+- Indivíduo PT-BR primary, mobile-primary, criador casual ou profissional querendo presença digital própria
+- Audiência inicial do MVP: 5+ amigos/conhecidos do owner (open-source, escala íntima — sem urgência de growth)
+- Valoriza: ownership/auditability de dados, ausência de ads forçados, controle sobre o próprio perfil público
+- Pain point central: bios de redes sociais limitam a 1 link; alternativas existentes (Linktree etc.) retêm dados ou forçam branding
+- Comportamento esperado: cadastra → adiciona 3-8 links → escolhe tema → compartilha `/@username` → volta esporadicamente para editar
+
+**Persona secundária — "Visitante da página pública"** (`/@username`):
+
+- Chega de bio social (Instagram, X, LinkedIn) — sessão curta (1-2 cliques antes de seguir adiante)
+- Mobile-primary (≥80% conforme convenção bio-link tools)
+- Espera: LCP < 2.0s, design legível, links clicáveis sem fricção, zero login/wall
+- Não autenticado, anônimo (events server-side hasheados — FR9/FR10)
+
+### 0.5.2 Usability Goals
+
+- **Ease of learning:** novo usuário completa fluxo signup → add primeiro link → publicar página em ≤ 5 minutos (sem onboarding tutorial)
+- **Efficiency of use:** usuário retornante reordena links com ≤ 2 cliques (drag-and-drop, optimistic)
+- **Error prevention:** ações destrutivas (delete link, delete conta) sempre via AlertDialog com confirmação explícita (§3.6)
+- **Memorability:** retornar após 30+ dias sem relearning — nav consistente, microcopy PT-BR direta
+- **Performance as UX:** Lighthouse ≥ 90 em todas categorias é gate de UX, não só técnico (Story 3.5 baseline)
+
+### 0.5.3 Information Architecture — herdada das Stories shipped
+
+> Sitemap, navigation structure e screen inventory já validados em produção. O refresh Epic 5 NÃO modifica IA — apenas reveste visualmente cada surface. Referência primária por story:
+
+```
+Sitemap (10 telas core — todas já em produção):
+
+/                         ← Story 1.9 (landing pública)
+├── /signup               ← Story 1.5 (auth signup)
+├── /login                ← Story 1.5 (auth login)
+├── /reset-password       ← Story 1.6 (reset senha)
+└── /dashboard            ← Story 2.4 (layout) + 2.5 (CRUD links) + 2.6 (drag-drop)
+    ├── /profile          ← Story 5.1 (display_name + bio)
+    ├── /theme            ← Story 3.3 (UI seleção tema)
+    ├── /analytics        ← Story 4.4 (dashboard analytics)
+    └── /account          ← Story 4.5 (export + delete)
+
+/@username                ← Story 2.7 (SSR pública)
+```
+
+**Navigation structure (herdada de Story 2.4):**
+
+- **Primary nav (autenticada):** sidebar desktop 240px / sheet mobile, com seções Links / Profile / Theme / Analytics / Account
+- **Header global:** logo (link `/dashboard`), user dropdown (@username + logout), theme switch global (☀/☾/✦)
+- **Breadcrumbs:** N/A — IA é flat (depth 2 max); cada sub-página tem H1 explícito + back-link contextual
+- **Pública (`/@username`):** sem nav, sem header, sem chrome — a página é o conteúdo (§2.10)
+
+### 0.5.4 User Flows — herdados das Stories shipped
+
+> Flows críticos foram modelados, implementados e QA-gated nas Stories abaixo. Este spec assume flows estáveis e documenta apenas refresh visual dos surfaces tocados:
+
+| Flow                                                          | Story canônica        | Refresh visual em      |
+| ------------------------------------------------------------- | --------------------- | ---------------------- |
+| Signup → verify email → criar primeiro link                   | 1.5, 1.6, 2.5         | §2.2, §2.5             |
+| Login → dashboard                                             | 1.5, 1.7 (middleware) | §2.3, §2.5             |
+| Reset password (request + confirm)                            | 1.6                   | §2.4                   |
+| CRUD link (create / edit inline / delete / toggle visibility) | 2.5, 2.6              | §2.5, §3.2, §3.3, §3.6 |
+| Reorder links via drag-drop (mouse + keyboard a11y)           | 2.6                   | §3.1                   |
+| Editar perfil (display_name, bio, avatar)                     | 3.4, 5.1              | §2.6                   |
+| Trocar tema da página pública                                 | 3.3                   | §2.7, §3.4             |
+| Visitante público acessa `/@user` → clica link                | 2.7, 4.1, 4.2         | §2.10                  |
+| Ver analytics (page views + clicks 7d/30d)                    | 4.3, 4.4              | §2.8                   |
+| Exportar dados (LGPD-mindful JSON)                            | 4.5                   | §2.9                   |
+| Excluir conta (typed confirmation)                            | 4.5                   | §2.9, §3.6             |
+
+**Edge cases & error handling** já cobertos nas stories acima — este spec endereça apenas refinamentos visuais dos error states em §3.7 (form feedback) e §3.9 (toast notifications).
+
+---
+
 ## 1. Identidade Visual
 
 ### 1.1 Princípios (Sally + Brad híbrido)
@@ -1348,10 +1426,11 @@ State C (success, transient):
 
 ## 7. Change Log
 
-| Date       | Version | Description                                                                                                                                                                                                                                                                                                                                                                                                  | Author      |
-| ---------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- |
-| 2026-05-29 | 0.1     | Draft inicial criado por `@ux-design-expert *create-front-end-spec` (Uma). Direção **Soft Studio** escolhida pelo owner entre 3 opções (A: refinar atual, B: Soft Studio ★, C: Câmara Brasileira). 3 paletas WCAG AA propostas + typescale DM Sans + 10 wireframes ASCII + 9 interaction patterns + a11y spec WCAG AA + plano migração 5-phase.                                                              | Uma (ux)    |
-| 2026-05-29 | 0.2     | Ratificação por `@pm`. 5/5 Open Questions resolvidas: Q1 APPROVED (PRD amend v0.5 §UX/Branding); Q2 APPROVED (DM Sans via next/font self-hosted); Q3 RESOLVED (3 temas mantidos, "Brand" → "Vibrante" em UI copy); Q4 APPROVED (★ placeholder, logomark real Phase 2); Q5 APPROVED (`biolink` all-lowercase). Source-of-truth canônico para Stories 5.2-5.9. Liberado para `@po *validate` + `*backlog-add`. | Morgan (pm) |
+| Date       | Version | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Author      |
+| ---------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- |
+| 2026-05-29 | 0.1     | Draft inicial criado por `@ux-design-expert *create-front-end-spec` (Uma). Direção **Soft Studio** escolhida pelo owner entre 3 opções (A: refinar atual, B: Soft Studio ★, C: Câmara Brasileira). 3 paletas WCAG AA propostas + typescale DM Sans + 10 wireframes ASCII + 9 interaction patterns + a11y spec WCAG AA + plano migração 5-phase.                                                                                                                                                                                      | Uma (ux)    |
+| 2026-05-29 | 0.2     | Ratificação por `@pm`. 5/5 Open Questions resolvidas: Q1 APPROVED (PRD amend v0.5 §UX/Branding); Q2 APPROVED (DM Sans via next/font self-hosted); Q3 RESOLVED (3 temas mantidos, "Brand" → "Vibrante" em UI copy); Q4 APPROVED (★ placeholder, logomark real Phase 2); Q5 APPROVED (`biolink` all-lowercase). Source-of-truth canônico para Stories 5.2-5.9. Liberado para `@po *validate` + `*backlog-add`.                                                                                                                         | Morgan (pm) |
+| 2026-05-29 | 0.3     | P1 self-audit por `@ux-design-expert *validate docs/frontend-spec.md`. Score 89% (GO). Adicionadas 3 seções de fechamento de gap estrutural com `front-end-spec-tmpl.yaml` v2.0: §0.5 (Personas + Usability Goals + IA herdada + Flows herdados — por referência às Stories 1.5-5.1 shipped) e §9 (Design Handoff Checklist com 6 items, todos ✓). Sem mudança em §1-§6: cobertura visual/a11y/migration permanece intacta. P2/P3 (responsiveness table, component matrix, performance section dedicada, iconography lib) diferidos. | Uma (ux)    |
 
 ---
 
@@ -1362,5 +1441,22 @@ State C (success, transient):
 3. **@po \*backlog-add:** registrar 8 stories Epic 5 (5.2-5.9) com priority MEDIUM (refresh visual = não-bloqueador, mas cohesion-impact alto). Plus 1 item LOW: "logomark real Phase 2 (post v1.x stabilization)".
 4. **@sm \*draft 5.2:** primeira story do refresh, path crítico — tokens swap.
 5. **Smoke manual em prod pós-Story 5.2:** validar que o swap não regrediu nenhum visual existente (3 temas × 10 telas = 30 surfaces).
+
+---
+
+## 9. Design Handoff Checklist
+
+> Conforme `front-end-spec-tmpl.yaml` v2.0 §next-steps. Estado de prontidão deste spec para handoff ao `@po` (validate) + `@sm` (drafting Story 5.2).
+
+- [x] **User flows documented** — referenciados das Stories 1.5-5.1 já em produção (§0.5.4). Refresh visual não introduz flows novos.
+- [x] **Component inventory complete** — 13 shadcn primitives mapeados com radius/cor/state targets (§5.2). Matriz formal Variant × State será produzida pelo `@dev` durante Story 5.3 (primitives audit) — não bloqueia handoff.
+- [x] **Accessibility requirements defined** — WCAG 2.1 AA + contrast ratios calculados nos 3 temas (§1.2 + §4). Gate programático via `pnpm check:contrast` já em CI (Story 3.2).
+- [x] **Responsive strategy clear** — breakpoints (375 / 640 / 1024) e padrões mobile-first declarados (§1.4.1 + por tela em §2). Tabela formal de Adaptation Patterns pode ser adicionada como P2 caso `@po` sinalize gap.
+- [x] **Brand guidelines incorporated** — Soft Studio palette + DM Sans + wordmark ratificados em PRD v0.5 §UX/Branding (Q1 §6). Source-of-truth canônico = este spec.
+- [x] **Performance goals established** — LCP < 2.0s (pública), bundle ≤ 180 KB gz, Lighthouse ≥ 90 em todas categorias (§2.10 + Story 3.5 baseline). FPS target = 60fps em motion (Phase 4 polish).
+
+**Status global:** ✅ pronto para `@po *validate` + `@sm *draft 5.2`.
+
+---
 
 — Uma, desenhando com empatia 💝

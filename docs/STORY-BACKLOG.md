@@ -3,7 +3,7 @@ title: Story Backlog
 description: Follow-up tasks, technical debt e oportunidades de otimização identificadas durante stories, dev e QA
 owner: '@po (Pax)'
 created: 2026-05-15
-last_updated: 2026-05-29 (Story 5.1 implementada por @dev — STORY-3.5-F2 ✅ DONE)
+last_updated: 2026-05-30 (Story 5.2 implementada — Soft Studio palette + DM Sans Variable + radius/shadow/typescale tokens; [EPIC-5-S2] → DONE)
 ---
 
 # Story Backlog
@@ -24,7 +24,86 @@ _Nenhum item._
 
 ## 🟡 MEDIUM Priority
 
-_Nenhum item ativo._
+> **Refresh visual Epic 5 — Soft Studio** — 8 stories (5.2-5.9) consolidam ratificação PRD v0.5 (2026-05-29) via `docs/frontend-spec.md` v0.3 (PO validate APPROVED 94%). Source-of-truth canônico do refresh: `docs/frontend-spec.md`. Path crítico: **5.2 → 5.3** (sequenciais); 5.4-5.9 paralelizáveis. **Estado atual:** ✅ 5.2 DONE (tokens swapados — desbloqueia 5.3); 5.3 pronta para `*draft`.
+
+#### [EPIC-5-S3] Story 5.3 — Primitives audit (13 shadcn)
+
+- **Source**: `docs/frontend-spec.md` §5.2 Phase 2
+- **Priority**: 🟡 MEDIUM
+- **Effort**: M — 13 files (1 por primitive em `components/ui/`)
+- **Status**: 📋 TODO
+- **Assignee**: TBD via `*backlog-schedule` — **path crítico** (depende de 5.2; bloqueia 5.4-5.7 visualmente)
+- **Spec ref**: §5.2 (matriz de 13 primitives: radius/cor/state targets); §1.5 (motion patterns para switch/dialog)
+- **Risk if not done**: surfaces consumidoras (5.4-5.7) vão herdar primitives com radius/cores antigos; cohesion visual quebrada
+- **Acceptance**: `pnpm test:components` (194/194 baseline Story 5.1) MANTÉM verde; snapshot updates aceitos como esperado (não regressão); CodeRabbit gate PASS
+
+#### [EPIC-5-S4] Story 5.4 — Landing + Auth pages Soft Studio
+
+- **Source**: `docs/frontend-spec.md` §5.3 Phase 3
+- **Priority**: 🟡 MEDIUM
+- **Effort**: M — ~5 files (`app/page.tsx`, `app/(auth)/signup`, `/login`, `/reset-password`)
+- **Status**: 📋 TODO
+- **Assignee**: TBD via `*backlog-schedule` — **paralelizável** com 5.5/5.6/5.7
+- **Spec ref**: §2.1 (Landing), §2.2 (Signup), §2.3 (Login), §2.4 (Reset Password); §3.7 (form feedback)
+- **Risk if not done**: primeira impressão do produto fica em paleta antiga; landing canary (Story 1.9) mantém branding violet seed
+- **Acceptance**: Lighthouse CI ≥ 90; LCP `/` < 2.0s (NFR1); a11y WCAG AA mantida; smoke seletivo
+
+#### [EPIC-5-S5] Story 5.5 — Dashboard core (layout + links)
+
+- **Source**: `docs/frontend-spec.md` §5.3 Phase 3
+- **Priority**: 🟡 MEDIUM
+- **Effort**: M — ~5 files (`app/dashboard/layout.tsx`, `page.tsx`, `components/links/*`)
+- **Status**: 📋 TODO
+- **Assignee**: TBD via `*backlog-schedule` — **paralelizável**
+- **Spec ref**: §2.5 (Dashboard/Links), §3.1 (drag-drop com spring overshoot), §3.2 (edição inline)
+- **Risk if not done**: surface principal autenticada mantém visual antigo
+- **Acceptance**: `pnpm test:components` PASS; component tests de `LinkRow`/`AddLinkButton` atualizados; smoke `/dashboard` × 3 temas
+
+#### [EPIC-5-S6] Story 5.6 — Profile + Theme + Account + rebrand "Brand" → "Vibrante"
+
+- **Source**: `docs/frontend-spec.md` §5.3 Phase 3; resolução Q3 §6
+- **Priority**: 🟡 MEDIUM
+- **Effort**: M — ~4 files + label-only rebrand
+- **Status**: 📋 TODO
+- **Assignee**: TBD via `*backlog-schedule` — **paralelizável**
+- **Spec ref**: §2.6 (Profile), §2.7 (Theme — incl. label change), §2.9 (Account); Q3 §6 (token `brand` preservado; só UI copy)
+- **Risk if not done**: rebrand "Vibrante" não ship; surface Profile refresh de 5.1 mantém char counters em escala antiga
+- **Acceptance**: token interno `brand` preservado em `globals.css` + DB enum + `lib/theme.ts`; tests que assertam "Brand" atualizados para "Vibrante"; smoke `/dashboard/theme` cycle 3 temas
+
+#### [EPIC-5-S7] Story 5.7 — Analytics + Public page
+
+- **Source**: `docs/frontend-spec.md` §5.3 Phase 3
+- **Priority**: 🟡 MEDIUM
+- **Effort**: M — ~3 files
+- **Status**: 📋 TODO
+- **Assignee**: TBD via `*backlog-schedule` — **paralelizável**
+- **Spec ref**: §2.8 (Analytics — 4 stat cards + chart plum line + peach gradient), §2.10 (Public `/@username` — radius 16, avatar 96px)
+- **Risk if not done**: público (visitor surface) mantém visual antigo — perde diferenciação "warm creator studio"
+- **Acceptance**: LCP `/@username` < 2.0s; bundle público ≤ 180 KB gz; Lighthouse CI público ≥ 90; smoke `/@demo` × 3 temas
+
+#### [EPIC-5-S8] Story 5.8 — Motion + polish (micro-interactions, easing)
+
+- **Source**: `docs/frontend-spec.md` §5.4 Phase 4
+- **Priority**: 🟡 MEDIUM
+- **Effort**: S — ~6 files (motion tokens + switch + drag-drop spring + toast + dialog scale + skeleton)
+- **Status**: 📋 TODO
+- **Assignee**: TBD via `*backlog-schedule` — **paralelizável** (depende de 5.3 primitives base)
+- **Spec ref**: §1.5 (motion durations + easing + reserved patterns), §3.1-3.9 (interaction refinements)
+- **Risk if not done**: feel "warm creator studio" fica em palette-only sem movimento — perde a 4ª princípio "Movement is meaning"
+- **Acceptance**: smoke macOS Reduce Motion ON/OFF; 60fps target em motion (DevTools profiler); `prefers-reduced-motion` fallback verificado
+
+#### [EPIC-5-S9] Story 5.9 — Logo + favicon (wordmark "biolink ★")
+
+- **Source**: `docs/frontend-spec.md` §5.5 Phase 5; resoluções Q4 + Q5 §6
+- **Priority**: 🟡 MEDIUM
+- **Effort**: S — ~5 new files (`favicon.ico` 32+16, `icon.png` 512, `apple-icon.png` 180, `Wordmark.tsx`, `layout.tsx` meta tags)
+- **Status**: 📋 TODO
+- **Assignee**: TBD via `*backlog-schedule` — **paralelizável**
+- **Spec ref**: §1.6 (wordmark `biolink` lowercase + ★ asterisco placeholder); Q4 §6 (logomark real diferido Phase 2); Q5 §6 (all-lowercase)
+- **Risk if not done**: tab/share dos perfis públicos mantém favicon Next default; refresh visual "incompleto" sem brand mark
+- **Acceptance**: favicon visível em Chrome/Safari/Firefox; OG meta tags atualizados; component test `Wordmark.tsx` cobre PT-BR copy
+
+---
 
 #### [STORY-3.5-F2] UI de edição de `display_name` e `bio` no dashboard ✅ DONE
 
@@ -67,6 +146,17 @@ _Nenhum item ativo._
 ---
 
 ## 🟢 LOW Priority
+
+#### [EPIC-5-PHASE2-LOGO] Logomark real (substitui ★ asterisco placeholder)
+
+- **Source**: `docs/frontend-spec.md` resolução Q4 §6 (2026-05-29) — placeholder ★ aprovado para Story 5.9 (MVP refresh); logomark customizado diferido
+- **Priority**: 🟢 LOW
+- **Effort**: TBD — investigação de brand (design exploratório + iterações + validação owner)
+- **Status**: 📋 TODO (Phase 2, post v1.x stabilization)
+- **Assignee**: @ux-design-expert (Uma) quando Phase 2 ativada
+- **Description**: Story 5.9 ship ★ asterisco como wordmark companion para MVP refresh (placeholder coerente com mood "indie/friendly"). Logomark real (espiral, fita, marca-página, monograma, etc.) é investimento de brand que requer exploração dedicada — fora do escopo do refresh visual incremental. Produto é open-source MVP, audiência inicial = 5+ amigos/conhecidos (escala íntima), sinal de marca não é gate de adoção.
+- **Risk if not done**: zero — ★ é coerente com mood até reavaliação Phase 2; sem impacto funcional ou de a11y.
+- **Acceptance**: TBD quando Phase 2 ativada — exploração ≥ 3 direções + validação owner + ratificação PRD amend.
 
 #### [STORY-3.1-F1] Refactor `@custom-variant dark` para eliminar a classe `.dark`
 
@@ -181,34 +271,38 @@ _Nenhum item ativo._
 
 | Métrica                  | Valor      |
 | ------------------------ | ---------- |
-| Total de itens ativos    | 6          |
+| Total de itens ativos    | 14         |
 | 🔴 HIGH                  | 0          |
-| 🟡 MEDIUM                | 0          |
-| 🟢 LOW                   | 6          |
+| 🟡 MEDIUM                | 7          |
+| 🟢 LOW                   | 7          |
 | ✅ DONE (não arquivados) | 2          |
-| Última atualização       | 2026-05-29 |
+| Última atualização       | 2026-05-30 |
 
 ---
 
 ## 📜 Change Log
 
-| Date       | Action    | Item                                                                                                                                                                                                                                                                                                                                               | Author           |
-| ---------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| 2026-05-15 | ADD       | `[STORY-1.9-F1]` Lighthouse CI automatizado (diferido de Story 1.9 DP-1)                                                                                                                                                                                                                                                                           | Pax (po)         |
-| 2026-05-20 | ADD       | `[STORY-3.1-F1]` Refactor `@custom-variant dark` para eliminar `.dark` (DEV-1 Story 3.1)                                                                                                                                                                                                                                                           | Pax (po)         |
-| 2026-05-21 | ADD       | `[STORY-3.2-F1]` Refactor `scripts/check-contrast.mjs` para parser CSS automatizado (DEV-3 + DEV-5 Story 3.2)                                                                                                                                                                                                                                      | Dex (dev)        |
-| 2026-05-25 | ADD       | `[STORY-3.5-F1]` Monitorar margem apertada de bundle da página pública (Finding MEDIUM Story 3.5 §1)                                                                                                                                                                                                                                               | Dex (dev)        |
-| 2026-05-25 | ADD       | `[STORY-3.5-F2]` UI de edição de `display_name` e `bio` no dashboard (gap funcional Story 3.5 Task 5)                                                                                                                                                                                                                                              | Dex (dev)        |
-| 2026-05-25 | DONE      | `[STORY-1.9-F1]` Lighthouse CI workflow — materializado via Story 3.5 Task 6 (lighthouse.yml + .lighthouserc.json)                                                                                                                                                                                                                                 | Gage (devops)    |
-| 2026-05-26 | ADD       | `[STORY-4.1-F1]` Batch fix `auth_rls_initplan` em 8 policies (PERF-001 do QA gate Story 4.1)                                                                                                                                                                                                                                                       | Pax (po)         |
-| 2026-05-26 | ADD       | `[STORY-3.5-F3]` Estabilizar Lighthouse CI (`runs: 1` → 3 + mediana) — evidência de flake no PR #18                                                                                                                                                                                                                                                | Gage (devops)    |
-| 2026-05-26 | NOTE      | Story 4.2 `[STORY-4.2-prep]` — AC5 forward-looking: schema `page_views` habilita agregações 4.3 + dashboard 4.4                                                                                                                                                                                                                                    | Dex (dev)        |
-| 2026-05-27 | UPDATE    | `[STORY-4.1-F1]` expandido de 8 → 9 policies (inclui `page_views_select_own`) ao close-story 4.2 — PERF-001 gate                                                                                                                                                                                                                                   | Pax (po)         |
-| 2026-05-27 | ADD       | `[STORY-4.3-F1]` Batch fix `function_search_path_mutable` em 3 funções (SEC-001 do QA gate Story 4.3 — set_updated_at + 2 helpers novas) — consolidar com STORY-4.1-F1                                                                                                                                                                             | Aria (architect) |
-| 2026-05-27 | NOTE      | Story 4.3 AC2 — estratégia "regular views + materialized deferida" registrada por referência a arch.md §L356-365 + schema-design.md §4 L655-657 (não duplica decisão; DEV-6)                                                                                                                                                                       | Dex (dev)        |
-| 2026-05-27 | NOTE      | Story 4.4 implementada — UI `/dashboard/analytics` (Frontend-only) consome views 4.3 + queries lifetime; Epic 4 backbone analítico (4.1+4.2+4.3+4.4) fechado, exceto 4.5 (Conta)                                                                                                                                                                   | Dex (dev)        |
-| 2026-05-28 | NOTE      | Story 4.5 implementada — Account Module (FR15+FR16): page `/dashboard/account` + 2 Server Actions (`exportAccountData` + `deleteAccount`) + 2 Client Components + cascade delete em 5 tabelas via `auth.users` ON DELETE CASCADE (zero migration nova) + Storage cleanup `avatars/{uid}/`. Epic 4 fechado; MVP backbone completo                   | Dex (dev)        |
-| 2026-05-28 | NOTE      | **v1.0.0 released** — tag + GitHub Release publicados (https://github.com/helionj/new-biolink/releases/tag/v1.0.0). CHANGELOG.md criado. Marco: encerramento do escopo PRD (Epics 1-4). 22 stories, 51 commits, 22 PRs                                                                                                                             | Gage (devops)    |
-| 2026-05-28 | SCHEDULE  | `[STORY-3.5-F2]` agendado como **Story 5.1** (Epic 5 — Polish & Gaps Pós-MVP) — única story MEDIUM no backlog pós-v1.0.0; gap UX (usuários reais não editam display_name/bio). **Pré-requisito de processo:** @pm precisa formalizar Epic 5 no PRD antes do @sm draftar (Constitution Art. IV — No Invention)                                      | Pax (po)         |
-| 2026-05-28 | FORMALIZE | **Epic 5 formalizado** em `docs/prd.md` v0.4 (Change Log + Lista de Epics + nova seção §Epic 5 com Story 5.1). AC1 ancorado em FR13 (≤50/≤280) — sugestão "80 chars" do backlog reconciliada como advisory. Pré-requisito atendido; pronto para `@sm *draft 5.1`                                                                                   | Morgan (pm)      |
-| 2026-05-29 | DONE      | `[STORY-3.5-F2]` ✅ implementada como **Story 5.1** (display_name + bio editáveis em `/dashboard/profile`): nova primitive `Textarea`, `UpdateProfileMetaInput` Zod schema, Server Action `updateProfileMeta` + `revalidateUserSurface`, Client Component `ProfileMetaForm` (RHF), 6 component tests verdes. Limites reconciliados a FR13 (50/280) | Dex (dev)        |
+| Date       | Action    | Item                                                                                                                                                                                                                                                                                                                                                                                         | Author           |
+| ---------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| 2026-05-15 | ADD       | `[STORY-1.9-F1]` Lighthouse CI automatizado (diferido de Story 1.9 DP-1)                                                                                                                                                                                                                                                                                                                     | Pax (po)         |
+| 2026-05-20 | ADD       | `[STORY-3.1-F1]` Refactor `@custom-variant dark` para eliminar `.dark` (DEV-1 Story 3.1)                                                                                                                                                                                                                                                                                                     | Pax (po)         |
+| 2026-05-21 | ADD       | `[STORY-3.2-F1]` Refactor `scripts/check-contrast.mjs` para parser CSS automatizado (DEV-3 + DEV-5 Story 3.2)                                                                                                                                                                                                                                                                                | Dex (dev)        |
+| 2026-05-25 | ADD       | `[STORY-3.5-F1]` Monitorar margem apertada de bundle da página pública (Finding MEDIUM Story 3.5 §1)                                                                                                                                                                                                                                                                                         | Dex (dev)        |
+| 2026-05-25 | ADD       | `[STORY-3.5-F2]` UI de edição de `display_name` e `bio` no dashboard (gap funcional Story 3.5 Task 5)                                                                                                                                                                                                                                                                                        | Dex (dev)        |
+| 2026-05-25 | DONE      | `[STORY-1.9-F1]` Lighthouse CI workflow — materializado via Story 3.5 Task 6 (lighthouse.yml + .lighthouserc.json)                                                                                                                                                                                                                                                                           | Gage (devops)    |
+| 2026-05-26 | ADD       | `[STORY-4.1-F1]` Batch fix `auth_rls_initplan` em 8 policies (PERF-001 do QA gate Story 4.1)                                                                                                                                                                                                                                                                                                 | Pax (po)         |
+| 2026-05-26 | ADD       | `[STORY-3.5-F3]` Estabilizar Lighthouse CI (`runs: 1` → 3 + mediana) — evidência de flake no PR #18                                                                                                                                                                                                                                                                                          | Gage (devops)    |
+| 2026-05-26 | NOTE      | Story 4.2 `[STORY-4.2-prep]` — AC5 forward-looking: schema `page_views` habilita agregações 4.3 + dashboard 4.4                                                                                                                                                                                                                                                                              | Dex (dev)        |
+| 2026-05-27 | UPDATE    | `[STORY-4.1-F1]` expandido de 8 → 9 policies (inclui `page_views_select_own`) ao close-story 4.2 — PERF-001 gate                                                                                                                                                                                                                                                                             | Pax (po)         |
+| 2026-05-27 | ADD       | `[STORY-4.3-F1]` Batch fix `function_search_path_mutable` em 3 funções (SEC-001 do QA gate Story 4.3 — set_updated_at + 2 helpers novas) — consolidar com STORY-4.1-F1                                                                                                                                                                                                                       | Aria (architect) |
+| 2026-05-27 | NOTE      | Story 4.3 AC2 — estratégia "regular views + materialized deferida" registrada por referência a arch.md §L356-365 + schema-design.md §4 L655-657 (não duplica decisão; DEV-6)                                                                                                                                                                                                                 | Dex (dev)        |
+| 2026-05-27 | NOTE      | Story 4.4 implementada — UI `/dashboard/analytics` (Frontend-only) consome views 4.3 + queries lifetime; Epic 4 backbone analítico (4.1+4.2+4.3+4.4) fechado, exceto 4.5 (Conta)                                                                                                                                                                                                             | Dex (dev)        |
+| 2026-05-28 | NOTE      | Story 4.5 implementada — Account Module (FR15+FR16): page `/dashboard/account` + 2 Server Actions (`exportAccountData` + `deleteAccount`) + 2 Client Components + cascade delete em 5 tabelas via `auth.users` ON DELETE CASCADE (zero migration nova) + Storage cleanup `avatars/{uid}/`. Epic 4 fechado; MVP backbone completo                                                             | Dex (dev)        |
+| 2026-05-28 | NOTE      | **v1.0.0 released** — tag + GitHub Release publicados (https://github.com/helionj/new-biolink/releases/tag/v1.0.0). CHANGELOG.md criado. Marco: encerramento do escopo PRD (Epics 1-4). 22 stories, 51 commits, 22 PRs                                                                                                                                                                       | Gage (devops)    |
+| 2026-05-28 | SCHEDULE  | `[STORY-3.5-F2]` agendado como **Story 5.1** (Epic 5 — Polish & Gaps Pós-MVP) — única story MEDIUM no backlog pós-v1.0.0; gap UX (usuários reais não editam display_name/bio). **Pré-requisito de processo:** @pm precisa formalizar Epic 5 no PRD antes do @sm draftar (Constitution Art. IV — No Invention)                                                                                | Pax (po)         |
+| 2026-05-28 | FORMALIZE | **Epic 5 formalizado** em `docs/prd.md` v0.4 (Change Log + Lista de Epics + nova seção §Epic 5 com Story 5.1). AC1 ancorado em FR13 (≤50/≤280) — sugestão "80 chars" do backlog reconciliada como advisory. Pré-requisito atendido; pronto para `@sm *draft 5.1`                                                                                                                             | Morgan (pm)      |
+| 2026-05-29 | DONE      | `[STORY-3.5-F2]` ✅ implementada como **Story 5.1** (display_name + bio editáveis em `/dashboard/profile`): nova primitive `Textarea`, `UpdateProfileMetaInput` Zod schema, Server Action `updateProfileMeta` + `revalidateUserSurface`, Client Component `ProfileMetaForm` (RHF), 6 component tests verdes. Limites reconciliados a FR13 (50/280)                                           | Dex (dev)        |
+| 2026-05-30 | VALIDATE  | `docs/frontend-spec.md` v0.3 (amend §0.5 Personas/IA/Flows + §9 Handoff Checklist) — PO validate APPROVED 94% (GO); zero blocking issues; Constitution Art. IV preservado (todo elemento rastreia para PRD v0.5/FRs/stories shipped)                                                                                                                                                         | Pax (po)         |
+| 2026-05-30 | ADD       | `[EPIC-5-S2..S9]` 8 stories MEDIUM consolidam refresh Soft Studio ratificado em PRD v0.5 — path crítico 5.2 → 5.3 (tokens swap + primitives audit); 5.4-5.9 paralelizáveis; source-of-truth canônico = `docs/frontend-spec.md`                                                                                                                                                               | Pax (po)         |
+| 2026-05-30 | DONE      | `[EPIC-5-S2]` → **Story 5.2** implementada (Soft Studio palette light/dark/brand + DM Sans Variable + radius/shadow/typescale tokens). Gates: `check:contrast` 27/27 PASS WCAG AA, typecheck/lint/test:components (194/194)/build PASS. DEV-9 documentado (destructive ajustado `#D14A4A → #C84141` — spec L148/L201 ratio errado, real 4.38 vs 4.5). Path crítico desbloqueado: 5.3 pronta. | Dex (dev)        |
+| 2026-05-30 | ADD       | `[EPIC-5-PHASE2-LOGO]` LOW — logomark real diferido para Phase 2 post v1.x stabilization (resolução Q4 §6 do spec; ★ asterisco placeholder OK para MVP refresh em Story 5.9)                                                                                                                                                                                                                 | Pax (po)         |
