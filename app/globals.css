@@ -53,6 +53,14 @@
      que passa AA por margem segura (DEV-9). */
   --destructive: #c84141;
   --destructive-foreground: #ffffff;
+  /* Status colors — Story 5.3 Task 8.0 PRÉ-FLIGHT (DEV-D). Append-only;
+     valores spec verbatim §1.2.1 L150-151 (success #2B7A5E 5.2:1 ✓ AA,
+     warning #B8742A 4.6:1 ✓ AA). Foreground = #FFFFFF (pattern parity
+     com primary-foreground / destructive-foreground sobre status deep tones). */
+  --success: #2b7a5e;
+  --success-foreground: #ffffff;
+  --warning: #b8742a;
+  --warning-foreground: #ffffff;
 
   /* Chart scale — slate ramp preservado (DEV-2: sem spec canon; Story 5.7 audita). */
   --chart-1: #e2e8f0;
@@ -107,6 +115,13 @@
   --popover-foreground: #f4effb;
   --destructive: #ff7878;
   --destructive-foreground: #14102a;
+  /* Status colors — Story 5.3 Task 8.0. Spec verbatim §1.2.2 L177-178
+     (success #7AC9A0 6.8:1 ✓ AA, warning #E8B978 7.1:1 ✓ AA).
+     Foreground = warm-dark (parity primary-foreground sobre lighter dark variants). */
+  --success: #7ac9a0;
+  --success-foreground: #0e2418;
+  --warning: #e8b978;
+  --warning-foreground: #2e1d0a;
 
   --chart-1: #1e293b;
   --chart-2: #334155;
@@ -160,6 +175,13 @@
   /* Destructive: ajustado de #D14A4A para #C84141 (DEV-9 — ver light block). */
   --destructive: #c84141;
   --destructive-foreground: #ffffff;
+  /* Status colors — Story 5.3 Task 8.0. Spec verbatim §1.2.3 L203-204
+     (success #2B7A5E 5.0:1 ✓ AA, warning #B8742A 4.4:1 AA large-text only;
+     toast border-left é elemento gráfico não-text, WCAG §1.4.11 3:1 ✓). */
+  --success: #2b7a5e;
+  --success-foreground: #ffffff;
+  --warning: #b8742a;
+  --warning-foreground: #ffffff;
 
   --chart-1: #e2e8f0;
   --chart-2: #64748b;
@@ -250,6 +272,11 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  /* Status colors — Story 5.3 Task 8.0 (expõe bg-success/text-warning/border-l-warning/etc. ao Tailwind v4). */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-chart-1: var(--chart-1);
@@ -350,6 +377,11 @@
     --popover-foreground: #f4effb;
     --destructive: #ff7878;
     --destructive-foreground: #14102a;
+    /* Status colors — Story 5.3 Task 8.0 (mantido em sincronia com [data-theme='dark']). */
+    --success: #7ac9a0;
+    --success-foreground: #0e2418;
+    --warning: #e8b978;
+    --warning-foreground: #2e1d0a;
     --chart-1: #1e293b;
     --chart-2: #334155;
     --chart-3: #475569;

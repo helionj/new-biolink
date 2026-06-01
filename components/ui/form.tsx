@@ -1,5 +1,6 @@
 'use client';
 
+import { AlertCircleIcon } from 'lucide-react';
 import * as React from 'react';
 import {
   Controller,
@@ -123,10 +124,14 @@ function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
     <p
       data-slot="form-message"
       id={formMessageId}
-      className={cn('text-sm font-medium text-destructive', className)}
+      className={cn(
+        'inline-flex items-center gap-1.5 text-sm font-medium text-destructive',
+        className,
+      )}
       {...props}
     >
-      {body}
+      <AlertCircleIcon className="size-4 shrink-0" aria-hidden="true" />
+      <span>{body}</span>
     </p>
   );
 }
