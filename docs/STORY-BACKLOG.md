@@ -3,7 +3,7 @@ title: Story Backlog
 description: Follow-up tasks, technical debt e oportunidades de otimização identificadas durante stories, dev e QA
 owner: '@po (Pax)'
 created: 2026-05-15
-last_updated: 2026-05-31 (Story 5.3 — primitives audit Soft Studio implementada; 4 snapshots atualizados; 194/194 test:components PASS; --success + --warning tokens adicionados em globals.css per Task 8.0 pré-flight)
+last_updated: 2026-05-31 (Story 5.3 mergeada em main via PR #30 — squash commit `02a295f`; CI 12/12 SUCCESS; gate PASS; [STORY-5.3-F1] LOW adicionado — amend spec warning ratios consolidar com [STORY-5.2-F1])
 ---
 
 # Story Backlog
@@ -135,6 +135,22 @@ _Nenhum item._
 ---
 
 ## 🟢 LOW Priority
+
+#### [STORY-5.3-F1] Amend `frontend-spec.md` §1.2.1 L151 + §1.2.3 L204 — warning ratios
+
+- **Source**: Story 5.3 DEV-A4 + QA OBS-001 (gate file `docs/qa/gates/5.3-primitives-audit-13-shadcn.yml`) — 2026-05-31
+- **Priority**: 🟢 LOW
+- **Effort**: XS — doc amend only (1 file, ~4 linhas de tabela). **Consolidar com [STORY-5.2-F1]** numa única passada de spec hygiene (mesmo owner, mesma fonte de erro de cálculo do autor — destructive + warning compartilham o mesmo bug de luminance calc).
+- **Status**: 📋 TODO
+- **Assignee**: @ux-design-expert (Uma) — owner do `frontend-spec.md`
+- **Spec ref**: `docs/frontend-spec.md` §1.2.1 L151 (light warning) + §1.2.3 L204 (brand warning) — par com [STORY-5.2-F1] que cobre §1.2.1 L148 + §1.2.3 L201 (destructive)
+- **Description**: Mesmo padrão de erro de cálculo WCAG do autor da spec descoberto pela [STORY-5.2-F1] (destructive) — agora confirmado para warning. Recalc independente W3C @qa (algoritmo padrão `(L1 + 0.05) / (L2 + 0.05)`) durante Story 5.3 Task 8.0.2:
+  - §1.2.1 L151 reivindica `warning #B8742A vs #FFFFFF = 4.6:1 AA` — real é **3.770 FAIL AA por 0.730**.
+  - §1.2.3 L204 reivindica `warning #B8742A vs #FFFFFF = 4.4:1 AA (large text)` — real é **3.770**; 4.4 alegado já estaria abaixo de 4.5 AA normal mas o ratio real é ainda menor que o alegado (gap 0.630).
+  - Note: success ratios spec (§1.2 L150/L177/L203) são **accurate** quando recalculados (#2B7A5E vs #FFFFFF = 5.188 ✓ matches claimed 5.0-5.2); só warning está inflated.
+- **Decisão pendente**: (a) Apenas amend ratios da spec com valores reais (mantém `#B8742A` + adicionar nota "warning usable apenas como bg graphical/border/large text — falha AA como text bg sobre branco"); OU (b) escurecer warning mais (ex.: `#9D5F1F` ~4.8 vs branco) para passar AA também como text bg. Decisão impacta futuras stories Epic 5 que usem `--warning` em bg/text components (Alert warning badge, etc.). Story 5.3 AC7(b) usa apenas como border-left graphical (WCAG §1.4.11 3.0 satisfeito por margem 0.770 — NÃO bloqueante).
+- **Risk if not done**: spec permanece com ratios incorretos; futura referência por outros devs/AI agents pode perpetuar o bug. Materializa em produção se `--warning` for usado como bg with white text futuramente (warning Alert components, badges) — atualmente zero usage além do border-left graphical da 5.3.
+- **Acceptance**: `frontend-spec.md` §1.2.1 L151 + §1.2.3 L204 atualizados com ratios pós-recalc WCAG W3C verificados via `pnpm check:contrast` (após [STORY-3.2-F1] adicionar status colors ao script — ou validação manual); commit conventional `docs(frontend-spec): amend status ratios [STORY-5.2-F1] [STORY-5.3-F1]` (consolidação); cross-ref aos gate files 5.2 + 5.3 + DEV-9/DEV-A4.
 
 #### [STORY-5.2-F1] Amend `frontend-spec.md` §1.2.1 L148 + §1.2.3 L201 — destructive ratios
 
@@ -276,10 +292,10 @@ _Nenhum item._
 
 | Métrica                  | Valor      |
 | ------------------------ | ---------- |
-| Total de itens ativos    | 14         |
+| Total de itens ativos    | 15         |
 | 🔴 HIGH                  | 0          |
 | 🟡 MEDIUM                | 6          |
-| 🟢 LOW                   | 8          |
+| 🟢 LOW                   | 9          |
 | ✅ DONE (não arquivados) | 3          |
 | Última atualização       | 2026-05-31 |
 
@@ -314,3 +330,5 @@ _Nenhum item._
 | 2026-05-31 | ADD       | `[STORY-5.2-F1]` LOW — Amend `frontend-spec.md` §1.2.1 L148 + §1.2.3 L201 com ratios destructive corretos pós-DEV-9 (recalc WCAG W3C). Decisão pendente: manter `#C84141` ou escurecer para passar AA em `text-destructive` sobre brand bg também.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Quinn (qa)       |
 | 2026-05-30 | ADD       | `[EPIC-5-PHASE2-LOGO]` LOW — logomark real diferido para Phase 2 post v1.x stabilization (resolução Q4 §6 do spec; ★ asterisco placeholder OK para MVP refresh em Story 5.9)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Pax (po)         |
 | 2026-05-31 | DONE      | `[EPIC-5-S3]` → **Story 5.3** implementada (primitives audit Soft Studio — 13 shadcn em `components/ui/` + Task 8.0 pré-flight adicionou `--success`/`--warning` tokens em 5 locais de `globals.css`). Mudanças: Button ghost `bg-muted` → `bg-accent` (peach, DEV-A1 descoberto durante audit); Card +`shadow-sm`; Input/Textarea destructive ring `/20` → `/30`; Dialog/AlertDialog `rounded-xl` → `rounded-2xl` + `shadow-lg`; DropdownMenu content `rounded-lg` → `rounded-xl`; Sheet radius condicional `data-side`; Switch `data-checked:bg-primary` → `bg-accent` (DEV-A2 selector Base UI mapping); Sonner overrides (position responsiva + border-left 4px por type). Gates: typecheck/lint/build (15/15 static pages) PASS; test:components 194/194 PASS (4 snapshots updated: card/dialog/form/input — todos className-only intencionais). Smoke manual SKIPPED (user opt-in). | Dex (dev)        |
+| 2026-05-31 | MERGE     | **Story 5.3 mergeada em main via PR #30** (squash commit `02a295f`). CI 12/12 SUCCESS (lighthouse + test-integration + test-components 194/194 + build + gitleaks + Vercel). Gate `5.3-primitives-audit-13-shadcn.yml` PASS com 3 LOW observations + 1 PENDING-CI documentadas. Status `Ready for Review → Done`. **Path crítico Epic 5 completo** (5.2 + 5.3 DONE) — desbloqueia Stories 5.4-5.7 paralelizáveis para `@sm *draft`.                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Gage (devops)    |
+| 2026-05-31 | ADD       | `[STORY-5.3-F1]` LOW — Amend `frontend-spec.md` §1.2.1 L151 + §1.2.3 L204 com ratios warning corretos pós-recalc WCAG W3C (real `#B8742A vs #FFFFFF = 3.770` vs spec claims 4.6/4.4 — padrão de erro idêntico ao DEV-9 5.2 destructive). **Consolidar com `[STORY-5.2-F1]`** numa única passada de spec hygiene (mesmo owner @ux-design-expert, mesmo padrão de erro). Sem impact material em Story 5.3 (AC7(b) usa apenas border-left graphical, WCAG §1.4.11 3.0 satisfeito). Materializa risk se warning for usado como bg with white text futuramente.                                                                                                                                                                                                                                                                                                                                | Pax (po)         |
