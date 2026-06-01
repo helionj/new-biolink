@@ -6,7 +6,7 @@ export default function SignupPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">Criar conta</h1>
+        <h1 className="text-h1">Criar conta</h1>
         <p className="text-sm text-muted-foreground">Comece agora — escolha seu @ público.</p>
       </div>
       <SignupForm />

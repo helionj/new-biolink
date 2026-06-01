@@ -48,7 +48,7 @@ export function ResetPasswordConfirmForm() {
             <FormItem>
               <FormLabel>Nova senha</FormLabel>
               <FormControl>
-                <Input type="password" autoComplete="new-password" {...field} />
+                <Input type="password" autoComplete="new-password" className="h-12" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -61,13 +61,13 @@ export function ResetPasswordConfirmForm() {
             <FormItem>
               <FormLabel>Confirmar nova senha</FormLabel>
               <FormControl>
-                <Input type="password" autoComplete="new-password" {...field} />
+                <Input type="password" autoComplete="new-password" className="h-12" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
+        <Button type="submit" disabled={form.formState.isSubmitting} className="h-12 w-full">
           {form.formState.isSubmitting ? 'Atualizando...' : 'Atualizar senha'}
         </Button>
       </form>

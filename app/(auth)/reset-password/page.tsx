@@ -12,7 +12,7 @@ export default async function ResetPasswordPage({ searchParams }: Props) {
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">Esqueceu a senha?</h1>
+        <h1 className="text-h1">Esqueceu a senha?</h1>
         <p className="text-sm text-muted-foreground">
           Informe seu email para receber um link de redefinição.
         </p>

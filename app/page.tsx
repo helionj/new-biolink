@@ -1,15 +1,30 @@
+import { BarChart3Icon, CodeIcon, ExternalLinkIcon, ShieldCheckIcon } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { buttonVariants } from '@/components/ui/button';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { createClient } from '@/lib/supabase/server';
+import { cn } from '@/lib/utils';
 
 const GITHUB_REPO_URL = 'https://github.com/helionj/new-biolink';
 
-const BENEFITS = [
-  'Do cadastro à primeira página publicada em apenas 2 cliques.',
-  'Todos os seus links reunidos em um único endereço profissional.',
-  'Acompanhe os acessos e descubra o que a sua audiência mais clica.',
+const MOTIVOS = [
+  {
+    icon: ShieldCheckIcon,
+    title: 'Sem ads forçados',
+    description: 'Seu perfil 100% seu, sempre.',
+  },
+  {
+    icon: BarChart3Icon,
+    title: 'Analytics próprios',
+    description: '7d e 30d, sem terceiros.',
+  },
+  {
+    icon: CodeIcon,
+    title: 'Open source',
+    description: 'Código auditável no GitHub.',
+  },
 ] as const;
 
 export const metadata: Metadata = {
@@ -37,45 +52,80 @@ export default async function Home() {
   const commitSha = process.env.NEXT_PUBLIC_COMMIT_SHA ?? 'local';
 
   return (
-    <main className="flex flex-1 flex-col">
-      <section className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-24 text-center">
-        <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-          Sua presença digital em um único link
-        </h1>
-        <p className="max-w-xl text-lg text-muted-foreground">
-          O BioLink reúne todos os seus links em uma página profissional — do cadastro à primeira
-          publicação em apenas 2 cliques.
-        </p>
-        <Link href={ctaHref} className={buttonVariants({ size: 'lg' })}>
-          {ctaLabel}
-        </Link>
-      </section>
-
-      <section className="border-t border-border px-6 py-16">
-        <ul className="mx-auto flex max-w-3xl flex-col gap-8 sm:flex-row">
-          {BENEFITS.map((benefit) => (
-            <li key={benefit} className="flex-1 text-center text-base text-foreground sm:text-left">
-              {benefit}
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <footer className="border-t border-border px-6 py-8">
-        <div className="mx-auto flex max-w-3xl flex-col items-center justify-between gap-2 sm:flex-row">
-          <a
-            href={GITHUB_REPO_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-muted-foreground underline-offset-4 hover:underline"
-          >
-            GitHub
-          </a>
-          <p className="text-xs text-muted-foreground">
-            Build {buildTime} · {commitSha}
-          </p>
+    <>
+      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm">
+        <div className="mx-auto flex h-14 max-w-screen-lg items-center justify-between px-6">
+          <Link href="/" className="text-h3 lowercase">
+            biolink
+          </Link>
+          {!user && (
+            <Link href="/login" className={buttonVariants({ variant: 'ghost' })}>
+              Entrar
+            </Link>
+          )}
         </div>
-      </footer>
-    </main>
+      </header>
+
+      <main className="flex flex-1 flex-col">
+        <section className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-24 text-center min-h-[calc(100vh-3.5rem)]">
+          <h1 className="text-display max-w-2xl">Seu link na bio, do seu jeito.</h1>
+          <p className="text-body-lg max-w-xl text-muted-foreground">
+            Crie sua página pública gratuita — seus links, seus dados.
+          </p>
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
+            <Link
+              href={ctaHref}
+              className={cn(buttonVariants({ size: 'lg' }), 'h-12 w-full sm:w-auto')}
+            >
+              {ctaLabel} →
+            </Link>
+            {!user && (
+              <Link
+                href="/login"
+                className={cn(buttonVariants({ variant: 'ghost' }), 'h-12 w-full sm:w-auto')}
+              >
+                Já tem conta? Entrar →
+              </Link>
+            )}
+          </div>
+        </section>
+
+        <section className="border-t border-border px-6 py-16">
+          <div className="mx-auto max-w-screen-lg">
+            <p className="text-body-sm mb-6 text-center uppercase tracking-wide text-muted-foreground">
+              3 motivos:
+            </p>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {MOTIVOS.map(({ icon: Icon, title, description }) => (
+                <Card key={title}>
+                  <CardHeader>
+                    <Icon className="size-6 text-primary" aria-hidden="true" />
+                    <CardTitle className="text-h2 mt-2">{title}</CardTitle>
+                    <CardDescription>{description}</CardDescription>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <footer className="border-t border-border px-6 py-8">
+          <div className="mx-auto flex max-w-screen-lg flex-col items-center gap-2 sm:flex-row sm:justify-between">
+            <a
+              href={GITHUB_REPO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-body-sm inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
+            >
+              <ExternalLinkIcon className="size-4" aria-hidden="true" /> open-source no GitHub
+            </a>
+            <p className="text-body-sm text-muted-foreground">gratuito • LGPD-mindful</p>
+            <p className="text-caption text-muted-foreground/70">
+              Build {buildTime} · {commitSha}
+            </p>
+          </div>
+        </footer>
+      </main>
+    </>
   );
 }

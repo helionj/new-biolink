@@ -17,7 +17,7 @@ export default async function ResetPasswordConfirmPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">Nova senha</h1>
+        <h1 className="text-h1">Nova senha</h1>
         <p className="text-sm text-muted-foreground">Escolha uma nova senha para sua conta.</p>
       </div>
       <ResetPasswordConfirmForm />

@@ -72,13 +72,19 @@ export function ResetPasswordRequestForm({ initialError }: Props) {
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input type="email" autoComplete="email" placeholder="seu@email.com" {...field} />
+                <Input
+                  type="email"
+                  autoComplete="email"
+                  placeholder="seu@email.com"
+                  className="h-12"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
+        <Button type="submit" disabled={form.formState.isSubmitting} className="h-12 w-full">
           {form.formState.isSubmitting ? 'Enviando...' : 'Enviar link'}
         </Button>
       </form>

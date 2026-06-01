@@ -1,69 +1,257 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`<Home> — landing pública (canary) > guest: CTA "Criar minha página" → /signup, com hero, 3 bullets e footer GitHub 1`] = `
+exports[`<Home> — landing pública Soft Studio > guest: hero CTAs (primary + secondary ghost) + 3 cards motivos + header Entrar + footer github 1`] = `
 <div>
+  <header
+    class="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm"
+  >
+    <div
+      class="mx-auto flex h-14 max-w-screen-lg items-center justify-between px-6"
+    >
+      <a
+        class="text-h3 lowercase"
+        href="/"
+      >
+        biolink
+      </a>
+      <a
+        class="group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 hover:bg-accent hover:text-accent-foreground aria-expanded:bg-muted aria-expanded:text-foreground h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2"
+        href="/login"
+      >
+        Entrar
+      </a>
+    </div>
+  </header>
   <main
     class="flex flex-1 flex-col"
   >
     <section
-      class="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-24 text-center"
+      class="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-24 text-center min-h-[calc(100vh-3.5rem)]"
     >
       <h1
-        class="max-w-2xl text-4xl font-semibold tracking-tight text-foreground sm:text-5xl"
+        class="text-display max-w-2xl"
       >
-        Sua presença digital em um único link
+        Seu link na bio, do seu jeito.
       </h1>
       <p
-        class="max-w-xl text-lg text-muted-foreground"
+        class="text-body-lg max-w-xl text-muted-foreground"
       >
-        O BioLink reúne todos os seus links em uma página profissional — do cadastro à primeira publicação em apenas 2 cliques.
+        Crie sua página pública gratuita — seus links, seus dados.
       </p>
-      <a
-        class="group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 bg-primary text-primary-foreground [a]:hover:bg-primary/80 h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2"
-        href="/signup"
+      <div
+        class="flex flex-col items-center gap-3 sm:flex-row sm:gap-4"
       >
-        Criar minha página
-      </a>
+        <a
+          class="group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 bg-primary text-primary-foreground [a]:hover:bg-primary/80 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 h-12 w-full sm:w-auto"
+          href="/signup"
+        >
+          Criar minha página
+           →
+        </a>
+        <a
+          class="group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 hover:bg-accent hover:text-accent-foreground aria-expanded:bg-muted aria-expanded:text-foreground gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 h-12 w-full sm:w-auto"
+          href="/login"
+        >
+          Já tem conta? Entrar →
+        </a>
+      </div>
     </section>
     <section
       class="border-t border-border px-6 py-16"
     >
-      <ul
-        class="mx-auto flex max-w-3xl flex-col gap-8 sm:flex-row"
+      <div
+        class="mx-auto max-w-screen-lg"
       >
-        <li
-          class="flex-1 text-center text-base text-foreground sm:text-left"
+        <p
+          class="text-body-sm mb-6 text-center uppercase tracking-wide text-muted-foreground"
         >
-          Do cadastro à primeira página publicada em apenas 2 cliques.
-        </li>
-        <li
-          class="flex-1 text-center text-base text-foreground sm:text-left"
+          3 motivos:
+        </p>
+        <div
+          class="grid gap-4 sm:grid-cols-3"
         >
-          Todos os seus links reunidos em um único endereço profissional.
-        </li>
-        <li
-          class="flex-1 text-center text-base text-foreground sm:text-left"
-        >
-          Acompanhe os acessos e descubra o que a sua audiência mais clica.
-        </li>
-      </ul>
+          <div
+            class="group/card flex flex-col gap-4 overflow-hidden rounded-xl bg-card py-4 text-sm text-card-foreground shadow-sm ring-1 ring-foreground/10 has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-3 data-[size=sm]:py-3 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl"
+            data-size="default"
+            data-slot="card"
+          >
+            <div
+              class="group/card-header @container/card-header grid auto-rows-min items-start gap-1 rounded-t-xl px-4 group-data-[size=sm]/card:px-3 has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto] [.border-b]:pb-4 group-data-[size=sm]/card:[.border-b]:pb-3"
+              data-slot="card-header"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-shield-check size-6 text-primary"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
+                />
+                <path
+                  d="m9 12 2 2 4-4"
+                />
+              </svg>
+              <div
+                class="text-base leading-snug font-medium group-data-[size=sm]/card:text-sm text-h2 mt-2"
+                data-slot="card-title"
+              >
+                Sem ads forçados
+              </div>
+              <div
+                class="text-sm text-muted-foreground"
+                data-slot="card-description"
+              >
+                Seu perfil 100% seu, sempre.
+              </div>
+            </div>
+          </div>
+          <div
+            class="group/card flex flex-col gap-4 overflow-hidden rounded-xl bg-card py-4 text-sm text-card-foreground shadow-sm ring-1 ring-foreground/10 has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-3 data-[size=sm]:py-3 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl"
+            data-size="default"
+            data-slot="card"
+          >
+            <div
+              class="group/card-header @container/card-header grid auto-rows-min items-start gap-1 rounded-t-xl px-4 group-data-[size=sm]/card:px-3 has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto] [.border-b]:pb-4 group-data-[size=sm]/card:[.border-b]:pb-3"
+              data-slot="card-header"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-chart-column size-6 text-primary"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M3 3v16a2 2 0 0 0 2 2h16"
+                />
+                <path
+                  d="M18 17V9"
+                />
+                <path
+                  d="M13 17V5"
+                />
+                <path
+                  d="M8 17v-3"
+                />
+              </svg>
+              <div
+                class="text-base leading-snug font-medium group-data-[size=sm]/card:text-sm text-h2 mt-2"
+                data-slot="card-title"
+              >
+                Analytics próprios
+              </div>
+              <div
+                class="text-sm text-muted-foreground"
+                data-slot="card-description"
+              >
+                7d e 30d, sem terceiros.
+              </div>
+            </div>
+          </div>
+          <div
+            class="group/card flex flex-col gap-4 overflow-hidden rounded-xl bg-card py-4 text-sm text-card-foreground shadow-sm ring-1 ring-foreground/10 has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-3 data-[size=sm]:py-3 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl"
+            data-size="default"
+            data-slot="card"
+          >
+            <div
+              class="group/card-header @container/card-header grid auto-rows-min items-start gap-1 rounded-t-xl px-4 group-data-[size=sm]/card:px-3 has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto] [.border-b]:pb-4 group-data-[size=sm]/card:[.border-b]:pb-3"
+              data-slot="card-header"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-code size-6 text-primary"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="m16 18 6-6-6-6"
+                />
+                <path
+                  d="m8 6-6 6 6 6"
+                />
+              </svg>
+              <div
+                class="text-base leading-snug font-medium group-data-[size=sm]/card:text-sm text-h2 mt-2"
+                data-slot="card-title"
+              >
+                Open source
+              </div>
+              <div
+                class="text-sm text-muted-foreground"
+                data-slot="card-description"
+              >
+                Código auditável no GitHub.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
     <footer
       class="border-t border-border px-6 py-8"
     >
       <div
-        class="mx-auto flex max-w-3xl flex-col items-center justify-between gap-2 sm:flex-row"
+        class="mx-auto flex max-w-screen-lg flex-col items-center gap-2 sm:flex-row sm:justify-between"
       >
         <a
-          class="text-sm text-muted-foreground underline-offset-4 hover:underline"
+          class="text-body-sm inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
           href="https://github.com/helionj/new-biolink"
           rel="noopener noreferrer"
           target="_blank"
         >
-          GitHub
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-external-link size-4"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M15 3h6v6"
+            />
+            <path
+              d="M10 14 21 3"
+            />
+            <path
+              d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+            />
+          </svg>
+           open-source no GitHub
         </a>
         <p
-          class="text-xs text-muted-foreground"
+          class="text-body-sm text-muted-foreground"
+        >
+          gratuito • LGPD-mindful
+        </p>
+        <p
+          class="text-caption text-muted-foreground/70"
         >
           Build 
           dev

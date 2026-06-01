@@ -3,7 +3,7 @@ title: Story Backlog
 description: Follow-up tasks, technical debt e oportunidades de otimização identificadas durante stories, dev e QA
 owner: '@po (Pax)'
 created: 2026-05-15
-last_updated: 2026-05-31 (Story 5.3 mergeada em main via PR #30 — squash commit `02a295f`; CI 12/12 SUCCESS; gate PASS; [STORY-5.3-F1] LOW adicionado — amend spec warning ratios consolidar com [STORY-5.2-F1])
+last_updated: 2026-06-01 (Story 5.3 mergeada via PR #30/#31; Story 5.4 — landing + auth pages Soft Studio refresh implementada — 194/194 test:components PASS; [STORY-5.3-F1] LOW adicionado; rebase 5.4 sobre 5.3 close resolveu stats)
 ---
 
 # Story Backlog
@@ -24,18 +24,7 @@ _Nenhum item._
 
 ## 🟡 MEDIUM Priority
 
-> **Refresh visual Epic 5 — Soft Studio** — 8 stories (5.2-5.9) consolidam ratificação PRD v0.5 (2026-05-29) via `docs/frontend-spec.md` v0.3 (PO validate APPROVED 94%). Source-of-truth canônico do refresh: `docs/frontend-spec.md`. Path crítico: **5.2 → 5.3** (sequenciais, ambas DONE); 5.4-5.9 paralelizáveis. **Estado atual:** ✅ 5.2 DONE (tokens swapados) + ✅ 5.3 DONE (13 primitives auditados + status tokens `--success`/`--warning` adicionados) → **5.4-5.7 desbloqueados visualmente**.
-
-#### [EPIC-5-S4] Story 5.4 — Landing + Auth pages Soft Studio
-
-- **Source**: `docs/frontend-spec.md` §5.3 Phase 3
-- **Priority**: 🟡 MEDIUM
-- **Effort**: M — ~5 files (`app/page.tsx`, `app/(auth)/signup`, `/login`, `/reset-password`)
-- **Status**: 📋 TODO
-- **Assignee**: TBD via `*backlog-schedule` — **paralelizável** com 5.5/5.6/5.7
-- **Spec ref**: §2.1 (Landing), §2.2 (Signup), §2.3 (Login), §2.4 (Reset Password); §3.7 (form feedback)
-- **Risk if not done**: primeira impressão do produto fica em paleta antiga; landing canary (Story 1.9) mantém branding violet seed
-- **Acceptance**: Lighthouse CI ≥ 90; LCP `/` < 2.0s (NFR1); a11y WCAG AA mantida; smoke seletivo
+> **Refresh visual Epic 5 — Soft Studio** — 8 stories (5.2-5.9) consolidam ratificação PRD v0.5 (2026-05-29) via `docs/frontend-spec.md` v0.3 (PO validate APPROVED 94%). Source-of-truth canônico do refresh: `docs/frontend-spec.md`. Path crítico: **5.2 → 5.3** (sequenciais, ambas DONE); 5.4-5.9 paralelizáveis. **Estado atual:** ✅ 5.2 DONE (tokens swapados) + ✅ 5.3 DONE (13 primitives auditados + status tokens `--success`/`--warning` adicionados) + ✅ 5.4 DONE (landing + auth pages page-level refresh) → **5.5-5.7 desbloqueados visualmente** (dashboard/profile/analytics paralelizáveis).
 
 #### [EPIC-5-S5] Story 5.5 — Dashboard core (layout + links)
 
@@ -292,11 +281,11 @@ _Nenhum item._
 
 | Métrica                  | Valor      |
 | ------------------------ | ---------- |
-| Total de itens ativos    | 15         |
+| Total de itens ativos    | 14         |
 | 🔴 HIGH                  | 0          |
-| 🟡 MEDIUM                | 6          |
+| 🟡 MEDIUM                | 5          |
 | 🟢 LOW                   | 9          |
-| ✅ DONE (não arquivados) | 3          |
+| ✅ DONE (não arquivados) | 4          |
 | Última atualização       | 2026-05-31 |
 
 ---
@@ -332,3 +321,4 @@ _Nenhum item._
 | 2026-05-31 | DONE      | `[EPIC-5-S3]` → **Story 5.3** implementada (primitives audit Soft Studio — 13 shadcn em `components/ui/` + Task 8.0 pré-flight adicionou `--success`/`--warning` tokens em 5 locais de `globals.css`). Mudanças: Button ghost `bg-muted` → `bg-accent` (peach, DEV-A1 descoberto durante audit); Card +`shadow-sm`; Input/Textarea destructive ring `/20` → `/30`; Dialog/AlertDialog `rounded-xl` → `rounded-2xl` + `shadow-lg`; DropdownMenu content `rounded-lg` → `rounded-xl`; Sheet radius condicional `data-side`; Switch `data-checked:bg-primary` → `bg-accent` (DEV-A2 selector Base UI mapping); Sonner overrides (position responsiva + border-left 4px por type). Gates: typecheck/lint/build (15/15 static pages) PASS; test:components 194/194 PASS (4 snapshots updated: card/dialog/form/input — todos className-only intencionais). Smoke manual SKIPPED (user opt-in). | Dex (dev)        |
 | 2026-05-31 | MERGE     | **Story 5.3 mergeada em main via PR #30** (squash commit `02a295f`). CI 12/12 SUCCESS (lighthouse + test-integration + test-components 194/194 + build + gitleaks + Vercel). Gate `5.3-primitives-audit-13-shadcn.yml` PASS com 3 LOW observations + 1 PENDING-CI documentadas. Status `Ready for Review → Done`. **Path crítico Epic 5 completo** (5.2 + 5.3 DONE) — desbloqueia Stories 5.4-5.7 paralelizáveis para `@sm *draft`.                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Gage (devops)    |
 | 2026-05-31 | ADD       | `[STORY-5.3-F1]` LOW — Amend `frontend-spec.md` §1.2.1 L151 + §1.2.3 L204 com ratios warning corretos pós-recalc WCAG W3C (real `#B8742A vs #FFFFFF = 3.770` vs spec claims 4.6/4.4 — padrão de erro idêntico ao DEV-9 5.2 destructive). **Consolidar com `[STORY-5.2-F1]`** numa única passada de spec hygiene (mesmo owner @ux-design-expert, mesmo padrão de erro). Sem impact material em Story 5.3 (AC7(b) usa apenas border-left graphical, WCAG §1.4.11 3.0 satisfeito). Materializa risk se warning for usado como bg with white text futuramente.                                                                                                                                                                                                                                                                                                                                | Pax (po)         |
+| 2026-06-01 | DONE      | `[EPIC-5-S4]` → **Story 5.4** implementada (landing + auth pages Soft Studio page-level refresh). Landing: header sticky novo + hero H1 `text-display` + body `text-body-lg` + CTAs h-12 (primary + secondary ghost conditional) + 3 `<Card>` motivos (ShieldCheck/BarChart3/Code icons) + footer minimal LGPD-mindful. Auth shared layout: `← voltar` + wordmark text-h3 lowercase. 4 auth pages: H1 → text-h1 (32px). 4 auth forms: h-12 className override em 9 inputs + 4 submits; Login: "Esqueci a senha →" movido + divider `<hr>` "ou" + ghost "Criar conta →"; Signup: helper "Mínimo 8 caracteres." adicionado. DEV-A1..A4 + DEV-B/C/D/E + **DEV-A2-extra** (lucide v1.14 sem GithubIcon export → ExternalLinkIcon substitution). Gates: typecheck/lint/build (15/15) PASS; test:components 194/194 PASS (1 snapshot HomePage rewrite + 1 obsolete removed; auth form tests intactos — DEV-D anticipated revisado). Zero `[STORY-5.4-F1/F2]` (gaps não materializaram — UsernameAvailabilityHint + terms checkbox JÁ presentes). Smoke manual SKIPPED (user opt-in). | Dex (dev)        |

@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/lib/toast';
+import { cn } from '@/lib/utils';
 import { SignInInput } from '@/lib/validators/auth';
 import { signIn } from '@/server/auth/actions';
 
@@ -69,7 +70,7 @@ export function LoginForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
         <FormField
           control={form.control}
           name="email"
@@ -77,7 +78,13 @@ export function LoginForm() {
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input type="email" autoComplete="email" placeholder="seu@email.com" {...field} />
+                <Input
+                  type="email"
+                  autoComplete="email"
+                  placeholder="seu@email.com"
+                  className="h-12"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -88,25 +95,36 @@ export function LoginForm() {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <div className="flex items-center justify-between">
-                <FormLabel>Senha</FormLabel>
-                <Link
-                  href="/reset-password"
-                  className="text-xs text-muted-foreground underline-offset-4 hover:underline"
-                >
-                  Esqueci a senha
-                </Link>
-              </div>
+              <FormLabel>Senha</FormLabel>
               <FormControl>
-                <Input type="password" autoComplete="current-password" {...field} />
+                <Input
+                  type="password"
+                  autoComplete="current-password"
+                  className="h-12"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
+        <Link
+          href="/reset-password"
+          className="self-end text-sm text-muted-foreground hover:text-foreground"
+        >
+          Esqueci a senha →
+        </Link>
+        <Button type="submit" disabled={form.formState.isSubmitting} className="h-12 w-full">
           {form.formState.isSubmitting ? 'Entrando...' : 'Entrar'}
         </Button>
+        <div className="my-2 flex items-center gap-2">
+          <hr className="flex-1 border-border" />
+          <span className="text-caption text-muted-foreground">ou</span>
+          <hr className="flex-1 border-border" />
+        </div>
+        <Link href="/signup" className={cn(buttonVariants({ variant: 'ghost' }), 'h-12 w-full')}>
+          Criar conta →
+        </Link>
       </form>
     </Form>
   );
