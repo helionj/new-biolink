@@ -71,7 +71,13 @@ export function SignupForm() {
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input type="email" autoComplete="email" placeholder="seu@email.com" {...field} />
+                <Input
+                  type="email"
+                  autoComplete="email"
+                  placeholder="seu@email.com"
+                  className="h-12"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -84,7 +90,13 @@ export function SignupForm() {
             <FormItem>
               <FormLabel>Username</FormLabel>
               <FormControl>
-                <Input type="text" autoComplete="username" placeholder="seu-username" {...field} />
+                <Input
+                  type="text"
+                  autoComplete="username"
+                  placeholder="seu-username"
+                  className="h-12"
+                  {...field}
+                />
               </FormControl>
               <p className="text-xs text-muted-foreground">
                 Seu @ público (3-30 caracteres, a-z, 0-9 e hífen).
@@ -105,6 +117,7 @@ export function SignupForm() {
                   <Input
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="new-password"
+                    className="h-12"
                     {...field}
                   />
                 </FormControl>
@@ -117,6 +130,7 @@ export function SignupForm() {
                   {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
+              <p className="text-caption text-muted-foreground">Mínimo 8 caracteres.</p>
               <FormMessage />
             </FormItem>
           )}
@@ -131,6 +145,7 @@ export function SignupForm() {
                 <Input
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
+                  className="h-12"
                   {...field}
                 />
               </FormControl>
@@ -160,7 +175,7 @@ export function SignupForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
+        <Button type="submit" disabled={form.formState.isSubmitting} className="h-12 w-full">
           {form.formState.isSubmitting ? 'Criando...' : 'Criar conta'}
         </Button>
       </form>

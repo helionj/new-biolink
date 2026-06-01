@@ -1,0 +1,592 @@
+schema: 1
+story: '5.4'
+gate: PASS
+status_reason: |
+  Implementação completa dos 15 ACs da Story 5.4 (landing + auth pages Soft
+  Studio page-level refresh — Phase 3 Epic 5). Landing materializada per spec
+  §2.1: header sticky novo (bg-background/95 + backdrop-blur + wordmark biolink
+  lowercase + Entrar ghost conditional), hero H1 'Seu link na bio, do seu jeito.'
+  (text-display 40px verbatim), body 'Crie sua página pública gratuita...'
+  (text-body-lg 18px verbatim), CTAs h-12 (primary + secondary ghost
+  conditional via DEV-A1 className override), 3 motivos como Card components
+  (ShieldCheck/BarChart3/Code icons — DEV-A2 lucide choices), footer minimal
+  com ExternalLinkIcon + 'open-source no GitHub' + LGPD-mindful. Auth shared
+  layout (app/(auth)/layout.tsx) — ← voltar + wordmark text-h3 lowercase per
+  §2.2/2.3/2.4. 4 auth pages — H1 typescale bump text-2xl → text-h1 (32px
+  per §1.3.2). 4 auth forms (Login/Signup/ResetRequest/ResetConfirm) — h-12
+  className override em 14 applications (inputs + submits, DEV-A1 NÃO mexer
+  em primitives Story 5.3 escopo fechado); Login: 'Esqueci a senha →' movido
+  de FormLabel header para self-end entre password input e submit per spec
+  §2.3 L500, ADDED divider <hr> 'ou' (DEV-B Separator primitive absent
+  fallback) + ghost 'Criar conta →' per §2.3 L506-509; Signup: ADDED password
+  helper 'Mínimo 8 caracteres.' per §2.2 L443 (gap real, era ausente).
+  Quality gates locais re-rodados independentemente pelo @qa: typecheck exit
+  0 ✅ / lint zero warnings ✅. Gates pesados (build Next 16.2.5 Turbopack
+  15/15 static pages, test:components 194/194 em 220s) validados pelo @dev
+  em sessão develop — outputs capturados em Debug Log References. **1
+  snapshot HomePage rewrite + 1 obsolete removed** (auth form tests não usam
+  toMatchSnapshot; DEV-D anticipated revisado vs draft que esperava ~5).
+  **HomePage.test.tsx rewrite** necessário (não apenas snapshot update — DEV-E):
+  2 behavior assertions falharam (getAllByRole('listitem').length=3 não bate
+  pois <li> virou <Card>; getByRole exact match falha pois CTAs têm arrow
+  suffix); reescrita com regex matchers + getByText em CardTitle + assertions
+  para secondary CTA/header Entrar conditional. DEV-A1..A4 + DEV-B/C/D/E + 1
+  novo **DEV-A2-extra** todas materializadas e documentadas em Completion
+  Notes. **DEV-A2-extra (critical discovery):** lucide-react v1.14 deste
+  projeto NÃO exporta Github/GithubIcon (verificado via Object.keys
+  filter — 0 matches); @dev substituiu por ExternalLinkIcon + texto
+  'open-source no GitHub' — semantic preservado, workaround defensível.
+  Constitution Art. IV (No Invention) preservada — ícones lucide são exports
+  oficiais (validados via Node), copy verbatim spec §2.1-2.4, tokens
+  consumidos via @theme inline classes (text-display/text-h1/text-h2/
+  text-body-lg/text-body-sm/text-caption — todas em globals.css pós-5.2).
+  Article III (Story-Driven) preservada — escopo restrito ao Source Tree
+  listado; zero touch em dashboard/profile/theme/account/analytics/public/
+  primitives/migrations/RLS/Server Actions. Backward compat ✓ — zero API
+  change nas auth forms (RHF/zodResolver/Server Actions intact); Landing
+  getUser() data flow preservado; URL semantics inchanged. Security clean:
+  story toca apenas page-level JSX/className + 1 import lucide novo;
+  pre-commit gitleaks PASS no commit 5cb9f5d; zero hardcoded secrets;
+  zero impact em auth/RLS/env. 3 observações: **OBS-001 LOW** (Landing 3
+  Cards motivos usam CardTitle que renders como `<div className="text-h2">`
+  ao invés de `<h2>` semântico — story já flagou; WCAG 1.3.1 mitigação via
+  contexto label 'motivos:' acima, mas heading navigation degrada; sugestão
+  refactor opcional a `<h2>` ou `role="heading" aria-level="2"` — fora de
+  escopo desta story, deferir para `[STORY-5.4-F1]` LOW se design system
+  exigir); **OBS-002 LOW** (DEV-A3 header sticky sempre semi-transparent ao
+  invés de scroll-driven transparent-on-top — defensible LCP-friendly
+  decision; spec wording §2.1 L368 sugere comportamento dinâmico, mas
+  perceived effect coerente; tracked para Story 5.8 motion+polish se @ux
+  exigir); **OBS-003 LOW** (DEV-A2-extra ExternalLinkIcon vs spec '[github
+  icon]' — lucide v1.14 ausente Github*, workaround semantic preservado);
+  **PERF-001 PENDING-CI** (Lighthouse dispara via paths `app/**` +
+  `components/**`; delta esperado +1-2 KB para 4 ícones lucide novos
+  tree-shakeable, mantém ≤ 200 KB threshold).
+reviewer: 'Quinn'
+updated: '2026-05-31T22:50:00Z'
+
+top_issues:
+  - id: 'OBS-001'
+    severity: low
+    finding: |
+      **Landing 3 Cards motivos a11y semantic concern (heading hierarchy).**
+      Implementação usa `<CardTitle className="text-h2 mt-2">{title}</CardTitle>`
+      — visualmente apresenta texto em 24px peso 500 (text-h2 typescale class),
+      mas semanticamente renderiza como `<div data-slot="card-title">` (shadcn
+      Card primitive — verificado em `components/ui/card.tsx:36`).
+
+      **Impact WCAG 1.3.1 (Info and Relationships):** Screen readers que
+      navegam por heading levels (rotor iOS, NVDA H key, JAWS H key) NÃO
+      encontram esses cards como `<h2>` headings. Navegação por landmarks
+      (`<section>`) ainda funciona; conteúdo é lido sequencialmente.
+
+      **Mitigação parcial existente:** label "3 motivos:" acima dos cards
+      estabelece contexto visual + textual (text-body-sm uppercase). Card
+      bodies usam CardDescription com text padrão (`text-sm
+      text-muted-foreground`).
+
+      Story 5.4 Dev Notes JÁ flagou: "3 Cards motivos usam CardTitle
+      (renders como `<div>`) — não é `<h2>` semântico, mas role aria-level
+      pode ser adicionado se @qa exigir".
+    suggested_action: |
+      Não-bloqueante. Heading hierarchy é nice-to-have visual para essa
+      surface (cards são informacionais, não navegação primária). Opções:
+      (1) **Quick fix** (~5 min): adicionar `role="heading" aria-level="2"`
+          ao `<CardTitle>` na Landing — preserva CardTitle data-slot pattern
+          shadcn; ARIA reconciliação. Pode ser implementado em
+          `[STORY-5.4-F1]` LOW se design system exigir formal a11y heading
+          tree.
+      (2) **Spec amend** (~10 min): shadcn CardTitle primitive shipped como
+          `<div>` é decisão de framework consciente (CardTitle é semantic
+          neutral, deixando consumer decidir heading level via composition).
+          Story 5.5+ que use Cards podem usar `<h2 className="text-h2">`
+          direto no children do Card ao invés de CardTitle. Recomendar
+          guideline em `docs/architecture/components.md` se existir.
+      (3) **Aceitar como design choice**: Cards informacionais não-navegáveis
+          podem usar visual hierarchy sem strict heading semantic — pattern
+          comum em landing pages modernas. Documentar decisão e seguir.
+      Sem ação obrigatória pré-merge. Aceitar OBS-001 LOW como observation;
+      decidir solução em design system review pós-Epic 5 completion.
+
+  - id: 'OBS-002'
+    severity: low
+    finding: |
+      **DEV-A3 header sticky simplificação vs spec wording.** Spec §2.1
+      L368 prescreve "Header sticky (transparent on scroll-top)" — wording
+      sugere comportamento dinâmico (header transparente quando scrollY=0,
+      vira opaque/blur ao scrollar).
+
+      Implementação @dev (DEV-A3 anticipated + aprovado @po validate):
+      header SEMPRE `bg-background/95 backdrop-blur-sm` (semi-transparent
+      constante). Razão: (a) JS scroll listener adiciona Client Component
+      overhead em landing (anti-LCP NFR1); (b) spring transition é Story
+      5.8 escopo; (c) backdrop-blur já cria sensação "flutuante" coerente
+      com mood Soft Studio.
+
+      Avaliação @qa: trade-off defensável. Constante semi-transparency
+      atinge ~80% do perceived effect "flutuante" sem custo JS. Real
+      transparent-on-top + scroll-driven blur seria refinamento de
+      polish — escopo natural de Story 5.8 (Motion + polish).
+    suggested_action: |
+      Aceitar como gate-PASS-com-monitoramento. Recomendações:
+      (1) Tracking opcional em `[STORY-5.4-F2]` LOW: se Story 5.8 motion
+          polish for executada, considerar implementar real
+          transparent-on-scroll-top via Client Component wrapper +
+          scroll listener (~15 linhas). Owner: `@ux-design-expert`.
+      (2) Se design review pós-Epic 5 julgar perceived effect insuficiente,
+          decidir entre: (a) aceitar simplification permanente; (b)
+          implementar JS scroll listener (custo LCP <100ms estimado pois
+          1 listener apenas); (c) explorar CSS-only solution via
+          @container queries ou scroll-driven animations Web standard
+          (suporte iOS 14+ verificar).
+      Sem ação obrigatória pré-merge. Documentar OBS-002 no Change Log da
+      Story 5.4 ao mover Status InReview → Done (post-push).
+
+  - id: 'OBS-003'
+    severity: low
+    finding: |
+      **DEV-A2-extra footer icon substitution.** Spec §2.1 L408 prescreve
+      "[github icon] open-source" — wording sugere logo GitHub específico.
+
+      Implementação @dev (DEV-A2-extra discovered durante typecheck):
+      `lucide-react` v1.14 deste projeto NÃO exporta `Github`/`GithubIcon`
+      (verificado via `Object.keys(require('lucide-react'))` — 0 matches
+      para "hub" pattern). @dev substituiu por `ExternalLinkIcon` + texto
+      "open-source no GitHub" (semantic preservado, repository link
+      target intact).
+
+      Workaround é defensible:
+      - Alternative options consideradas (per Dev Notes): inline SVG
+        custom (brand asset concern), drop icon (UX downgrade)
+      - ExternalLinkIcon comunica "link sai do site" — semantic match
+        para link externo a github.com
+      - Texto "open-source no GitHub" comunica destino verbalmente
+
+      Trade-off: perde reconhecimento visual do logo GitHub, mas ganha
+      consistência com icon library do projeto.
+    suggested_action: |
+      Aceitar como gate-PASS. Sem ação obrigatória. Considerações
+      futuras:
+      (1) Se brand reconhecimento github logo for crítico, opção de
+          adicionar custom SVG inline (`<svg>` com path do GitHub mark
+          public asset) — Story 5.9 (Logo + favicon) é o lugar natural
+          se design exigir.
+      (2) `lucide-react` v1.14 é versão minor/fork do projeto — upgrade
+          para canonical `lucide-react` v0.x latest pode expor Github
+          export, mas é decision separada (Story TBD se upgrade for
+          desejado). Não impacta Story 5.4.
+
+  - id: 'PERF-001'
+    severity: low
+    finding: |
+      Lighthouse Performance score do `/` e `/[username]` ainda não medido
+      empiricamente nesta validação local — vai ser medido pelo workflow
+      `.github/workflows/lighthouse.yml` disparado no PR via trigger
+      `paths: [app/**, components/**]`. Match definitivo: story modifica
+      `app/page.tsx` + `app/(auth)/**` + `components/auth/**`. Workflow
+      estável após [STORY-3.5-F3] Done (runs:3 + mediana). Bundle expected
+      delta **+1-2 KB max** pelos 4 ícones lucide novos (ShieldCheckIcon/
+      BarChart3Icon/CodeIcon/ExternalLinkIcon) — todos tree-shakeable;
+      Card primitive já no bundle pós-Story 5.3. Header sticky novo + 3
+      Cards adicionam ~80 linhas JSX (~2 KB minified).
+    suggested_action: |
+      Aceitar como gate-PASS-com-monitoramento (padrão Stories 5.2/5.3).
+      @devops deve:
+      (1) Verificar Lighthouse CI no PR como housekeeping. Se workflow
+          falhar por flake, re-run; se 1 das 3 runs falhar mas median
+          passar, OK (mediana é o critério canônico per [STORY-3.5-F3]).
+      (2) Capturar First Load JS de `/` e `/[username]` reportados pelo
+          workflow. Confirmar **mantém** vs baseline pós-5.3 (~180-185 KB
+          esperado). Se piorar inesperadamente (>200 KB), investigar
+          antes do merge.
+      (3) Confirmar LCP `/` mantém < 2.0s per NFR1 (AC15) — header sticky
+          é SSR (não-Client), zero impacto LCP esperado.
+      (4) Documentar resultado real no Change Log da story ao mover
+          Status Ready for Review → Done.
+
+waiver: { active: false }
+
+# ---------------------------------------------------------------------------
+# Detalhes do review (informacional — fora do schema mínimo do qa-gate)
+# ---------------------------------------------------------------------------
+
+review_evidence:
+  date: '2026-05-31'
+  branch: 'feat/5.4-landing-auth-soft-studio (1 commit ahead of main: 5cb9f5d feat — @devops abrirá PR contra main)'
+  reviewer_role: |
+    @qa (Quinn) — `quality_gate: '@qa'` per Executor Assignment da story
+    (`quality_gate_tools: [typecheck, lint, build, test:components]`).
+    Story Frontend-primary page-level — escopo padrão @qa, idêntico Stories
+    5.2/5.3. Gate manual via QA-001 workaround (CodeRabbit/WSL incompat.
+    macOS; MEMORY `project_qa_review_hang.md`; precedente validado 1.4-5.3).
+
+  acceptance_criteria_summary:
+    landing_8: PASS — H1 (text-display) + body (text-body-lg) + primary CTA h-12 + secondary ghost conditional + 3 Cards motivos + header sticky + desktop vh100/grid-3 + footer minimal (ACs 1-8).
+    auth_pages_h1: PASS — 4 pages H1 text-2xl → text-h1 (AC9).
+    auth_forms_h12: PASS — 14 h-12 applications across 4 forms (AC10).
+    login_extras: PASS — Esqueci a senha self-end + <hr> ou divider + ghost Criar conta (AC11).
+    signup_helper: PASS — password helper "Mínimo 8 caracteres." adicionado (AC12 parcial); UsernameAvailabilityHint + terms checkbox JÁ presentes pré-5.4.
+    auth_layout: PASS — ← voltar + wordmark text-h3 lowercase (AC13).
+    quality_gates: PASS — typecheck/lint/build/test:components 194/194 (AC14).
+    lighthouse_ci: PENDING-CI — validation automática no PR (AC15).
+
+  quality_gate_set:
+    - check: 'Local: pnpm typecheck'
+      result: PASS
+      notes: |
+        `tsc --noEmit` exit 0 (re-run @qa 2026-05-31T22:45Z). Zero erros TS
+        após DEV-A2-extra fix (1ª run @dev FAIL com GithubIcon — fixed via
+        ExternalLinkIcon).
+    - check: 'Local: pnpm lint'
+      result: PASS
+      notes: 'eslint exit 0 zero warnings (re-run @qa 2026-05-31).'
+    - check: 'Local: pnpm build'
+      result: PASS
+      notes: |
+        Next 16.2.5 Turbopack ✓ Compiled + TS verify + 15/15 static pages
+        PASS (validado @dev em sessão). Routes inalteradas. Warning
+        middleware → proxy pré-existente Next 16 (não regression).
+    - check: 'Local: pnpm test:components (full suite)'
+      result: PASS
+      notes: |
+        **194/194 PASS** em 34 files (~220s). Baseline Story 5.1/5.2/5.3
+        mantida. **1 snapshot HomePage rewrite** (describe rename + new
+        structure) + **1 obsolete removed**. Auth form tests
+        (LoginForm/SignupForm/ResetPasswordRequestForm/ResetPasswordConfirmForm)
+        **intactos** — não usam toMatchSnapshot, apenas behavior assertions
+        que não são afetadas por h-12 className override. **DEV-D
+        anticipated revisado**: esperava ~5 snapshot updates, realidade 1.
+        **DEV-E confirmed**: HomePage test rewrite necessário (não apenas
+        snapshot -u) — reescrita usa regex matchers + getByText em
+        CardTitle + assertions conditional rendering.
+    - check: 'CI: Lighthouse workflow (paths trigger)'
+      result: PENDING-PR-CHECK
+      notes: |
+        Dispara via trigger `paths: [app/**, components/**]` matchea
+        app/page.tsx + app/(auth)/** + components/auth/**. Bundle delta
+        +1-2 KB esperado (4 ícones lucide novos tree-shakeable; Card já
+        no bundle pós-5.3). @devops valida resultado real no PR
+        (PERF-001 housekeeping).
+    - check: 'CI: gitleaks workflow'
+      result: PASS
+      notes: |
+        Pre-commit gitleaks scan PASS no commit `5cb9f5d` (132 KB scanned,
+        no leaks). Story não toca env vars/secrets; zero hardcoded
+        credentials.
+    - check: 'Smoke runtime manual'
+      result: SKIPPED-user-approved
+      notes: |
+        Task 8 SKIPPED com decisão usuário (MEMORY
+        `feedback_skip_manual_smoke.md`). Cobertura indireta válida:
+        test:components 194/194 + HomePage test rewrite valida estrutura.
+        Risco residual em Task 8.3: regressões responsive (mobile vs
+        desktop layout), behavior CSS-only (header sticky/blur), CTAs
+        conditional rendering. @qa pode solicitar smoke pós-merge em prod
+        (padrão Stories 5.1/5.2/5.3).
+    - check: 'Code review (patterns, readability, maintainability, security)'
+      result: PASS
+      notes: |
+        **Patterns:** Landing JSX bem-organizado (MOTIVOS const declarativo,
+        map render — DRY). Auth forms preservam RHF/zodResolver/Server
+        Actions intact (zero functional regression). h-12 className override
+        consistente pattern em 14 applications. DEV-B `<hr>` fallback
+        defensible (Separator primitive absent confirmado). Login form
+        structure change isolado (page.tsx remove `<p>`, LoginForm adds
+        divider+ghost) — sem cross-cutting concerns.
+        **Security:** zero env vars/RLS/auth/service-role tocado. JSX é
+        declarative SSR/CSR sem exec novo. lucide-react imports são
+        statically known. ExternalLinkIcon substitution justified +
+        documented (DEV-A2-extra).
+        **Maintainability:** Story Dev Agent Record extenso (~600 linhas
+        — Debug Log + Completion Notes + File List). DEV-A1..A4 +
+        DEV-B/C/D/E + DEV-A2-extra todas documentadas com fonte/rationale.
+        Tests rewrite documentado em Debug Log References.
+        **Validations independentes @qa:** typecheck/lint re-run independent;
+        spot-checks Landing CTAs h-12 + 3 Cards CardTitle render + Login
+        form structure + auth layout; lucide-react Github export absence
+        re-verified via Node. **A11y observation OBS-001** raised: CardTitle
+        renders `<div>` não `<h2>` semantic — mitigation via context label;
+        Story Dev Notes JÁ flagou para @qa decision.
+
+  nfr_validation:
+    - nfr: 'NFR1 LCP / < 2.0s'
+      status: PENDING-CI-EXPECTED-MAINTAIN
+      notes: |
+        Header sticky é SSR (não-Client) — zero JS overhead em initial
+        render. 3 Cards SSR também. CTAs são Link SSR. Bundle delta
+        +1-2 KB (lucide tree-shakeable). LCP baseline pós-5.3 ~180-185 KB
+        esperado mantido. Lighthouse CI no PR valida empiricamente.
+
+    - nfr: 'NFR2 Lighthouse score >= 0.85 (4 categories)'
+      status: PENDING-CI-EXPECTED-MAINTAIN
+      notes: |
+        Mesma análise PERF-001. Performance: bundle delta neutral.
+        Accessibility: OBS-001 mild concern (3 Cards <div> não <h2>),
+        mas Hero H1 + section landmarks intact — score esperado
+        ≥0.95. Best Practices/SEO: H1 single + meta intact.
+
+    - nfr: 'NFR3 WCAG 2.1 AA (a11y)'
+      status: PASS-with-low-obs
+      notes: |
+        Hero H1 (`<h1 className="text-display">`) semantic intact —
+        single H1 per page ✓. 3 Cards motivos OBS-001 LOW (CardTitle
+        renders `<div>` não `<h2>` — heading hierarchy degrada mas
+        mitigation via context label "3 motivos:" acima). Auth pages H1
+        (`<h1 className="text-h1">`) semantic intact. ARIA preservado
+        nos forms (RHF + FormMessage AlertCircle aria-hidden via Story
+        5.3 AC11). Header sticky com biolink Link + Entrar Link preserva
+        focus order natural. Tab navigation Landing → Header → Hero CTAs
+        → 3 motivos Cards → Footer. Auth layout '← voltar' link
+        navegável via tab.
+
+    - nfr: 'NFR4 bundle First Load JS < 200 KB gz'
+      status: PENDING-CI-EXPECTED-MAINTAIN
+      notes: |
+        Mesma análise PERF-001. +1-2 KB de 4 ícones lucide (tree-shake).
+        Card primitive já no bundle pós-5.3. Auth forms já no bundle
+        pré-5.4. Story 5.4 NÃO adiciona dependência nova.
+
+    - nfr: 'NFR6 cobertura test:components (frontend ≥ 50%)'
+      status: PASS
+      notes: |
+        194/194 PASS mantém baseline. HomePage test rewrite mantém AC
+        coverage (verifica primary CTA + secondary CTA + header Entrar
+        + 3 motivos titles + footer github link + conditional rendering
+        guest vs authenticated).
+
+    - nfr: 'NFR9 sem novas dependências'
+      status: PASS
+      notes: |
+        Zero `pnpm install` necessário. lucide-react já no bundle
+        (consumers existentes: form.tsx AlertCircleIcon, sonner.tsx
+        icons, etc.). Card/Button primitives já no bundle.
+        package.json não modificado.
+
+    - nfr: 'NFR10 zero secrets versionados'
+      status: PASS
+      notes: |
+        Story não toca env vars. Zero hardcoded secrets em código novo.
+        Pre-commit gitleaks scan PASS (commit `5cb9f5d`).
+
+    - nfr: 'NFR11 UI 100% PT-BR'
+      status: PASS
+      notes: |
+        Todo copy novo é PT-BR verbatim spec §2.1-2.4: "Seu link na bio,
+        do seu jeito.", "Crie sua página pública gratuita...", "Criar
+        minha página", "Já tem conta? Entrar", "3 motivos:", "Sem ads
+        forçados", "Analytics próprios", "Open source", "open-source no
+        GitHub", "gratuito • LGPD-mindful", "Esqueci a senha", "Criar
+        conta", "Mínimo 8 caracteres.", "← voltar".
+
+    - nfr: 'NFR13 browser support iOS 14+'
+      status: PASS
+      notes: |
+        Tailwind utility classes (sticky/backdrop-blur/h-12/border-l-4)
+        são CSS standard suportadas iOS 14+. lucide-react SVGs são
+        SVG inline (suporte universal). Card primitive shipped iOS 14+
+        compatible (Story 1.5+). CSS custom properties text-display/
+        text-h1/etc. suportadas iOS 14+ via Tailwind v4 @theme inline.
+
+  deviations_resolved:
+    - id: DEV-A1
+      status: APPROVED-RATIFIED
+      notes: |
+        h-12 className override em 14 applications (CTAs Landing + 9
+        inputs auth forms + 4 submits). Zero edit em Button/Input
+        primitives (Story 5.3 escopo preservado). tailwind-merge
+        garante override do default h-8 do Input + h-9 do Button lg.
+        Pattern consistente: `className="h-12 w-full"` em submits,
+        `className={cn(buttonVariants({...}), 'h-12 w-full sm:w-auto')}`
+        em Landing CTAs.
+    - id: DEV-A2
+      status: APPROVED-RATIFIED
+      notes: |
+        Ícones lucide-react para 3 Cards motivos: ShieldCheckIcon (◐ Sem
+        ads forçados), BarChart3Icon (▦ Analytics próprios), CodeIcon
+        (⚙ Open source). Semantic-appropriate substitutes para glyphs
+        Unicode da spec. Todos exports oficiais lucide v1.14
+        (verificados via Object.keys).
+    - id: DEV-A2-extra
+      status: APPROVED-AS-DEVIATION
+      notes: |
+        **NEW deviation discovered durante typecheck.** lucide-react v1.14
+        deste projeto NÃO exporta `Github`/`GithubIcon` (verified via
+        `Object.keys(require('lucide-react')).filter(k => k.toLowerCase().
+        includes('hub'))` — 0 matches). Standard lucide-react v0.x
+        exporta `Github`, mas projeto usa lucide-react ^1.14.0 (provavelmente
+        fork ou versão diferente). @dev substituiu footer `GithubIcon`
+        por `ExternalLinkIcon` + texto "open-source no GitHub" — semantic
+        preservado (link externo a github.com), brand reconhecimento
+        degradado (perde logo familiaridade). OBS-003 LOW raised.
+        Workaround defensible para Story 5.4 (não bloqueia).
+    - id: DEV-A3
+      status: APPROVED-AS-OBSERVATION
+      notes: |
+        Header sticky simplificado: sempre `bg-background/95
+        backdrop-blur-sm` (vs spec "transparent on scroll-top" dinâmico).
+        Trade-off LCP vs perceived effect aceito (Story 5.8 motion
+        polish pode refinar). OBS-002 LOW raised — pre-emptive tracking.
+    - id: DEV-A4
+      status: APPROVED-RATIFIED
+      notes: |
+        CardTitle override via `className="text-h2 mt-2"` (mantém
+        CardTitle data-slot pattern shadcn-friendly). Semantic concern
+        (CardTitle renders `<div>`) tracked em OBS-001 LOW.
+    - id: DEV-B
+      status: APPROVED-RATIFIED
+      notes: |
+        Separator primitive confirmadamente absent (verified pre-5.4 by
+        @po SF cross-check + by @dev em ls components/ui/). Login
+        divider OR usa `<hr className="flex-1 border-border" />`
+        fallback. NÃO criar Separator primitive nesta story (scope
+        creep — primitive adições saem Story 5.3 audit completion).
+    - id: DEV-C
+      status: APPROVED-RATIFIED
+      notes: |
+        Login form structure change isolado em LoginForm.tsx + removed
+        `<p>` from login/page.tsx. RHF/zodResolver/onSubmit intact.
+        "Esqueci a senha →" movido de FormLabel header row para
+        self-end entre password input e submit per spec §2.3 L500.
+    - id: DEV-D
+      status: REVISED-DOWNWARD
+      notes: |
+        **Anticipated ~5 snapshot updates (HomePage + 4 auth forms);
+        realidade: 1 snapshot update (HomePage) + 1 obsolete removed.**
+        Auth form tests NÃO usam toMatchSnapshot — apenas behavior
+        assertions (RHF state, submit handler, validation). h-12
+        className override não afeta behavior — surpresa positiva.
+    - id: DEV-E
+      status: CONFIRMED-WITH-REWRITE
+      notes: |
+        HomePage test rewrite necessário (não apenas snapshot update):
+        (1) `getAllByRole('listitem').length === 3` falha pois `<ul><li>`
+        virou `<Card>` (<div>); (2) `getByRole('link', { name: 'Ir para
+        meu dashboard' })` exact match falha pois CTAs têm ` →` arrow
+        suffix per spec. Reescrita: regex matchers `/Criar minha página/`
+        + getByText em CardTitle ('Sem ads forçados' etc.) + assertions
+        adicionais para conditional rendering (secondary CTA "Já tem
+        conta?" + header "Entrar" not.toBeInTheDocument quando
+        authenticated). describe name "landing pública (canary)" →
+        "landing pública Soft Studio". 1 snapshot regenerated.
+
+  follow_ups_proposed:
+    - id: 'STORY-5.4-F1'
+      severity: LOW
+      title: 'Landing 3 Cards motivos heading semantic (h2 vs div)'
+      action: |
+        Decidir entre (a) quick fix `role="heading" aria-level="2"` no
+        CardTitle Landing, OU (b) shadcn CardTitle children pattern com
+        `<h2 className="text-h2">` direto, OU (c) aceitar como design
+        choice. Owner: `@ux-design-expert`. Effort: XS (~5 min para
+        (a)). Tracking pós-Epic 5 design system review.
+    - id: 'STORY-5.4-F2'
+      severity: LOW
+      title: 'Landing header sticky real transparent-on-scroll-top'
+      action: |
+        Se Story 5.8 motion+polish for executada, considerar
+        implementar via Client Component wrapper + scroll listener
+        (~15 linhas). Owner: `@ux-design-expert`. Effort: XS. Tracking
+        Story 5.8.
+
+  code_intel_advisory: null
+
+  ids_compliance:
+    reuse_count: 12
+    reused_artifacts:
+      - 'Tailwind v4 `@theme inline` typescale classes (text-display/text-h1/text-h2/text-body-lg/text-body-sm/text-caption — Story 5.2)'
+      - 'Card primitive + CardHeader/CardTitle/CardDescription (Story 5.3 +shadow-sm)'
+      - 'Button primitive ghost variant (Story 5.3 peach hover automatic)'
+      - 'Input primitive (Story 5.3 destructive ring /30) + h-12 className override pattern'
+      - 'cn() utility from @/lib/utils (Story 1.5+)'
+      - 'buttonVariants CVA from @/components/ui/button (Story 1.5+)'
+      - 'lucide-react v1.14 icons (ShieldCheckIcon/BarChart3Icon/CodeIcon/ExternalLinkIcon — Story 1.5+)'
+      - 'react-hook-form + zodResolver pattern (auth forms — Story 1.5+)'
+      - '@/lib/supabase/server createClient (Landing user check — Story 1.5+)'
+      - 'UsernameAvailabilityHint component (SignupForm — Story 5.1+)'
+      - 'app/(auth)/ route group + shared layout (Story 1.5+)'
+      - '<hr> HTML native (Login divider fallback — DEV-B)'
+    new_artifacts:
+      - 'app/page.tsx Landing restructured: header sticky + hero CTAs (h-12) + 3 Cards motivos + footer minimal (~80 lines rewrite)'
+      - 'app/(auth)/layout.tsx restructured: ← voltar + wordmark text-h3 lowercase (~5 lines)'
+      - 'components/auth/LoginForm.tsx restructured: h-12 inputs + Esqueci a senha self-end + <hr> divider + ghost Criar conta (~40 lines edited)'
+      - 'Auth form className h-12 overrides (4 forms × ~3 = 14 applications)'
+      - 'Auth pages H1 text-h1 typescale class (4 pages × 1 line)'
+      - 'HomePage.test.tsx rewrite (regex matchers + getByText + conditional rendering assertions)'
+    justification: |
+      Capability incremental (page-level refresh Soft Studio — Phase 3
+      Epic 5 per spec §5.3). REUSE extensivo (12 artifacts): typescale
+      classes Story 5.2, Card/Button/Input primitives Story 5.3,
+      auth route group + forms Story 1.5+. NEW artifacts são apenas
+      restructure de pages existentes + 1 test rewrite + className
+      overrides — zero novo primitive, zero novo hook, zero nova
+      Server Action, zero nova dep. Constitution Art. III (Story-Driven)
+      ✓ — escopo restrito ao Source Tree. Constitution Art. IV (No
+      Invention) ✓ — copy verbatim spec §2.1-2.4, ícones lucide oficiais
+      (incluindo ExternalLinkIcon substitution justified por DEV-A2-extra
+      lucide v1.14 gap). Constitution Art. V (No Premature Optimization)
+      ✓ — DEV-A1 className override evita over-engineering primitive API
+      change; DEV-A3 sticky simplification evita scroll listener overhead.
+
+# ---------------------------------------------------------------------------
+# Handoff
+# ---------------------------------------------------------------------------
+handoff:
+  next_agent: '@devops'
+  next_command: '*push'
+  condition: |
+    Gate PASS com 3 LOW observations + 1 PENDING-CI:
+    - OBS-001 LOW: Landing 3 Cards CardTitle semantic (div vs h2);
+      mitigação via context label; follow-up [STORY-5.4-F1] LOW
+      opcional para design system review pós-Epic 5;
+    - OBS-002 LOW: header sticky simplificado (DEV-A3); follow-up
+      [STORY-5.4-F2] LOW tracking para Story 5.8 motion+polish;
+    - OBS-003 LOW: ExternalLinkIcon substitution (DEV-A2-extra
+      lucide v1.14 gap); workaround defensible, sem follow-up;
+    - PERF-001 PENDING: Lighthouse CI no PR (bundle delta +1-2 KB).
+
+    @devops deve:
+    (1) **Atenção a ordem**: PR #31 (close-story 5.3) AINDA mid-flight
+        em background; idealmente merge primeiro para evitar conflito
+        em STORY-BACKLOG.md statistics (esta branch tem stats
+        13/5/8/4 baseline pre-close-5.3; PR #31 tem stats 14/5/9/4
+        que include [STORY-5.3-F1] LOW — merge order matters).
+        Recomendação: finalize PR #31 first, then push branch 5.4.
+    (2) Verificar baseRefName antes de merge (MEMORY
+        `feedback_check_pr_base_before_merge.md`) — PR esperado contra
+        `main` (Story 5.4 é primeira da fase 3 paralela; branch base = main).
+    (3) Branch `feat/5.4-landing-auth-soft-studio` já existe local
+        (1 commit ahead: `5cb9f5d` feat). Push do branch para origin
+        via `git push -u origin feat/5.4-landing-auth-soft-studio`.
+    (4) Abrir PR contra main via `gh pr create --base main --title
+        "feat: landing + auth pages Soft Studio refresh [Story 5.4]"
+        --body ...`.
+    (5) Aguardar required status checks (mesma suite Stories 5.2/5.3
+        precedent: install/lint/typecheck/test-unit/test-components/
+        test-integration/build/gitleaks/audit/lighthouse + Vercel).
+    (6) MONITORAR Lighthouse CI no PR (PERF-001). First Load JS de
+        `/` e `/[username]` esperado **mantém** ~180-185 KB.
+    (7) Após PR CLEAN + MERGEABLE → merge squash em main.
+    (8) Marcar Story 5.4 Status `Ready for Review → Done` via @po
+        *close-story 5.4 (separate PR padrão Stories 5.2/5.3).
+    (9) **Backlog action (housekeeping)**: nenhum novo follow-up
+        OBRIGATÓRIO a registrar. [STORY-5.4-F1] e [STORY-5.4-F2] são
+        opcionais (LOW, tracking-only) — @po decide se cria entradas
+        formais ao *close-story 5.4.
+  alternatives:
+    - condition: 'Operador opcionalmente faz smoke runtime manual antes de @devops push'
+      action: |
+        pnpm dev → abrir http://localhost:3000/ (Landing — validar
+        header sticky + hero CTAs + 3 Cards grid responsive), /signup
+        + /login (validar H1 text-h1 + h-12 inputs visualmente),
+        /reset-password. Cycle 3 temas via DevTools attribute
+        data-theme. Validar:
+        (1) Landing CTAs h-12 visual ≈ 48px height em mobile/desktop;
+        (2) Secondary CTA "Já tem conta? Entrar" aparece SÓ para
+            guest (testar com session via /login);
+        (3) 3 Cards grid 1 col mobile / 3 cols desktop ≥1024px;
+        (4) Login form "Esqueci a senha →" right-aligned entre
+            password input e submit;
+        (5) Login divider "ou" visualmente OK;
+        (6) Auth layout "← voltar" link clicável + wordmark biolink
+            lowercase.
+      status: OPTIONAL-pre-merge OR validated-post-merge-in-prod
