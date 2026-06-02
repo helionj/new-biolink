@@ -64,15 +64,28 @@ describe('<ThemeSelector>', () => {
     render(<ThemeSelector currentTheme="light" previewData={previewData} />);
     expect(screen.getByRole('radio', { name: /light/i })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /dark/i })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /brand/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /vibrante/i })).toBeInTheDocument();
     expect(screen.getAllByRole('radio')).toHaveLength(3);
+  });
+
+  it('exibe label "Vibrante" + descrição "Lavender + peach pop" para tema brand (Q3 §6 PRD v0.5, Story 5.6 DEV-B)', () => {
+    render(<ThemeSelector currentTheme="light" previewData={previewData} />);
+    // Label rebrand "Brand" → "Vibrante" preserva enum 'brand' em DB/types.
+    expect(screen.getByText('Vibrante')).toBeInTheDocument();
+    // Descrições verbatim spec §2.7 L706/L715/L724.
+    expect(screen.getByText('Lavender mist')).toBeInTheDocument();
+    expect(screen.getByText('Deep plum night')).toBeInTheDocument();
+    expect(screen.getByText('Lavender + peach pop')).toBeInTheDocument();
   });
 
   it('card atual está aria-checked=true; outros aria-checked=false (AC2)', () => {
     render(<ThemeSelector currentTheme="dark" previewData={previewData} />);
     expect(screen.getByRole('radio', { name: /dark/i })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByRole('radio', { name: /light/i })).toHaveAttribute('aria-checked', 'false');
-    expect(screen.getByRole('radio', { name: /brand/i })).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByRole('radio', { name: /vibrante/i })).toHaveAttribute(
+      'aria-checked',
+      'false',
+    );
   });
 
   it('clique chama updateTheme + toast.success em sucesso (AC2, AC4)', async () => {
@@ -80,13 +93,16 @@ describe('<ThemeSelector>', () => {
     mockedUpdate.mockResolvedValue({ ok: true, data: fakePage('brand') });
     render(<ThemeSelector currentTheme="light" previewData={previewData} />);
 
-    await user.click(screen.getByRole('radio', { name: /brand/i }));
+    await user.click(screen.getByRole('radio', { name: /vibrante/i }));
 
     await waitFor(() => {
       expect(mockedUpdate).toHaveBeenCalledWith({ theme: 'brand' });
     });
     expect(mockedToastSuccess).toHaveBeenCalledWith('Tema atualizado');
-    expect(screen.getByRole('radio', { name: /brand/i })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('radio', { name: /vibrante/i })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
   });
 
   it('erro do server reverte seleção + toast.error (AC4)', async () => {
@@ -111,7 +127,7 @@ describe('<ThemeSelector>', () => {
     const user = userEvent.setup();
     render(<ThemeSelector currentTheme="brand" previewData={previewData} />);
 
-    await user.click(screen.getByRole('radio', { name: /brand/i }));
+    await user.click(screen.getByRole('radio', { name: /vibrante/i }));
 
     expect(mockedUpdate).not.toHaveBeenCalled();
     expect(mockedToastSuccess).not.toHaveBeenCalled();

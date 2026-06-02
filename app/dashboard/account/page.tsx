@@ -32,18 +32,21 @@ export default async function AccountPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-8 px-4 py-8">
-      <header>
-        <h1 className="text-2xl font-semibold">Conta</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+      <header className="space-y-1">
+        <h1 className="text-h1">Conta</h1>
+        <p className="text-body text-muted-foreground">
           Gerencie seus dados pessoais — exporte tudo em JSON ou exclua sua conta permanentemente.
         </p>
       </header>
 
-      <section aria-labelledby="export-heading" className="space-y-3">
-        <h2 id="export-heading" className="text-lg font-medium">
+      <section
+        aria-labelledby="export-heading"
+        className="space-y-3 rounded-xl border border-border bg-card p-6"
+      >
+        <h2 id="export-heading" className="text-h3 font-medium">
           Exportar dados
         </h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-body text-muted-foreground">
           Baixe um JSON com seu perfil, página, links e analytics (LGPD-mindful — pseudonimização
           preservada).
         </p>
@@ -52,12 +55,12 @@ export default async function AccountPage() {
 
       <section
         aria-labelledby="delete-heading"
-        className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-6"
+        className="space-y-3 rounded-xl border border-destructive/30 bg-destructive/5 p-6"
       >
-        <h2 id="delete-heading" className="text-lg font-medium text-destructive">
+        <h2 id="delete-heading" className="text-h3 font-medium text-destructive">
           Excluir conta
         </h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-body text-muted-foreground">
           Esta ação é <strong>permanente e irreversível</strong>. Todos os seus dados serão apagados
           imediatamente — perfil, página pública, links, cliques registrados e visualizações.
         </p>

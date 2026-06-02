@@ -44,8 +44,8 @@ export default async function ThemePage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <header className="space-y-1">
-        <h1 className="text-xl font-semibold tracking-tight">Tema da página</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-h1">Tema da página</h1>
+        <p className="text-body text-muted-foreground">
           Escolha como sua página pública em <code>/@{profile?.username ?? ''}</code> aparece.
         </p>
       </header>
