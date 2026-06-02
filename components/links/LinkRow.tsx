@@ -136,7 +136,7 @@ export function LinkRow({ link, onMove, isFirst = false, isLast = false }: LinkR
     <li
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-3 rounded-md border border-border bg-card p-3"
+      className="group flex items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-sm ring-1 ring-foreground/5 transition-shadow hover:shadow-md"
     >
       {/* AC1 — handle de drag dedicado (NÃO o <li> inteiro) p/ não interceptar
           cliques de edit/toggle/delete. `touch-none` previne scroll-vs-drag em
@@ -144,7 +144,7 @@ export function LinkRow({ link, onMove, isFirst = false, isLast = false }: LinkR
       <button
         type="button"
         aria-label="Reordenar link"
-        className="-ml-1 touch-none cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-50"
+        className="-ml-1 touch-none cursor-grab text-muted-foreground transition-opacity hover:text-foreground active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-50 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
         {...attributes}
         {...listeners}
       >
