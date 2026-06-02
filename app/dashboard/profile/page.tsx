@@ -27,21 +27,30 @@ export default async function ProfilePage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <header className="space-y-1">
-        <h1 className="text-xl font-semibold tracking-tight">Seu perfil</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-h1">Seu perfil</h1>
+        <p className="text-body text-muted-foreground">
           Edite as informações que aparecem na sua página pública <code>/@{username}</code>.
         </p>
       </header>
-      <AvatarUpload
-        currentAvatarUrl={profile?.avatar_url ?? null}
-        displayName={profile?.display_name ?? null}
-        username={username}
-      />
-      <ProfileMetaForm
-        currentDisplayName={profile?.display_name ?? null}
-        currentBio={profile?.bio ?? null}
-      />
-      <UsernameForm currentUsername={username} />
+      <section className="space-y-3">
+        <h2 className="text-h3 font-medium">Foto</h2>
+        <AvatarUpload
+          currentAvatarUrl={profile?.avatar_url ?? null}
+          displayName={profile?.display_name ?? null}
+          username={username}
+        />
+      </section>
+      <section className="space-y-3">
+        <h2 className="text-h3 font-medium">Identidade</h2>
+        <ProfileMetaForm
+          currentDisplayName={profile?.display_name ?? null}
+          currentBio={profile?.bio ?? null}
+        />
+      </section>
+      <section className="space-y-3">
+        <h2 className="text-h3 font-medium">URL pública</h2>
+        <UsernameForm currentUsername={username} />
+      </section>
     </div>
   );
 }

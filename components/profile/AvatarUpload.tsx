@@ -55,10 +55,13 @@ export function AvatarUpload({ currentAvatarUrl, displayName, username }: Props)
 
   return (
     <div className="flex items-center gap-4">
-      <Avatar size="lg">
+      {/* Override 96×96 [Source: docs/frontend-spec.md §2.6 L638-641 — "AVATAR 96x96 circle"]. */}
+      {/* Avatar primitive Story 5.3 expõe apenas size-8/sm/lg=size-10 (40px); className size-24 */}
+      {/* via tailwind-merge final-wins evita refactor de primitive (escopo Story 5.3 fechado). */}
+      <Avatar size="lg" className="size-24">
         {previewUrl ? (
           <AvatarImage
-            render={<Image src={previewUrl} alt={altText} width={40} height={40} unoptimized />}
+            render={<Image src={previewUrl} alt={altText} width={96} height={96} unoptimized />}
           />
         ) : (
           <AvatarFallback>{initials}</AvatarFallback>
@@ -83,7 +86,7 @@ export function AvatarUpload({ currentAvatarUrl, displayName, username }: Props)
         >
           {isPending ? 'Enviando…' : 'Trocar avatar'}
         </Button>
-        <p className="text-xs text-muted-foreground">jpg, png ou webp — máx 1 MB</p>
+        <p className="text-xs text-muted-foreground">JPG, PNG ou WebP — máx 1 MB</p>
       </div>
     </div>
   );

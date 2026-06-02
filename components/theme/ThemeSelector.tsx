@@ -10,10 +10,18 @@ import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import { updateTheme } from '@/server/page/actions';
 
+/** LABELS UI-only — enum 'brand' preservado em DB + Theme type (Q3 §6 PRD v0.5 ratified 2026-05-29). */
 const LABELS: Record<Theme, string> = {
   light: 'Light',
   dark: 'Dark',
-  brand: 'Brand',
+  brand: 'Vibrante',
+};
+
+/** Descrições verbatim spec §2.7 L706/L715/L724 (frontend-spec.md v0.3). */
+const DESCRIPTIONS: Record<Theme, string> = {
+  light: 'Lavender mist',
+  dark: 'Deep plum night',
+  brand: 'Lavender + peach pop',
 };
 
 /**
@@ -89,7 +97,10 @@ export function ThemeSelector({
               <ThemePreview theme={theme} data={previewData} />
             </div>
             <div className="flex items-center justify-between">
-              <span className="font-medium">{LABELS[theme]}</span>
+              <div className="flex flex-col gap-0.5">
+                <span className="font-medium">{LABELS[theme]}</span>
+                <span className="text-body-sm text-muted-foreground">{DESCRIPTIONS[theme]}</span>
+              </div>
               {isPending ? (
                 <Loader2
                   className="h-4 w-4 animate-spin text-muted-foreground"
