@@ -61,11 +61,11 @@ describe('<LinkList>', () => {
 });
 
 describe('<EmptyState>', () => {
-  it('mostra ilustração + CTA "Adicione seu primeiro link" (AC8)', () => {
+  it('mostra ilustração soft blob + CTA "Adicionar link" (AC8 + Story 5.5 AC7)', () => {
     render(<EmptyState />);
 
-    expect(screen.getByText('Nenhum link ainda')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Adicione seu primeiro link' })).toBeInTheDocument();
+    expect(screen.getByText(/Adicione seu primeiro link/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Adicionar link/ })).toBeInTheDocument();
   });
 });
 

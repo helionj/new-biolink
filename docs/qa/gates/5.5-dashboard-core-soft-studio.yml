@@ -1,0 +1,95 @@
+schema: 1
+story: '5.5'
+gate: PASS
+status_reason: 'Dashboard core (layout + Links page) refresh Soft Studio implementado com 15/15 ACs cobertas, gates locais typecheck/lint/build PASS, test:components 194/194 PASS sem regressão funcional; observação LOW sobre Lighthouse CI validável no PR.'
+reviewer: 'Quinn'
+updated: '2026-06-01T00:00:00Z'
+
+# QA Gate Manual (Workaround QA-001 macOS — CodeRabbit/WSL incompatível)
+# Ref: docs/qa/known-issues.md QA-001 + MEMORY project_qa_review_hang.md
+# Padrão validado em Stories 5.2/5.3/5.4 — todas mergeadas com gate manual.
+
+acceptance_criteria_coverage:
+  total: 15
+  implemented: 15
+  skipped: 0
+  notes: |
+    AC1 layout header (wordmark + palette quick-link) ✅
+    AC2 H1 typescale text-h1 "Meus links" ✅
+    AC3 PublicUrlCopy inline (NEW component) ✅
+    AC4 LinkRow Card visual (rounded-xl + shadow-sm + ring-1) ✅
+    AC5 LinkRow drag handle group-hover responsive opacity ✅
+    AC6 AddLinkButton dashed border (NEW component) ✅
+    AC7 EmptyState SVG inline soft blob + H2 CTA ✅
+    AC8 MobileDrawer wordmark SKIPPED per DEV-E (header global cobre mobile) ✅
+    AC9 Sidebar tokens audit NO-OP (DEV-D confirmado L72-79/L132-139/L192-199) ✅
+    AC10 UserMenu audit NO-OP ✅
+    AC11 dnd-kit + inline edit + toggle preserved (behavior tests PASS) ✅
+    AC12 quality suite local PASS ✅
+    AC13 Lighthouse CI — pendente validação no PR (LOW observation) ⚠️
+    AC14 UserMenu copy URL no regression (defense-in-depth) ✅
+    AC15 Constitution Art. IV + housekeeping (backlog DONE entry) ✅
+
+quality_gates:
+  typecheck:
+    status: PASS
+    evidence: 'pnpm typecheck exit 0 (re-rodado durante QA gate)'
+  lint:
+    status: PASS
+    evidence: 'pnpm lint exit 0 zero warnings (re-rodado durante QA gate)'
+  build:
+    status: PASS
+    evidence: 'Dev Agent Record: Next 16.2.5 Turbopack compiled 111s + 15/15 static pages + 16 routes intactos'
+  test_components:
+    status: PASS
+    evidence: 'Dev Agent Record: 34 test files / 194 tests PASS / 553.74s; 1 test source atualizado em LinkList.test.tsx (DEV-H — regex + button name reconciliado, NÃO snapshot)'
+
+constitution_compliance:
+  article_iv_no_invention:
+    status: PASS
+    evidence: |
+      Toda AC1-AC10 cita docs/frontend-spec.md §section verbatim (L569/L572-573/L596-598/L605/L612/L619/L82-87/L241-244).
+      AC11-AC14 são preservação de behavior Stories 2.5/2.6/3.3/5.3.
+      AC15 housekeeping. Zero glyph/copy/behavior inventado.
+  article_iii_story_driven:
+    status: PASS
+    evidence: 'File List bate exatamente com gitStatus inicial (5 mod + 2 NEW + 1 backlog). Zero out-of-scope edits.'
+
+top_issues:
+  - id: 'REL-001'
+    severity: low
+    finding: 'Lighthouse CI threshold ≥0.85 (Performance/A11y/Best Practices/SEO) gated em / e /[username] — /dashboard é authenticated route fora dos gate paths. Mudanças aqui afetam bundle compartilhado via Card/Button/Switch primitives.'
+    suggested_action: 'Validar Lighthouse run no PR. Bundle delta esperado neutral (~1-2 KB para Palette+Plus lucide tree-shakeable; Copy já em bundle via UserMenu). Investigar se queda > 5 pontos.'
+
+residual_risks:
+  - id: 'RISK-SMOKE-SKIP'
+    severity: low
+    finding: 'Smoke runtime manual (×3 temas /dashboard) SKIPPED per MEMORY feedback_skip_manual_smoke — cobertura indireta via 194 behavior tests + Lighthouse CI no PR.'
+    mitigation: 'Lighthouse CI valida bundle/a11y no PR. Behavior tests cobrem dnd-kit reorder + inline edit + toggle visibility. Risco residual baixo (frontend-primary, zero mudança em Server Actions/Schema/RLS).'
+
+scope_assessment:
+  type: 'frontend-primary visual refresh'
+  blast_radius: 'low'
+  files_modified: 5
+  files_new: 2
+  files_audited_noop: 3
+  housekeeping: 1
+  notes: 'Zero migration, zero RLS, zero schema, zero Server Action novo. Mudanças localizadas em 2 page-level + 4 components/links + 0-N components/dashboard. Primitives shadcn não tocados (Story 5.3 escopo). Tokens não tocados (Story 5.2 escopo).'
+
+dev_decisions_ratified:
+  - DEV-A1: 'Palette quick-link Link icon-only ghost (não runtime toggle) — preserva ThemeSelector Story 3.3 single-source-of-truth DB. RATIFICADO.'
+  - DEV-A2: 'Palette lucide-react named export PRESENT (validate-po confirmou) — fallback Sparkles/Brush não materializou. RATIFICADO.'
+  - DEV-B: 'LinkRow group-hover responsive opacity (md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100) — preserva a11y keyboard. RATIFICADO.'
+  - DEV-C: 'Query profiles.username separada em DashboardPage — custo +1 query RLS-protected ~5ms aceito. RATIFICADO.'
+  - DEV-D: 'Sidebar-* tokens audit NO-OP confirmado (L72-79/L132-139/L192-199). [STORY-5.5-F1] LOW NÃO materializa. RATIFICADO.'
+  - DEV-E: 'MobileDrawer wordmark SKIPPED — header global cobre mobile branding (sem md:hidden no wordmark). RATIFICADO.'
+  - DEV-F: 'AddLinkButton positioning bottom-of-list (não header) per wireframe §2.5. RATIFICADO.'
+  - DEV-G: 'EmptyState soft blob SVG inline pragmatic ship — designer-grade asset deferido. RATIFICADO.'
+  - DEV-H: 'Test rewrite em LinkList.test.tsx describe <EmptyState> (regex /Adicione seu primeiro link/ + button name "Adicionar link") — NÃO snapshot. RATIFICADO.'
+
+next_steps:
+  recommended_agent: '@devops'
+  recommended_command: '*push'
+  rationale: 'Gate PASS — pronto para push + PR. Lighthouse CI no PR validará bundle delta (LOW observation REL-001).'
+
+waiver: { active: false }

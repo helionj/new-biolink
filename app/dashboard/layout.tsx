@@ -1,3 +1,5 @@
+import { Palette } from 'lucide-react';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 
@@ -5,6 +7,7 @@ import { EmailVerificationBanner } from '@/components/dashboard/EmailVerificatio
 import { MobileDrawer } from '@/components/dashboard/MobileDrawer';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 import { UserMenu } from '@/components/dashboard/UserMenu';
+import { buttonVariants } from '@/components/ui/button';
 import { env } from '@/lib/env';
 import { createClient } from '@/lib/supabase/server';
 
@@ -28,9 +31,19 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     <div className="flex min-h-screen bg-background">
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center gap-2 border-b border-border px-4 py-3">
+        <header className="flex items-center gap-3 border-b border-border px-4 py-3">
           <MobileDrawer />
-          <div className="ml-auto">
+          <Link href="/dashboard" className="text-h3 lowercase">
+            biolink
+          </Link>
+          <div className="ml-auto flex items-center gap-1">
+            <Link
+              href="/dashboard/theme"
+              aria-label="Mudar tema"
+              className={buttonVariants({ variant: 'ghost', size: 'icon' })}
+            >
+              <Palette className="size-4" aria-hidden="true" />
+            </Link>
             <UserMenu
               username={profile?.username ?? ''}
               displayName={profile?.display_name ?? null}

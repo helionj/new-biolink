@@ -1,9 +1,10 @@
 import { redirect } from 'next/navigation';
 
-import { AddLinkModal } from '@/components/links/AddLinkModal';
+import { PublicUrlCopy } from '@/components/dashboard/PublicUrlCopy';
+import { AddLinkButton } from '@/components/links/AddLinkButton';
 import { EmptyState } from '@/components/links/EmptyState';
 import { LinkList } from '@/components/links/LinkList';
-import { Button } from '@/components/ui/button';
+import { env } from '@/lib/env';
 import { createClient } from '@/lib/supabase/server';
 import type { Tables } from '@/lib/supabase/types';
 
@@ -19,6 +20,12 @@ export default async function DashboardPage() {
   if (!user) {
     redirect('/login');
   }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', user.id)
+    .single();
 
   // page 1:1 garantida pelo trigger da Story 2.2. Query direta a `pages` (não
   // embed `profiles.pages` — typegen o tipa como array mas o PostgREST retorna
@@ -45,19 +52,14 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <header className="flex items-center justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-xl font-semibold tracking-tight">Seus links</h1>
-          <p className="text-sm text-muted-foreground">
-            Gerencie os links que aparecem na sua página pública.
-          </p>
-        </div>
-        {links.length > 0 && (
-          <AddLinkModal trigger={<Button type="button">Adicionar link</Button>} />
-        )}
+      <header className="space-y-2">
+        <h1 className="text-h1">Meus links</h1>
+        <PublicUrlCopy username={profile?.username ?? ''} siteUrl={env.NEXT_PUBLIC_SITE_URL} />
       </header>
 
       {links.length === 0 ? <EmptyState /> : <LinkList links={links} />}
+
+      {links.length > 0 && <AddLinkButton />}
     </div>
   );
 }
