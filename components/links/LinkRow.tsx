@@ -42,8 +42,14 @@ export function LinkRow({ link, onMove, isFirst = false, isLast = false }: LinkR
   // useSortable funciona dentro de um SortableContext (LinkList) — fora dele,
   // os hooks degradam para um no-op (sem transform/listeners ativos), o que
   // permite o uso isolado em testes/storybook.
+  // Story 5.8: transition override 250ms ease-spring (--ease-spring per spec
+  // §1.5.2 L321 "playful overshoot (drag-drop drop)" + §3.1 L942 250ms drop).
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: link.id,
+    transition: {
+      duration: 250,
+      easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+    },
   });
 
   const style: React.CSSProperties = {
