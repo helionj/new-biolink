@@ -1,6 +1,12 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+/* Excluir docs/ do auto-detection do Tailwind v4 — story files contêm
+   padrões literais como `duration-*` em comentários técnicos que o scanner
+   tentaria compilar como utilities inválidas (asterisco literal em CSS
+   var() quebra parse). Fix Story 5.8 build error. */
+@source not "../docs/**";
+
 @custom-variant dark (&:is(.dark *));
 
 /* -------------------------------------------------------------------------- */
