@@ -2,6 +2,7 @@ import { BarChart3Icon, CodeIcon, ExternalLinkIcon, ShieldCheckIcon } from 'luci
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import { Wordmark } from '@/components/brand/Wordmark';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { createClient } from '@/lib/supabase/server';
@@ -55,9 +56,7 @@ export default async function Home() {
     <>
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm">
         <div className="mx-auto flex h-14 max-w-screen-lg items-center justify-between px-6">
-          <Link href="/" className="text-h3 lowercase">
-            biolink
-          </Link>
+          <Wordmark href="/" size="md" />
           {!user && (
             <Link href="/login" className={buttonVariants({ variant: 'ghost' })}>
               Entrar

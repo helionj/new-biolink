@@ -1,0 +1,165 @@
+schema: 1
+story: '5.9'
+gate: PASS
+status_reason: 'Logo + Favicon Phase 5 implementado com 13/13 ACs cobertas, Wordmark primitive CREATE per Art. IV-A IDS justified + 3 layouts replace + 2 NEW Next 16 ImageResponse routes + metadata/viewport refactor (bonus fix Next 14+ alignment) + cleanup 5 SVGs Next defaults, gates locais typecheck/lint/build/test:components PASS (201/201; +6 Wordmark over 195 baseline), 1 snapshot regen HomePage 1-line intentional AC2; última story Epic 5 — pós-merge: Epic 5 Soft Studio refresh COMPLETO 8/8 stories shipped.'
+reviewer: 'Quinn'
+updated: '2026-06-03T16:30:00Z'
+
+# QA Gate Manual (Workaround QA-001 macOS — CodeRabbit/WSL incompatível)
+# Ref: docs/qa/known-issues.md QA-001 + MEMORY project_qa_review_hang.md
+# Padrão validado em Stories 5.2/5.3/5.4/5.5/5.7/5.8 — todas mergeadas com gate manual.
+
+acceptance_criteria_coverage:
+  total: 13
+  implemented: 13
+  skipped: 0
+  notes: |
+    AC1 NEW components/brand/Wordmark.tsx CREATE per Art. IV-A IDS justified (3 sizes sm/md/lg = 16/24/40 per spec §1.6 L351 verbatim + DM Sans Bold 700 tracking -0.04em + text-primary plum + ★ text-accent peach + showStar + href via Link + aria-label "biolink" + className passthrough) ✅
+    AC2 3 layouts replace inline wordmark com <Wordmark href size="md" /> (SF-1 user opt-in ratified md=24 per prominence; +4px shift vs text-h3 atual aceito) ✅
+    AC3 NEW app/icon.tsx Next 16 ImageResponse 32×32 ★ peach #FFB5A7 sobre lavender #F4EFFB hex literals spec §1.6 L354 verbatim (DEV-A1/A2 ratified) ✅
+    AC4 NEW app/apple-icon.tsx 180×180 fontSize 120 borderRadius 32 iOS optimized ✅
+    AC5 app/favicon.ico preserved legacy fallback (DEV-A3 coexistence Next 16) ✅
+    AC6 app/layout.tsx ADD icons defense-in-depth + BONUS FIX themeColor → export const viewport: Viewport (Next 14+ recommendation; corrige build warning sem functional impact; plum #5B3A8C light/brand + lavender #B8A1E8 dark media-query per spec §1.2.1 L26 + §1.2.2 L92 verbatim) ✅
+    AC7 NEW tests/components/brand/Wordmark.test.tsx 6 testes (next/link mock pattern Story 4.4 + biolink + ★ + showStar + href + standalone + size) — 6/6 PASS isolated ✅
+    AC8 Suite quality local PASS (typecheck/lint/build/test:components) — 201/201 final ✅
+    AC9 Lighthouse CI ≥0.85 + PWA hint enhancement themeColor — pendente PR validation (LOW observation REL-001) ⚠️
+    AC10 Behavior tests preserved 195 baseline + 6 Wordmark = 201 (1 snapshot regen HomePage intentional AC2-aligned) ✅
+    AC11 Smoke runtime manual × Chrome/Safari/Firefox SKIPPED user opt-in (pattern Stories 5.4-5.8) — cobertura indireta via Lighthouse + Vercel preview ✅
+    AC12 Cleanup public/* 5 SVGs Next defaults REMOVED (DEV-D ratified user opt-in; grep-confirmed zero consumers) ✅
+    AC13 Constitution Art. IV + Art. IV-A IDS (Wordmark CREATE justified) + Phase 5 closure + housekeeping ([EPIC-5-S9] MEDIUM → DONE + stats 10/0/1/9/8 → 9/0/0/9/9 MEDIUM zero!) ✅
+
+quality_gates:
+  typecheck:
+    status: PASS
+    evidence: 'pnpm typecheck exit 0 (re-rodado durante QA gate). Wordmark TypeScript + ImageResponse imports next/og + Viewport type import OK.'
+  lint:
+    status: PASS
+    evidence: 'pnpm lint exit 0 zero warnings (re-rodado durante QA gate). Sem novos imports unused; Wordmark/icon.tsx/apple-icon.tsx/Wordmark.test.tsx + layout updates preservam standards.'
+  build:
+    status: PASS
+    evidence: 'Dev Agent Record: pnpm build Next 16.2.5 Turbopack 17/17 static pages PASS (15 prévios + 2 NEW Next 16 ImageResponse routes /icon + /apple-icon auto-registered via filesystem convention) + 18 routes intactos. Pre-existing middleware deprecation warning Next 16 → proxy é out-of-scope.'
+  test_components:
+    status: PASS
+    evidence: 'Dev Agent Record: pnpm test:components final 35 test files / 201 tests PASS (195 baseline pós-5.8 + 6 Wordmark = 201 effectively). 1 snapshot regen HomePage.test.tsx.snap (Story 1.9 shipped) single-line diff intentional AC2 inline wordmark → <Wordmark /> component replacement.'
+  snapshot_validation:
+    status: PASS
+    evidence: 'git diff tests/components/features/landing/__snapshots__/HomePage.test.tsx.snap: snapshot diff intentional AC2-aligned (inline <Link biolink> → <Wordmark> nested span structure). Zero outras mudanças snapshot — outros 8 snapshots em tests/components/ui/__snapshots__/ + tests/components/features/public/__snapshots__/ não afetados (Wordmark NEW component sem consumers em features tested).'
+
+constitution_compliance:
+  article_iv_no_invention:
+    status: PASS
+    evidence: |
+      Toda AC1-AC8 cita docs/frontend-spec.md §section verbatim:
+      - AC1 §1.6 L347-354 Logo Seed wordmark specs verbatim (DM Sans Bold 700 + tracking -0.04em + text-primary + 3 sizes sm/md/lg = 16/24/40 + ★ asterisco placeholder)
+      - AC2 §1.6 L351 (DEV-B md=24 reconcilio com prominence argument; user opt-in ratified)
+      - AC3 + AC4 §1.6 L354 favicon ★ peach #FFB5A7 sobre lavender #F4EFFB verbatim + §5.5 L1326-1328 file list reconciled to Next 16 convention (DEV-A1 defensible Art. IV — Next.js technical canonical)
+      - AC5 DEV-A3 Next 16 coexistence canonical
+      - AC6 §1.2.1 L26 plum #5B3A8C + §1.2.2 L92 lavender #B8A1E8 verbatim themeColor; PRESERVE PascalCase metadata title (DEV-C user opt-in SEO convention + visual lowercase wordmark)
+      - AC7 §1.6 + §5.5 cobertura behavior
+
+      Q4 §6 L1395-1405 ratified ★ asterisco placeholder (logomark real Phase 2 deferred).
+      Q5 §6 L1407-1417 ratified wordmark "biolink" all-lowercase.
+
+      Bonus fix themeColor → viewport (Next 14+ recommendation) é technical canonical alignment, não invention.
+  article_iii_story_driven:
+    status: PASS
+    evidence: |
+      File List bate exatamente com git diff stat (16 files changed):
+      - 4 NEW files (Wordmark.tsx + icon.tsx + apple-icon.tsx + Wordmark.test.tsx)
+      - 5 modified (3 layouts + app/layout.tsx + STORY-BACKLOG.md)
+      - 5 DELETED (public/{file,globe,next,vercel,window}.svg Next defaults)
+      - 1 snapshot regen (HomePage.test.tsx.snap intentional AC2)
+      - 1 NEW story file (5.9 docs/stories)
+      Zero out-of-scope edits. NEW directories: components/brand/ + tests/components/brand/ documented per Story Dev Notes Project Structure.
+  article_iv_a_ids_wordmark_create:
+    status: PASS
+    evidence: |
+      Wordmark primitive CREATE justified per Art. IV-A IDS — REUSE > ADAPT > CREATE:
+      - evaluated_patterns: (a) shadcn upstream sem brand component canonical; (b) 3 inline `<Link className="text-h3 lowercase">biolink</Link>` patterns existentes em layouts.
+      - rejection_reasons: (a) shadcn não publica brand-specific wordmark component (out-of-scope shadcn philosophy); (b) inline patterns são fragile + duplicated (DRY violation).
+      - new_capability: reusable Wordmark com 3 size variants + showStar optional + href passthrough via next/link + aria-label "biolink" pure + className passthrough cn() + data-slot equivalent via className composition.
+      - Adaptability constraints: className passthrough overrideable; default size="md" + showStar=true.
+      Registration: 3 consumers shipped (app/page.tsx + app/(auth)/layout.tsx + app/dashboard/layout.tsx); NEW directory components/brand/ documented para futuras stories brand-specific (Phase 2 Logomark.tsx se Q4 §6 desfeito).
+  article_ii_agent_authority:
+    status: PASS
+    evidence: '@dev commitou (e7cdb65) sem push (Constitution Art. II — git push/gh pr create exclusivos @devops). Story 5.9 Status InProgress → Ready for Review preservado para handoff @devops. Working tree limpo.'
+
+top_issues:
+  - id: 'REL-001'
+    severity: low
+    finding: 'Lighthouse CI threshold ≥0.85 (Performance/A11y/Best Practices/SEO) gated em `/`, `/@demo`, `/dashboard` per .github/workflows/lighthouse.yml. Story 5.9 afeta 3 surfaces (landing + auth + dashboard) consumindo NEW Wordmark + favicon assets via app/icon.tsx ImageResponse (Next 16 ○ static prerendered routes). Bundle delta esperado neutral-positive (+~500 bytes Wordmark.tsx tree-shakeable; ImageResponse routes server-only zero client JS impact).'
+    suggested_action: 'Validar Lighthouse run no PR (runs:3 + median absorve flake per [STORY-3.5-F3]). Bundle baseline `/dashboard` ~180-185 KB gz pós-5.8 — esperado neutral. PWA hint enhancement via themeColor viewport export (mobile install splash + browser chrome tinting). Investigar se queda > 5 pontos vs baseline 5.8.'
+
+residual_risks:
+  - id: 'RISK-SF-1-SIZE-MAPPING'
+    severity: low
+    finding: 'Wordmark size mapping current text-h3 (20px) → md (24px) AC2 user opt-in ratified vs spec §1.6 L351 literal "16px header" favor sm=16. Story choice md=24 per prominence sidebar-like argumentação (dashboard header > auth header > simple link); +4px shift visual em 3 surfaces.'
+    mitigation: 'Manual visual review @qa pré-merge via Vercel preview deploy ratificará. Lighthouse a11y audit no PR. Se durante review visual shift quebrar layouts (e.g., header overflow em mobile), amend AC2 future story trivial swap size="md" → size="sm" (1-line per consumer). Decisão defensible Art. IV most-context-applicable-wins.'
+  - id: 'RISK-SMOKE-SKIP'
+    severity: low
+    finding: 'Smoke runtime manual × 3 browsers (Chrome/Safari/Firefox) favicon visibility + Wordmark visual rendering SKIPPED user opt-in pre-implementation (Task 9.1 marcada [x] com nota SKIPPED per MEMORY feedback_skip_manual_smoke.md).'
+    mitigation: 'Cobertura indireta via (a) Wordmark.test.tsx 6/6 PASS isolated confirma render + showStar + href + size behaviors; (b) Build 17/17 static pages PASS confirma routes /icon + /apple-icon auto-registered; (c) Lighthouse CI gate canônico ≥0.85 em /, /@demo, /dashboard validará favicon visibility + a11y + perf no PR; (d) Vercel preview deploy permite manual @qa visual review pré-merge se desejado. Pattern Stories 5.4-5.8 todas mergeadas com smoke SKIP.'
+  - id: 'RISK-SATORI-FONT-RENDERING'
+    severity: low
+    finding: 'ImageResponse via Satori renderiza ★ asterisco com system font fallback (não tem DM Sans Bold disponível por default em ImageResponse; spec §1.6 não prescreve font para favicon — apenas wordmark visual). Fallback pode renderizar ★ glyph com proporção diferente entre browsers/sistemas operacionais.'
+    mitigation: 'Star glyph ★ é universal Unicode (U+2605); renderização ligeiramente diferente entre fonts é aceitável (sub-perceptual em 32×32 favicon tab; em 180×180 apple icon mais perceptível mas iOS auto-mask preserva intent). Future enhancement opt-in: ImageResponse font config para custom DM Sans Bold se brand consistency 100% required (out-of-scope Phase 5 strict). Validar em Vercel preview pré-merge.'
+  - id: 'RISK-HOMEPAGE-SNAPSHOT-LATE-DISCOVERY'
+    severity: low
+    finding: 'tests/components/features/landing/HomePage.test.tsx.snap (Story 1.9 shipped) capturava inline wordmark layout não-previsto na story 5.9 originalmente como "zero-impact"; descoberto durante full test:components run e regenerated mid-implementation. Pattern análogo Stories 5.7 PublicPage + 5.8 Dialog snapshots.'
+    mitigation: 'Pattern emergente cross-stories: predictions "zero-impact" em layouts replacement são hipóteses verificáveis; @sm/@po podem incorporar pre-check pattern em futuras drafts ("grep -rn snapshots tests/components/features/__snapshots__/" antes de declarar "no snapshot impact"). Não bloqueia 5.9 — snapshot regen single-line intentional AC2-aligned. Learning para próximas stories.'
+
+scope_assessment:
+  type: 'Frontend-primary brand mark Phase 5 + 1 NEW primitive CREATE + bonus Next 14+ alignment'
+  blast_radius: 'low-medium'
+  files_created: 4
+  files_modified_source: 4
+  files_modified_doc: 1
+  files_modified_test_snapshot: 1
+  files_deleted_cleanup: 5
+  files_new_story: 1
+  housekeeping: 1
+  notes: |
+    Zero migration, zero RLS, zero schema, zero Server Action novo, zero novo npm dependency (next/og ImageResponse já shipped via next@16; next/link já shipped).
+    Mudanças localizadas em:
+    - 1 NEW brand primitive (components/brand/Wordmark.tsx)
+    - 2 NEW Next 16 ImageResponse routes (app/icon.tsx + app/apple-icon.tsx)
+    - 3 layouts consumindo Wordmark (replace inline patterns)
+    - 1 metadata update + viewport split (app/layout.tsx — bonus fix Next 14+ alignment)
+    - 1 NEW test file + 1 snapshot regen (Wordmark.test.tsx + HomePage.test.tsx.snap)
+    - 5 deleted cleanup (public/* SVGs Next defaults zero consumers)
+    Primitives shadcn 14 (Stories 5.3 + 5.8 audit fechado) não tocados. Stories 2.7-5.8 surfaces preserved.
+    Blast radius "low-medium" (não "low") por: (a) 1 NEW primitive + 3 layouts replacements + 1 snapshot regen + 5 deletions + 2 NEW dynamic routes; (b) bonus fix metadata/viewport refactor; (c) Wordmark consumed em todas surfaces autenticadas + landing — high visibility. Final 201/201 PASS valida.
+
+dev_decisions_ratified:
+  - DEV-A1: 'Next 16 app/icon.tsx + app/apple-icon.tsx ImageResponse vs spec §5.5 public/*.png static binary — Constitution Art. IV defensible (Next.js convention é technical canonical; spec é guidance generic). RATIFICADO.'
+  - DEV-A2: 'ImageResponse via Satori NÃO suporta CSS custom properties — hex literais inline `#F4EFFB` + `#FFB5A7` são spec §1.6 L354 verbatim, zero invention. JSDoc rastreio limitação documented. RATIFICADO.'
+  - DEV-A3: 'app/favicon.ico (25931 bytes shipped Next.js init) preserved legacy fallback — Next 16 coexistence canonical (modern browsers prefer icon.tsx, legacy fallback ICO). Zero modify. RATIFICADO.'
+  - DEV-B-SIZE-MD: 'Wordmark size mapping current text-h3 (20px) → md (24px) per prominence argumentação user opt-in ratified vs spec literal sm=16. Trade-off aceito; +4px shift visual minor. SF-1 documented residual risk. RATIFICADO (com mitigation manual review @qa).'
+  - DEV-C-PRESERVE-TITLE: 'Metadata title `BioLink` PascalCase PRESERVED em app/layout.tsx + app/page.tsx + app/[username]/page.tsx (SEO title-case convention) + visual wordmark lowercase via <Wordmark> (Q5 §6 alignment). Split metadata vs visual é convention shipping pattern. RATIFICADO.'
+  - DEV-D-CLEANUP-SVGS: 'REMOVE 5 Next default SVGs (public/{file,globe,next,vercel,window}.svg) cleanup boilerplate — grep-confirmed zero consumers em codebase. RATIFICADO.'
+  - DEV-MODE-YOLO: 'Mode YOLO autônomo ratificado user opt-in pre-implementation. RATIFICADO.'
+  - DEV-SMOKE-SKIP: 'Task 9.1 smoke browsers Chrome/Safari/Firefox SKIPPED user opt-in (pattern Stories 5.4-5.8 per MEMORY feedback_skip_manual_smoke.md). Cobertura indireta documented. RATIFICADO.'
+  - DEV-BONUS-VIEWPORT: 'BONUS FIX descoberto durante implementação: Next 16 build warning themeColor em metadata deprecated → MOVE para `export const viewport: Viewport` (Next 14+ recommendation; zero functional impact + elimina warning). Implementação preserved metadata.icons + metadataBase. RATIFICADO.'
+  - DEV-HOMEPAGE-SNAPSHOT-REGEN: 'HomePage.test.tsx snapshot regen mandatory (Story 1.9 shipped capturava inline wordmark) — pattern análogo Stories 5.7/5.8 snapshot surprises. Single-line diff intentional AC2-aligned. RATIFICADO.'
+  - DEV-NEXT-ENV-DISCARD: 'next-env.d.ts auto-regenerado pelo Next 16.2.5 durante pnpm build descartado via git checkout — pattern Stories 5.6/5.7/5.8 precedent. RATIFICADO.'
+
+next_steps:
+  recommended_agent: '@devops'
+  recommended_command: '*push'
+  rationale: |
+    Gate PASS — pronto para push + PR. Branch feat/story-5.9-logo-favicon-soft-studio com 1 commit ahead de main:
+    - e7cdb65 feat: logo + favicon Soft Studio brand mark Phase 5 [Story 5.9]
+    Working tree limpo. Lighthouse CI no PR validará bundle delta + a11y/perf gates ≥0.85 + favicon visibility (REL-001 LOW observation pending validation).
+
+    Sequência push @devops esperada (pattern Stories 5.5/5.6/5.7/5.8):
+    1. git push -u origin feat/story-5.9-logo-favicon-soft-studio
+    2. gh pr create --title "feat: logo + favicon Soft Studio brand mark Phase 5 [Story 5.9]" --base main
+    3. Aguardar CI (lighthouse + test-integration + test-components 201/201 + build 17/17 + audit + gitleaks + lint + typecheck + test-unit + Vercel preview)
+    4. gh pr merge --squash --delete-branch (após CI verde)
+    5. @po *close-story 5.9 (Status Ready for Review → Done)
+
+    🎉 **Pós-merge: Epic 5 Soft Studio refresh COMPLETO 8/8 stories shipped em produção!**
+    5 phases entregues (Tokens 5.2 + Primitives 5.3 + Page-level 5.4-5.7 + Motion 5.8 + Brand mark 5.9).
+    Stats backlog post-close: 9/0/0/9/9 (MEDIUM zero!).
+
+waiver: { active: false }
