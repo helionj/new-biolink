@@ -28,9 +28,12 @@ vi.mock('next/link', () => ({
 }));
 
 // recharts → mock leve para evitar canvas/SVG no jsdom.
+// AreaChart + Area adicionados em Story 5.7 (switch LineChart → AreaChart + peach gradient under per spec §2.8 L775-777).
 vi.mock('recharts', () => {
   const Passthrough = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
   return {
+    AreaChart: Passthrough,
+    Area: () => null,
     LineChart: Passthrough,
     Line: () => null,
     XAxis: () => null,

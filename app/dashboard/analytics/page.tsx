@@ -136,8 +136,9 @@ export default async function AnalyticsPage({ searchParams }: Props) {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <header>
-        <h1 className="text-xl font-semibold tracking-tight">Analytics</h1>
+      <header className="space-y-1">
+        <h1 className="text-h1">Analytics</h1>
+        <p className="text-body text-muted-foreground">Como sua página tá indo.</p>
       </header>
 
       <section aria-label="Métricas principais" className="grid grid-cols-2 gap-4 md:grid-cols-4">

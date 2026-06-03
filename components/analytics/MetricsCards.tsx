@@ -23,7 +23,7 @@ export function MetricsCards(props: Props) {
         <Card key={card.key} data-testid={card.testId}>
           <CardHeader className="pb-2">
             <CardDescription>{card.label}</CardDescription>
-            <CardTitle className="text-3xl tabular-nums">
+            <CardTitle className="text-h2 tabular-nums text-primary">
               {props[card.key].toLocaleString('pt-BR')}
             </CardTitle>
           </CardHeader>
