@@ -1,0 +1,142 @@
+schema: 1
+story: '5.7'
+gate: PASS
+status_reason: 'Analytics + Public Soft Studio refresh implementado com 15/15 ACs cobertas, gates locais typecheck/lint/build/test:components PASS (195/195 baseline pós-5.6 preservado), snapshot regenerate PublicPage validado por git diff (18 line diffs exatos), 2 test rewrites mandatórios documentados; 1 observação LOW sobre Lighthouse CI `/@demo` validável no PR.'
+reviewer: 'Quinn'
+updated: '2026-06-03T13:00:00Z'
+
+# QA Gate Manual (Workaround QA-001 macOS — CodeRabbit/WSL incompatível)
+# Ref: docs/qa/known-issues.md QA-001 + MEMORY project_qa_review_hang.md
+# Padrão validado em Stories 5.2/5.3/5.4/5.5 — todas mergeadas com gate manual; 5.6 sem gate file (close direto pós-merge).
+
+acceptance_criteria_coverage:
+  total: 15
+  implemented: 15
+  skipped: 0
+  notes: |
+    AC1 Analytics page H1 (text-h1) + subtitle "Como sua página tá indo." (spec §2.8 L754 verbatim) + header space-y-1 ✅
+    AC2 MetricsCards big number text-h2 tabular-nums text-primary (plum §2.8 L759) ✅
+    AC3 TimeSeriesChart switch <LineChart>/<Line> → <AreaChart>/<Area> + <defs><linearGradient> peach var(--accent) 0.35→0 + preserva stroke plum var(--primary) + dot=false + isAnimationActive=false + gap-fill + sr-only table (DEV-A ratified) ✅
+    AC4 TimeSeriesChart figure rounded-lg → rounded-xl + figcaption H2 text-sm → text-h3 font-medium + ToggleLink rounded-md → rounded-lg ✅
+    AC5 LinksTable rounded-lg → rounded-xl (DEV-C SKIP inline bar ratified pre-implementation — wireframe ilustrativo, tabela atual mais rica) ✅
+    AC6 EmptyAnalyticsState rounded-lg → rounded-xl + H2 text-lg font-semibold → text-h3 font-medium + body text-sm → text-body + copy reconcile spec §2.8 L801 verbatim com fallback condicional username + CTA text-sm → text-body-sm ✅
+    AC7 AnalyticsLoadingSkeleton SkeletonBar rounded-md → rounded-xl + H1 placeholder h-7 → h-8 ✅
+    AC8 PublicPage h1 text-2xl font-semibold tracking-tight → text-h1 text-primary text-center (spec §2.10 L878 "H1 32, plum, centered") ✅
+    AC9 PublicPage bio <p text-center text-muted-foreground> → <p text-body text-center text-muted-foreground> (spec §2.10 L880) ✅
+    AC10 PublicLinkCard transition-colors hover:bg-accent → transition-all hover:bg-accent hover:shadow-md (spec §2.10 L887) ✅
+    AC11 Snapshot regenerate PublicPage — 3 snapshots × 3 className strings = 18 line diffs (9+/9-) exatos no .snap (DEV-B ratified); zero outras mudanças estruturais (avatar fallback + svg lucide user + main flex layout intactos) ✅
+    AC12 Analytics + Public behavior tests preservados — final 195/195 PASS pós-2 test rewrites mandatórios (TimeSeriesChart mock + EmptyAnalyticsState copy) ✅
+    AC13 quality suite local PASS — typecheck/lint/build/test:components ✅
+    AC14 Lighthouse CI `/@demo` — pendente validação no PR (LOW observation; gate path canônico `.github/workflows/lighthouse.yml:72`) ⚠️
+    AC15 Constitution Art. IV + housekeeping (backlog [EPIC-5-S7] MEDIUM → DONE + stats 12/0/3/9/6 → 11/0/2/9/7 + narrative Epic 5 update + last_updated reconcile + Change Log DONE entry) ✅
+
+quality_gates:
+  typecheck:
+    status: PASS
+    evidence: 'pnpm typecheck exit 0 (re-rodado durante QA gate). recharts AreaChart/Area types preservam — mesmo namespace.'
+  lint:
+    status: PASS
+    evidence: 'pnpm lint exit 0 zero warnings (re-rodado durante QA gate). Sem novos imports unused; React 19 Server/Client Component boundaries preservados (TimeSeriesChart já use client shipped).'
+  build:
+    status: PASS
+    evidence: 'Dev Agent Record: pnpm build Next 16.2.5 Turbopack 15/15 static pages PASS + 16 routes intactos (Routes: / [auth][dashboard]/* /[username] /api/track/* /dev/themes /signup /login /reset-password*).'
+  test_components:
+    status: PASS
+    evidence: 'Dev Agent Record: final run 34 test files / 195 tests PASS / 12m47s (767.24s). Baseline pós-5.6 (195/195) preservado integralmente. 2 test rewrites mandatórios documentados (TimeSeriesChart mock + EmptyAnalyticsState copy).'
+  snapshot_validation:
+    status: PASS
+    evidence: 'git diff tests/components/features/public/__snapshots__/PublicPage.test.tsx.snap: 18 line diffs (9+/9-) exatos conforme predição AC11 — 3 snapshots × 3 className strings (h1 + bio p + link <a>); zero outras mudanças estruturais validadas.'
+
+constitution_compliance:
+  article_iv_no_invention:
+    status: PASS
+    evidence: |
+      Toda AC1-AC11 cita docs/frontend-spec.md §section verbatim:
+      - AC1 §2.8 L753-754 (Analytics H1 + subtitle "Como sua página tá indo." verbatim)
+      - AC2 §2.8 L759 (H2 big number, plum) + §1.2 L122 plum #5B3A8C
+      - AC3 §2.8 L775-777 (Linha smooth + primary color + gradiente sutil bg under) + §1.2 L138 peach #FFB5A7
+      - AC4 §1.4.2 radius scale + §1.3.2 typescale
+      - AC5 §2.8 L785-794 wireframe + §1.4.2
+      - AC6 §2.8 L801 copy verbatim + §1.4.2 + §1.3.2
+      - AC7 §1.4.2 radius scale
+      - AC8 §2.10 L878 "H1 32, plum, centered" verbatim
+      - AC9 §2.10 L880 "Body 16, muted-fg, centered" verbatim
+      - AC10 §2.10 L886-887 "border 1px lavender; hover: shadow-md" verbatim
+      - AC11 §2.10 L878-880 + L886-887 (snapshot regenerate rastreado para spec verbatim — não invention)
+      AC12-AC15 são preservação de behavior + gates + housekeeping. Zero glyph/copy/behavior inventado.
+
+      Lighthouse threshold reconciliation: backlog dizia "≥0.90" mas .lighthouserc.json L11-14 actual gate é minScore: 0.85 — story reconciliou em AC14 ("≥0.85 actual gate, não 0.90 não-vigente"); reconciliação consciente documentada, não invention.
+  article_iii_story_driven:
+    status: PASS
+    evidence: |
+      File List bate exatamente com git diff stat (13 files changed):
+      - 8 source files modified (1 page + 5 analytics components + 2 public components)
+      - 2 test files modified (TimeSeriesChart mock + EmptyAnalyticsState copy)
+      - 1 snapshot file modified (PublicPage)
+      - 1 backlog doc modified (STORY-BACKLOG.md)
+      - 1 new story file created (5.7 story)
+      Zero out-of-scope edits. Files NOT modified (preservados per AC12 negative): app/[username]/page.tsx, server/page/queries.ts, components/public/TrackedLinkCard.tsx, components/public/ViewBeacon.tsx, app/api/track/*, components/ui/*, app/globals.css, lib/theme.ts, supabase/migrations/*.
+  article_ii_agent_authority:
+    status: PASS
+    evidence: 'Pre-existing chore commit 4b90a18 (chore(story-5.6): close Done post-merge) feito autônomo por @dev ANTES de iniciar work 5.7 — housekeeping @po close-story 5.6 da sessão anterior. @dev NÃO executou git push / gh pr create (Constitution Art. II — exclusivos @devops). Story 5.7 Status InProgress → Ready for Review preservado para handoff @devops.'
+
+top_issues:
+  - id: 'REL-001'
+    severity: low
+    finding: 'Lighthouse CI threshold ≥0.85 (Performance/A11y/Best Practices/SEO) gated em `/`, `/@demo`, `/dashboard` per .github/workflows/lighthouse.yml:70-73. `/@demo` é o path direto afetado por AC8-AC11 (PublicPage h1 plum + bio body + PublicLinkCard hover shadow). Mudanças TimeSeriesChart/MetricsCards estão em /dashboard/analytics (authenticated route, fora dos gate paths) mas afetam bundle compartilhado via Card primitive.'
+    suggested_action: 'Validar Lighthouse run no PR (runs:3 + median absorve flake per [STORY-3.5-F3] estabilizado). Bundle delta esperado neutral (className changes + 1 import switch recharts mesmo namespace + inline <defs> SVG; zero novo dependency lucide-react; zero novo import). Investigar se queda > 5 pontos vs baseline 5.6.'
+
+residual_risks:
+  - id: 'RISK-SMOKE-SKIP'
+    severity: low
+    finding: 'Smoke runtime manual × 3 temas /@demo + /dashboard/analytics SKIPPED user opt-in pre-implementation (Tasks 11.1/11.2 marcadas [x] com nota _(SKIPPED ...)_ per MEMORY feedback_skip_manual_smoke.md). Cobertura indireta via behavior tests 195/195 + Lighthouse CI no PR.'
+    mitigation: 'Lighthouse CI `/@demo` valida bundle/a11y/perf no PR (gate ≥0.85). Behavior tests cobrem MetricsCards/TimeSeriesChart/LinksTable/EmptyAnalyticsState/AnalyticsLoadingSkeleton + PublicPage/PublicLinkCard/TrackedLinkCard/ViewBeacon. Snapshot regenerate confirma intenção visual em 3 temas (light/dark/brand). Risco residual baixo (frontend-primary, zero mudança em Server Actions/Schema/RLS/tracking endpoints).'
+  - id: 'MNT-001'
+    severity: low
+    finding: '2 test rewrites mandatórios descobertos durante implementação contradizendo "zero-impact" da story original em AC12: (1) TimeSeriesChart.test.tsx recharts mock precisou ADD AreaChart/Area; (2) EmptyAnalyticsState.test.tsx 2 assertions copy precisaram reconciliar spec §2.8 L801 verbatim. Pattern idêntico ao Story 5.6 ThemeSelector test rewrite (regex /brand/i → /vibrante/i também descoberto durante implementação).'
+    mitigation: 'Padrão emerging — quando story altera (a) imports de bibliotecas terceiras com mocks hardcoded em vi.mock OU (b) strings literais asserted em testes existentes, classificar como "test rewrite likely required" em vez de "zero-impact". @sm/@po podem incorporar este learning em futuras story drafts (5.8/5.9) ao escanear test files antes de declarar "preserved behavior" em AC negativos. Não bloqueia 5.7 — rewrites entregues + 195/195 PASS final ratifica.'
+
+scope_assessment:
+  type: 'frontend-primary visual refresh + Phase 3 closure'
+  blast_radius: 'low-medium'
+  files_modified: 8
+  files_test_modified: 2
+  files_snapshot_modified: 1
+  files_doc_modified: 1
+  files_story_new: 1
+  files_audited_noop: 0
+  housekeeping: 1
+  notes: |
+    Zero migration, zero RLS, zero schema, zero Server Action novo. Mudanças localizadas em:
+    - 1 page-level (app/dashboard/analytics/page.tsx)
+    - 5 analytics components (MetricsCards / TimeSeriesChart / LinksTable / EmptyAnalyticsState / AnalyticsLoadingSkeleton)
+    - 2 public components (PublicPage / PublicLinkCard)
+    Primitives shadcn não tocados (Story 5.3 escopo fechado). Tokens app/globals.css não tocados (Story 5.2 escopo fechado). Tracking endpoints + ViewBeacon + TrackedLinkCard preservados (Stories 4.1/4.2). ISR revalidate=60 preservado (Story 2.7). Server/Client Component boundaries preservados (TimeSeriesChart 'use client' shipped).
+    Blast radius "low-medium" (não "low" das 5.5/5.6) por: (a) AreaChart switch requer mock update — efeito 1-degree em test file; (b) 2 assertions de copy precisaram rewrite — efeito 1-degree em test file; (c) snapshot regenerate intentional — efeito 1-degree em .snap file. Todos efeitos diagnosed + fixed durante implementação; final 195/195 PASS valida.
+
+dev_decisions_ratified:
+  - DEV-A: 'TimeSeriesChart switch <LineChart>/<Line> → <AreaChart>/<Area> + <defs><linearGradient> peach var(--accent) 0.35→0 + preserva stroke plum var(--primary) + dot=false + isAnimationActive=false + gap-fill + sr-only table. Decisão consciente em vez de refactor primitive recharts. RATIFICADO.'
+  - DEV-B: 'PublicPage snapshot regenerate intentional via `pnpm test:components -u` — 3 snapshots × 3 className strings = 18 line diffs exatos no .snap conforme predição AC11 + spec §2.10 L878-880 + L886-887. Validação via git diff confirma zero mudanças estruturais não-previstas. RATIFICADO.'
+  - DEV-C: 'LinksTable inline bar visualization SKIPPED user opt-in pre-implementation — wireframe ilustrativo spec L787, tabela atual 3 colunas (7d/30d/Total) provê info mais rica para dono do BioLink. Apenas radius rounded-lg → rounded-xl aplicado per AC5 mandatory. RATIFICADO.'
+  - DEV-MODE-YOLO: 'Mode YOLO autônomo ratificado user opt-in pre-implementation. Decisões @dev tomadas autonomously com logging em commits + Change Log. ACs bem definidas justificaram baixa interatividade. RATIFICADO.'
+  - DEV-TASK-11-SKIP: 'Task 11 smoke runtime manual × 3 temas SKIPPED user opt-in pre-implementation. Cobertura indireta via 195/195 behavior tests + Lighthouse CI /@demo gate canônico no PR. Pattern Stories 5.4/5.5/5.6 per MEMORY feedback_skip_manual_smoke.md. RATIFICADO.'
+  - DEV-CHORE-PRE: 'Pre-existing chore commit 4b90a18 (chore(story-5.6): close Done post-merge) — @po close-story 5.6 housekeeping da sessão anterior commitado autônomo ANTES de iniciar work 5.7 para manter commits 5.7 limpos. RATIFICADO.'
+  - DEV-NEXT-ENV-DISCARD: 'next-env.d.ts auto-regenerado pelo Next 16.2.5 durante pnpm build (mudança cosmetic single → double quote) descartado via git checkout — pattern Story 5.6 precedent. RATIFICADO.'
+
+next_steps:
+  recommended_agent: '@devops'
+  recommended_command: '*push'
+  rationale: |
+    Gate PASS — pronto para push + PR. Branch feat/story-5.7-analytics-public-soft-studio com 2 commits ahead de main:
+    - 4b90a18 chore(story-5.6): close Done post-merge
+    - 8a88b3b feat: analytics + public Soft Studio refresh [Story 5.7]
+    Working tree limpo. Lighthouse CI no PR validará bundle delta + a11y/perf gates ≥0.85 em / + /@demo + /dashboard (LOW observation REL-001).
+
+    Sequência push @devops esperada (pattern Story 5.5/5.6):
+    1. git push -u origin feat/story-5.7-analytics-public-soft-studio
+    2. gh pr create --title "feat: analytics + public Soft Studio refresh [Story 5.7]" --base main
+    3. Aguardar CI (lighthouse + test-integration + test-components + build + audit + gitleaks + lint + typecheck + test-unit + Vercel)
+    4. gh pr merge --squash --delete-branch (após CI verde)
+    5. @po *close-story 5.7 (Status Ready for Review → Done)
+
+waiver: { active: false }
