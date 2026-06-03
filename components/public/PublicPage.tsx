@@ -58,9 +58,11 @@ export function PublicPage({ data }: { data: PublicPageData }) {
           </div>
         )}
 
-        <h1 className="text-2xl font-semibold tracking-tight">{displayName}</h1>
+        <h1 className="text-h1 text-primary text-center">{displayName}</h1>
 
-        {profile.bio && <p className="text-center text-muted-foreground">{profile.bio}</p>}
+        {profile.bio && (
+          <p className="text-body text-center text-muted-foreground">{profile.bio}</p>
+        )}
 
         {links.length === 0 ? (
           <p className="text-muted-foreground">@{profile.username} ainda não publicou links.</p>

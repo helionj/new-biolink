@@ -23,7 +23,7 @@ export function PublicLinkCard({ link }: { link: PublicLink }) {
         href={link.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex w-full items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:bg-accent"
+        className="flex w-full items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-all hover:bg-accent hover:shadow-md"
         data-link-id={link.id}
       >
         {createElement(getLinkIcon(link.icon), {

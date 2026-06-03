@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import {
+  Area,
+  AreaChart,
   CartesianGrid,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -58,7 +58,7 @@ function ToggleLink({
       scroll={false}
       aria-current={isActive ? 'page' : undefined}
       className={cn(
-        'rounded-md border border-border px-3 py-1 text-sm font-medium transition-colors',
+        'rounded-lg border border-border px-3 py-1 text-sm font-medium transition-colors',
         isActive
           ? 'bg-primary text-primary-foreground'
           : 'bg-background text-muted-foreground hover:bg-muted',
@@ -74,9 +74,9 @@ export function TimeSeriesChart({ series, range }: Props) {
   const dense = gapFill(series, days);
 
   return (
-    <figure className="space-y-3 rounded-lg border border-border p-4">
+    <figure className="space-y-3 rounded-xl border border-border p-4">
       <figcaption className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-medium">Page views — últimos {days} dias</h2>
+        <h2 className="text-h3 font-medium">Page views — últimos {days} dias</h2>
         <nav aria-label="Selecionar janela do gráfico" className="flex gap-2">
           <ToggleLink value="7d" current={range}>
             7d
@@ -89,7 +89,13 @@ export function TimeSeriesChart({ series, range }: Props) {
 
       <div aria-hidden="true">
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={dense} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+          <AreaChart data={dense} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="analytics-area-gradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.35} />
+                <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
+              </linearGradient>
+            </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis
               dataKey="day"
@@ -103,15 +109,16 @@ export function TimeSeriesChart({ series, range }: Props) {
                 'Page views',
               ]}
             />
-            <Line
+            <Area
               type="monotone"
               dataKey="count"
               stroke="var(--primary)"
               strokeWidth={2}
+              fill="url(#analytics-area-gradient)"
               dot={false}
               isAnimationActive={false}
             />
-          </LineChart>
+          </AreaChart>
         </ResponsiveContainer>
       </div>
 

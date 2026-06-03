@@ -37,12 +37,12 @@ exports[`<PublicPage> theme wrapper > aplica data-theme="brand" no wrapper top-l
         </svg>
       </div>
       <h1
-        class="text-2xl font-semibold tracking-tight"
+        class="text-h1 text-primary text-center"
       >
         Demo
       </h1>
       <p
-        class="text-center text-muted-foreground"
+        class="text-body text-center text-muted-foreground"
       >
         Bio teste
       </p>
@@ -53,7 +53,7 @@ exports[`<PublicPage> theme wrapper > aplica data-theme="brand" no wrapper top-l
         <span>
           <li>
             <a
-              class="flex w-full items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:bg-accent"
+              class="flex w-full items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-all hover:bg-accent hover:shadow-md"
               data-link-id="lnk-1"
               href="https://instagram.com/demo"
               rel="noopener noreferrer"
@@ -130,12 +130,12 @@ exports[`<PublicPage> theme wrapper > aplica data-theme="dark" no wrapper top-le
         </svg>
       </div>
       <h1
-        class="text-2xl font-semibold tracking-tight"
+        class="text-h1 text-primary text-center"
       >
         Demo
       </h1>
       <p
-        class="text-center text-muted-foreground"
+        class="text-body text-center text-muted-foreground"
       >
         Bio teste
       </p>
@@ -146,7 +146,7 @@ exports[`<PublicPage> theme wrapper > aplica data-theme="dark" no wrapper top-le
         <span>
           <li>
             <a
-              class="flex w-full items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:bg-accent"
+              class="flex w-full items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-all hover:bg-accent hover:shadow-md"
               data-link-id="lnk-1"
               href="https://instagram.com/demo"
               rel="noopener noreferrer"
@@ -223,12 +223,12 @@ exports[`<PublicPage> theme wrapper > aplica data-theme="light" no wrapper top-l
         </svg>
       </div>
       <h1
-        class="text-2xl font-semibold tracking-tight"
+        class="text-h1 text-primary text-center"
       >
         Demo
       </h1>
       <p
-        class="text-center text-muted-foreground"
+        class="text-body text-center text-muted-foreground"
       >
         Bio teste
       </p>
@@ -239,7 +239,7 @@ exports[`<PublicPage> theme wrapper > aplica data-theme="light" no wrapper top-l
         <span>
           <li>
             <a
-              class="flex w-full items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:bg-accent"
+              class="flex w-full items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-all hover:bg-accent hover:shadow-md"
               data-link-id="lnk-1"
               href="https://instagram.com/demo"
               rel="noopener noreferrer"
