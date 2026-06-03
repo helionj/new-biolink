@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 
+import { Wordmark } from '@/components/brand/Wordmark';
 import { EmailVerificationBanner } from '@/components/dashboard/EmailVerificationBanner';
 import { MobileDrawer } from '@/components/dashboard/MobileDrawer';
 import { Sidebar } from '@/components/dashboard/Sidebar';
@@ -33,9 +34,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex items-center gap-3 border-b border-border px-4 py-3">
           <MobileDrawer />
-          <Link href="/dashboard" className="text-h3 lowercase">
-            biolink
-          </Link>
+          <Wordmark href="/dashboard" size="md" />
           <div className="ml-auto flex items-center gap-1">
             <Link
               href="/dashboard/theme"
