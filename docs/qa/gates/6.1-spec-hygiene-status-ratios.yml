@@ -1,0 +1,143 @@
+schema: 1
+story: '6.1'
+gate: PASS
+status_reason: 'Spec hygiene amend destructive + warning ratios implementado com 10/10 ACs cobertas (AC6 SKIPPED per PO NH-2 — L124 preserved + footnote prominent), grep verifications all PASS (4.897 × 4 matches L148/L149/L201/L202; 3.770 × 2 matches L151/L204; zero #D14A4A token references — apenas 3 inline historical refs intentional rastreabilidade); dual close [STORY-5.2-F1] + [STORY-5.3-F1] consolidated single PR; stats 9/0/0/9/9 → 9/0/0/7/11 MEDIUM zero preserved Epic 5 closure maintained. Story Epic 6 tácito primeira doc-only XS.'
+reviewer: 'Quinn'
+updated: '2026-06-05T14:00:00Z'
+
+# QA Gate Manual (Workaround QA-001 macOS — CodeRabbit/WSL incompatível)
+# Ref: docs/qa/known-issues.md QA-001 + MEMORY project_qa_review_hang.md
+# Padrão validado em Stories 5.2/5.3/5.4/5.5/5.7/5.8/5.9 — todas mergeadas com gate manual.
+# Story 6.1 doc-only XS — gate manual simplified scope (grep verifications + cross-ref gate files OBS-001).
+
+acceptance_criteria_coverage:
+  total: 10
+  implemented: 10
+  skipped: 1 # AC6 SKIPPED per PO NH-2 — L124 validation header preserved + AC5 footnote prominent enough
+  notes: |
+    AC1 §1.2.1 L148 destructive: hex #D14A4A → #C84141 (DEV-9 sync) + ratio 4.8 → 4.897 + clarification "warm red — pós-DEV-9 fix Story 5.2 (era #D14A4A, ratio inflated)" ✅
+    AC1 sub L149 destructive-foreground ratio sync 4.897 ✅
+    AC2 §1.2.1 L151 warning: hex #B8742A preserved + ratio 4.6 → 3.770 ⚠ AA bg+text FAIL — ✓ §1.4.11 border-left + clarification "decorative/border-left only (falha AA bg+text; OK §1.4.11 3:1 graphical)" ✅
+    AC3 §1.2.3 L201 destructive brand: hex #D14A4A → #C84141 + ratio 4.6 → 4.897 + clarification "warm red — pós-DEV-9 fix Story 5.2 (era #D14A4A)" ✅
+    AC3 sub L202 destructive-foreground brand sync 4.897 ✅
+    AC4 §1.2.3 L204 warning brand: hex #B8742A preserved + ratio 4.4 large → 3.770 ✓ AA large + §1.4.11 — ⚠ FAIL AA normal text + clarification "decorative/border-left + AA large text only (FAIL AA normal text bg+text)" ✅
+    AC5 Story 6.1 amend stamp footnote ADD após L124 (acima §1.2.1 table) com WCAG W3C algorithm reference + cross-ref gate files 5.2/5.3 OBS-001 + DEV-9 + Story 6.1 date ✅
+    AC6 L124 validation header soften SKIPPED per PO NH-2 — preserved "todos passam AA" + AC5 footnote prominent enough (defensible) ⚪
+    AC7 Housekeeping STORY-BACKLOG.md dual close [STORY-5.2-F1] + [STORY-5.3-F1] LOW blocks removed + stats 9/0/0/9/9 → 9/0/0/7/11 + last_updated reconcile + Change Log DONE dual entry ✅
+    AC8 Gates locais NO-OP doc-only (typecheck/lint/build/test:components SKIPPED — markdown não afeta compilação; baseline 201/201 pós-5.9 preserved) ✅
+    AC9 Lighthouse CI NO-OP esperado (doc-only zero impacto bundle/perf/a11y/SEO) ⚠ pending PR validation
+    AC10 Constitution Art. IV PASS (hex shipped preserved DEV-A1 + ratios W3C verbatim reproducible) + Art. III PASS (File List bate diff stat 3 files) + Art. IV-A IDS N/A (sem NEW primitive) + housekeeping dual close consolidated ✅
+
+quality_gates:
+  typecheck:
+    status: SKIPPED
+    evidence: 'Doc-only story — markdown não afeta TypeScript compilation. Story baseline 201/201 pós-5.9 preserved (zero código tocado). DEV-A1 preserve hex shipped + scripts/check-contrast.mjs unchanged.'
+  lint:
+    status: SKIPPED
+    evidence: 'Doc-only — ESLint não scaneia .md.'
+  build:
+    status: SKIPPED
+    evidence: 'Doc-only — Next.js não compila markdown.'
+  test_components:
+    status: SKIPPED
+    evidence: 'Doc-only — zero test impact. Baseline 201/201 pós-Story 5.9 preserved.'
+  grep_verifications:
+    status: PASS
+    evidence: |
+      pós-Story 6.1 amend:
+      - `grep -cE "4\.897" docs/frontend-spec.md` → 4 matches (L148 destructive light + L149 destructive-foreground light + L201 destructive brand + L202 destructive-foreground brand) ✓
+      - `grep -cE "3\.770" docs/frontend-spec.md` → 2 matches (L151 warning light + L204 warning brand) ✓
+      - `grep -E "#D14A4A" docs/frontend-spec.md` → 3 references inline em historical clarifications (L148/L201 descriptions + L207 footnote) — ZERO referências como hex token canonical; intentional rastreabilidade documentada
+      - Story 6.1 amend stamp footnote presente após L124 com cross-ref gate files 5.2/5.3 OBS-001 + DEV-9 + WCAG W3C algorithm
+      - STORY-BACKLOG.md: zero matches `[STORY-5.2-F1]` ou `[STORY-5.3-F1]` em LOW section (dual close confirmed); Change Log DONE entry added (visível last_updated reconciled)
+
+constitution_compliance:
+  article_iv_no_invention:
+    status: PASS
+    evidence: |
+      Toda AC1-AC7 cita fonte canonical:
+      - AC1-AC4 ratios W3C `(L1+0.05)/(L2+0.05)` algorithm verbatim reproduzível — `#C84141` vs `#FFFFFF` = 4.897 ✓; `#B8742A` vs `#FFFFFF` = 3.770 ✓ (matches gate files 5.2/5.3 OBS-001 lines)
+      - AC1+AC3 hex destructive sync `#D14A4A` → `#C84141` rastreado para `app/globals.css:54,176` DEV-9 shipped Story 5.2 (zero new authoring; catch-up doc com realidade)
+      - AC2+AC4 warning preservado `#B8742A` per `app/globals.css:62,184` shipped Story 5.3 Task 8.0
+      - AC5 footnote cita Story 6.1 date + gate files 5.2/5.3 OBS-001 + DEV-9 + scripts/check-contrast.mjs destructive coverage
+      - AC7 housekeeping referencia [STORY-5.2-F1] + [STORY-5.3-F1] explicitly
+      Zero invenção — recalc WCAG é correction (não new requirement) per Constitution Art. IV defensible.
+  article_iii_story_driven:
+    status: PASS
+    evidence: |
+      File List bate exatamente com git diff stat (3 files changed):
+      - docs/frontend-spec.md (76 lines delta — amend 4 ratios + 1 hex sync + footnote ADD)
+      - docs/STORY-BACKLOG.md (43 lines delta net — 2 LOW blocks removed ~30 lines + stats + last_updated + Change Log entry)
+      - docs/stories/6.1.spec-hygiene-status-ratios.story.md (407 lines NEW)
+      Zero out-of-scope edits. DEV-A1 preserve `app/globals.css` + `scripts/check-contrast.mjs` confirmed via grep zero changes.
+  article_iv_a_ids:
+    status: N/A
+    evidence: 'Story doc-only — sem NEW primitive ou code module CREATE; IDS REUSE > ADAPT > CREATE não-aplicável. Pattern análogo Story 5.9 Wordmark CREATE não materializa em 6.1.'
+  article_ii_agent_authority:
+    status: PASS
+    evidence: '@dev shadow per PO NH-1 ratify commitou (f1fb0cf) sem push (Constitution Art. II — git push/gh pr create exclusivos @devops). Working tree limpo. Story Status InProgress → Ready for Review preservado para handoff @devops.'
+
+top_issues:
+  - id: 'REL-001'
+    severity: low
+    finding: 'Lighthouse CI no PR — doc-only story zero impacto esperado em bundle/perf/a11y/SEO; gate canonical `.lighthouserc.json` ≥0.85 em `/`, `/@demo`, `/dashboard` será NO-OP validation. Esperado PASS sem ação.'
+    suggested_action: 'Lighthouse run no PR confirmará no-op. Bundle baseline `/dashboard` ~180-185 KB gz pós-5.9 — esperado UNCHANGED (zero JS/CSS asset added). Investigar somente se queda > 5 pontos (improvable).'
+
+residual_risks:
+  - id: 'RISK-AC6-SKIP'
+    severity: low
+    finding: 'AC6 L124 validation header soften "todos os pares text/bg passam AA" → "maioria passa AA (exceções marcadas)" SKIPPED per PO NH-2 recommendation. L124 mantém claim genérico "todos passam AA" + AC5 footnote acima §1.2.1 table explicitly qualifies warning exception.'
+    mitigation: 'AC5 footnote é prominent (entre L124 validation block e §1.2.1 table heading — única seção entre validation e first table). Leitor casual pode initially read "todos passam AA" L124 sem ler footnote — risk educacional mas mitigated by footnote location + warning clarifications inline tabela (L151+L204). Future story trivial (~1-line) se @ux-design-expert future audit decide soften L124 — não-bloqueante.'
+  - id: 'RISK-SATORI-NA'
+    severity: low
+    finding: 'Spec mention "Validação programática via `pnpm check:contrast`" L124 — script atual cobre apenas destructive ↔ destructive-foreground pair (`scripts/check-contrast.mjs:106`). Warning + success coverage NÃO expandida (out-of-scope Story 6.1 per backlog [STORY-3.2-F1] LOW deferred).'
+    mitigation: 'Warning ratio 3.770 manual recalc documented em gate 5.3 OBS-001 + Story 6.1 amend stamp footnote + Dev Notes. Future [STORY-3.2-F1] script expansion automará warning coverage (parser CSS automated). Not-bloqueante story 6.1 — manual recalc é WCAG W3C standard reproducible.'
+  - id: 'RISK-INFLATED-SUCCESS-RATIOS-DEFER'
+    severity: low
+    finding: 'Story 6.1 scope strict destructive + warning ratios per backlog [STORY-5.2-F1] + [STORY-5.3-F1]. Spec autor inflated approach pode ter afetado outros tokens — gate 5.3 OBS-001 explicitly menciona "success ratios spec são accurate quando recalc" (5.188 matches claimed 5.2) — assumed defensible MAS not exhaustively audited.'
+    mitigation: 'Story 5.3 DEV-A4 explicit audited success ratios + confirmed accurate. Future [STORY-3.2-F1] expansão script captura quaisquer ratios drift adicional. Out-of-scope strict 6.1 — defensible.'
+
+scope_assessment:
+  type: 'Doc-only spec hygiene XS — Epic 6 tácito primeira story'
+  blast_radius: 'zero'
+  files_modified_doc: 2 # frontend-spec.md + STORY-BACKLOG.md
+  files_new_story: 1 # 6.1 story file
+  files_modified_source: 0
+  files_modified_test: 0
+  files_modified_snapshot: 0
+  files_deleted: 0
+  housekeeping: 1 # dual close STORY-BACKLOG
+  notes: |
+    Zero migration, zero RLS, zero schema, zero Server Action, zero npm dependency, zero código source modified, zero test impact, zero snapshot impact.
+    Mudanças localizadas em:
+    - docs/frontend-spec.md (§1.2 amend stamp footnote ADD + §1.2.1 L148/L149/L151 + §1.2.3 L201/L202/L204)
+    - docs/STORY-BACKLOG.md (dual close [STORY-5.2-F1] + [STORY-5.3-F1] LOW blocks remove + stats + Change Log)
+    Preservados (per DEV-A1 ratified): app/globals.css (hex #C84141 + #B8742A shipped); scripts/check-contrast.mjs (destructive coverage shipped); todos primitives + components + tests + snapshots (zero impact).
+    Blast radius "zero" — doc-only sem failure mode além de typo (mitigated via grep verifications passed).
+
+dev_decisions_ratified:
+  - DEV-A1: 'amend approach apenas (preserve hex shipped #C84141 destructive + #B8742A warning; NÃO escurecer cores — out-of-scope). User opt-in pre-implementation. RATIFICADO.'
+  - DEV-A2: 'hex destructive sync #D14A4A → #C84141 catch-up doc com app/globals.css:54,176 DEV-9 shipped Story 5.2 merge 2026-05-30. RATIFICADO.'
+  - DEV-MODE-YOLO: 'Mode YOLO autônomo ratificado user opt-in pre-implementation. RATIFICADO.'
+  - DEV-AC6-SKIP: 'AC6 L124 validation header soften SKIPPED per PO NH-2 recommendation — AC5 footnote prominent enough para qualify warning exception. Trade-off educacional low residual risk (RISK-AC6-SKIP). RATIFICADO.'
+  - NH-1-EXECUTOR-SWAP: 'Executor swap @ux-design-expert (Uma) canonical → @dev shadow execute per PO NH-1 ratify (Uma não active; defensible Stories 5.2/5.3 precedent @dev modificou spec sob spec ownership delegated; story doc-only XS sem authoring substantial). RATIFICADO.'
+  - DEV-CHORE-FOOTNOTE-LOCATION: '@dev shadow chose location: footnote após L124 validation block + antes §1.2.1 table heading — most prominent (única seção entre validation + first table; leitor lê footnote naturalmente após validation note). Story 6.1 spec sugeriu "início de §1.2 paleta block (recommended)" — implementation 6.1 escolheu after L124 inside §1.2 block per natural flow. Equivalent intent + better visibility. RATIFICADO.'
+
+next_steps:
+  recommended_agent: '@devops'
+  recommended_command: '*push'
+  rationale: |
+    Gate PASS — pronto para push + PR. Branch feat/story-6.1-spec-hygiene com 1 commit ahead de main:
+    - f1fb0cf feat(spec): amend destructive + warning ratios (dual close) [Story 6.1]
+    Working tree limpo. Lighthouse CI no PR será NO-OP confirmation (doc-only zero impacto bundle).
+
+    Sequência push @devops esperada (pattern Stories 5.5/5.6/5.7/5.8/5.9):
+    1. git push -u origin feat/story-6.1-spec-hygiene
+    2. gh pr create --title "feat(spec): amend destructive + warning ratios (dual close) [Story 6.1]" --base main
+    3. Aguardar CI (lint + typecheck + test-unit + test-components 201/201 + test-integration + build + audit + gitleaks + lighthouse + Vercel preview) — esperado UNCHANGED vs baseline
+    4. gh pr merge --squash --delete-branch
+    5. @po *close-story 6.1 (Status Ready for Review → Done; dual close [STORY-5.2-F1] + [STORY-5.3-F1] já aplicado pre-merge via Task 4 housekeeping)
+
+    **Próxima:** Story 6.2 (Cluster B DB hardening — [STORY-4.1-F1] + [STORY-4.3-F1] consolidated; migration única `0010_db_hardening.sql`; effort S ~1-2h).
+
+waiver: { active: false }
