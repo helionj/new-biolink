@@ -123,6 +123,8 @@ Sitemap (10 telas core — todas já em produção):
 
 > **Validação:** todos os pares text/bg abaixo passam AA (4.5:1 normal text, 3:1 large/UI). Validação programática via `pnpm check:contrast` (script existente, Story 3.2) com mock de paleta nova antes do swap.
 
+> **Status ratios amend (Story 6.1, 2026-06-04):** `--destructive` + `--warning` ratios recalculados via WCAG W3C `(L1+0.05)/(L2+0.05)` algoritmo padrão durante QA gates Stories 5.2/5.3 (OBS-001 em ambos `docs/qa/gates/5.{2,3}-*.yml`); spec original autor inflated valores por bug de cálculo. Hex `--destructive` `#D14A4A` → `#C84141` sync com DEV-9 fix shipped em `app/globals.css:54,176` desde Story 5.2 merge. Hex `--warning` `#B8742A` preservado — uso compliant via border-left graphical §1.4.11 (Story 5.3 Task 8 sonner) + AA large text §1.4.3, mas falha AA normal text bg+text (decorative/border-left only). Tokens shipped + `scripts/check-contrast.mjs` cobrindo destructive ↔ destructive-foreground confirmam realidade pós-DEV-9.
+
 #### 1.2.1 Light (default)
 
 ```
@@ -130,25 +132,25 @@ Mood: lavender mist, off-white, deep plum acentos.
 Uso primário: dashboard, formulários, leitura prolongada.
 ```
 
-| Token                      | Hex       | Notas                                      | Contrast vs `--foreground`  |
-| -------------------------- | --------- | ------------------------------------------ | --------------------------- |
-| `--background`             | `#FAF8FF` | lavender mist — warm off-white             | (base)                      |
-| `--foreground`             | `#1B1530` | deep plum-ink (NÃO `#000`)                 | **16.4:1** ✓ AAA            |
-| `--surface`                | `#F4EFFB` | cards, popovers (deeper than bg)           | 14.8:1 ✓ AAA                |
-| `--surface-elevated`       | `#FFFFFF` | modais, dropdowns (max contrast)           | 17.1:1 ✓ AAA                |
-| `--primary`                | `#5B3A8C` | deep plum — buttons, links interativos     | **9.2:1** ✓ AAA             |
-| `--primary-foreground`     | `#FFFFFF` | text on primary                            | 9.2:1 ✓ AAA                 |
-| `--primary-hover`          | `#4A2E73` | -15% lightness                             | 12.1:1 ✓ AAA                |
-| `--accent`                 | `#FFB5A7` | peach — badges, hover surfaces, highlights | 2.4:1 ⚠ **decorativo only** |
-| `--accent-foreground`      | `#7A2C1F` | text on peach (raro — só badges)           | 7.8:1 ✓ AAA (on peach)      |
-| `--muted`                  | `#EFEAF7` | disabled states, dividers de baixo peso    | 1.1:1 (não usar pra texto)  |
-| `--muted-foreground`       | `#6B5B95` | subtítulos, captions, help text            | **5.8:1** ✓ AA              |
-| `--border`                 | `#E6E0F8` | soft lavender border                       | UI 3:1 ✓                    |
-| `--ring`                   | `#5B3A8C` | focus ring (3px @ 0.5 alpha)               | UI 3:1 ✓                    |
-| `--destructive`            | `#D14A4A` | warm red (NÃO `#FF0000`)                   | **4.8:1** ✓ AA              |
-| `--destructive-foreground` | `#FFFFFF` |                                            | 4.8:1 ✓ AA                  |
-| `--success`                | `#2B7A5E` | tone-matched green (warm)                  | 5.2:1 ✓ AA                  |
-| `--warning`                | `#B8742A` | warm amber                                 | 4.6:1 ✓ AA                  |
+| Token                      | Hex       | Notas                                                                                 | Contrast vs `--foreground`                          |
+| -------------------------- | --------- | ------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `--background`             | `#FAF8FF` | lavender mist — warm off-white                                                        | (base)                                              |
+| `--foreground`             | `#1B1530` | deep plum-ink (NÃO `#000`)                                                            | **16.4:1** ✓ AAA                                    |
+| `--surface`                | `#F4EFFB` | cards, popovers (deeper than bg)                                                      | 14.8:1 ✓ AAA                                        |
+| `--surface-elevated`       | `#FFFFFF` | modais, dropdowns (max contrast)                                                      | 17.1:1 ✓ AAA                                        |
+| `--primary`                | `#5B3A8C` | deep plum — buttons, links interativos                                                | **9.2:1** ✓ AAA                                     |
+| `--primary-foreground`     | `#FFFFFF` | text on primary                                                                       | 9.2:1 ✓ AAA                                         |
+| `--primary-hover`          | `#4A2E73` | -15% lightness                                                                        | 12.1:1 ✓ AAA                                        |
+| `--accent`                 | `#FFB5A7` | peach — badges, hover surfaces, highlights                                            | 2.4:1 ⚠ **decorativo only**                         |
+| `--accent-foreground`      | `#7A2C1F` | text on peach (raro — só badges)                                                      | 7.8:1 ✓ AAA (on peach)                              |
+| `--muted`                  | `#EFEAF7` | disabled states, dividers de baixo peso                                               | 1.1:1 (não usar pra texto)                          |
+| `--muted-foreground`       | `#6B5B95` | subtítulos, captions, help text                                                       | **5.8:1** ✓ AA                                      |
+| `--border`                 | `#E6E0F8` | soft lavender border                                                                  | UI 3:1 ✓                                            |
+| `--ring`                   | `#5B3A8C` | focus ring (3px @ 0.5 alpha)                                                          | UI 3:1 ✓                                            |
+| `--destructive`            | `#C84141` | warm red — pós-DEV-9 fix Story 5.2 (era `#D14A4A`, ratio inflated)                    | **4.897** ✓ AA                                      |
+| `--destructive-foreground` | `#FFFFFF` |                                                                                       | 4.897 ✓ AA                                          |
+| `--success`                | `#2B7A5E` | tone-matched green (warm)                                                             | 5.2:1 ✓ AA                                          |
+| `--warning`                | `#B8742A` | warm amber — decorative/border-left only (falha AA bg+text; OK §1.4.11 3:1 graphical) | **3.770** ⚠ AA bg+text FAIL — ✓ §1.4.11 border-left |
 
 #### 1.2.2 Dark
 
@@ -184,24 +186,24 @@ Mood: brand-forward, vibrant lavender bg, white card pops, peach accents.
 Uso primário: páginas públicas /@username de usuários que querem "personality forward".
 ```
 
-| Token                      | Hex       | Notas                                         | Contrast vs `--foreground` |
-| -------------------------- | --------- | --------------------------------------------- | -------------------------- |
-| `--background`             | `#F0E8FF` | deeper lavender (distingue do light's mist)   | (base)                     |
-| `--foreground`             | `#1B1530` | mesmo ink do light (consistência cross-theme) | **15.2:1** ✓ AAA           |
-| `--surface`                | `#FFFFFF` | white cards POPAM no lavender                 | 17.1:1 ✓ AAA               |
-| `--surface-elevated`       | `#FFFFFF` |                                               | 17.1:1 ✓ AAA               |
-| `--primary`                | `#5B3A8C` | deep plum anchor                              | 8.7:1 ✓ AAA                |
-| `--primary-foreground`     | `#FFFFFF` |                                               | 8.7:1 ✓ AAA                |
-| `--accent`                 | `#FFB5A7` | peach (mesmo do light)                        | UI decorative              |
-| `--accent-foreground`      | `#7A2C1F` |                                               | 7.8:1 ✓ AAA (on peach)     |
-| `--muted`                  | `#D9CCEF` | lavender mid                                  |                            |
-| `--muted-foreground`       | `#4A3A6B` |                                               | **7.2:1** ✓ AAA            |
-| `--border`                 | `#D9CCEF` | mesma lavender mid (low contrast intencional) |                            |
-| `--ring`                   | `#5B3A8C` |                                               | UI 3:1 ✓                   |
-| `--destructive`            | `#D14A4A` |                                               | 4.6:1 ✓ AA                 |
-| `--destructive-foreground` | `#FFFFFF` |                                               | 4.6:1 ✓ AA                 |
-| `--success`                | `#2B7A5E` |                                               | 5.0:1 ✓ AA                 |
-| `--warning`                | `#B8742A` |                                               | 4.4:1 ✓ AA (large text)    |
+| Token                      | Hex       | Notas                                                                                  | Contrast vs `--foreground`                             |
+| -------------------------- | --------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `--background`             | `#F0E8FF` | deeper lavender (distingue do light's mist)                                            | (base)                                                 |
+| `--foreground`             | `#1B1530` | mesmo ink do light (consistência cross-theme)                                          | **15.2:1** ✓ AAA                                       |
+| `--surface`                | `#FFFFFF` | white cards POPAM no lavender                                                          | 17.1:1 ✓ AAA                                           |
+| `--surface-elevated`       | `#FFFFFF` |                                                                                        | 17.1:1 ✓ AAA                                           |
+| `--primary`                | `#5B3A8C` | deep plum anchor                                                                       | 8.7:1 ✓ AAA                                            |
+| `--primary-foreground`     | `#FFFFFF` |                                                                                        | 8.7:1 ✓ AAA                                            |
+| `--accent`                 | `#FFB5A7` | peach (mesmo do light)                                                                 | UI decorative                                          |
+| `--accent-foreground`      | `#7A2C1F` |                                                                                        | 7.8:1 ✓ AAA (on peach)                                 |
+| `--muted`                  | `#D9CCEF` | lavender mid                                                                           |                                                        |
+| `--muted-foreground`       | `#4A3A6B` |                                                                                        | **7.2:1** ✓ AAA                                        |
+| `--border`                 | `#D9CCEF` | mesma lavender mid (low contrast intencional)                                          |                                                        |
+| `--ring`                   | `#5B3A8C` |                                                                                        | UI 3:1 ✓                                               |
+| `--destructive`            | `#C84141` | warm red — pós-DEV-9 fix Story 5.2 (era `#D14A4A`)                                     | **4.897** ✓ AA                                         |
+| `--destructive-foreground` | `#FFFFFF` |                                                                                        | 4.897 ✓ AA                                             |
+| `--success`                | `#2B7A5E` |                                                                                        | 5.0:1 ✓ AA                                             |
+| `--warning`                | `#B8742A` | warm amber — decorative/border-left + AA large text only (FAIL AA normal text bg+text) | **3.770** ✓ AA large + §1.4.11 — ⚠ FAIL AA normal text |
 
 ### 1.3 Typography
 
