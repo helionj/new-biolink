@@ -61,6 +61,40 @@ A margem de ~1-2 KB gz entre `/[username]` e o threshold de 200 KB significa que
 
 **Recomendação:** Toda PR que tocar `app/[username]/**` ou `components/public/**` deve re-medir o bundle. O Lighthouse CI da Task 6 (workflow `lighthouse.yml`) cobre a métrica indiretamente via score de Performance, mas não checa bundle size explicitamente — esse continua sendo gate manual no quality gate (Task 7).
 
+### Monitor automatizado ([STORY-3.5-F1] — 2026-06-06)
+
+Materializa a recomendação acima como script reproduzível, automatizando a metodologia DEV-1 para Next 16 + Turbopack:
+
+```bash
+pnpm build                  # Gera .next/ atualizado
+pnpm bundle-budget          # Reporta First Load JS gzipped por rota pública (advisory)
+pnpm bundle-budget --strict # Falha CI se threshold breached (não usado em CI atual)
+```
+
+**Script:** `scripts/check-bundle-budget.mjs` reproduz metodologia DEV-1 verbatim:
+
+1. Lê `.next/build-manifest.json` → `rootMainFiles` + `polyfillFiles` = SHARED
+2. Lê `.next/server/app/{route}/page_client-reference-manifest.js` → `__RSC_MANIFEST[{route}].entryJSFiles` (chunks INITIAL load — page + layout + not-found + global-error adjacentes)
+3. `FIRST_LOAD = unique(SHARED ∪ ROUTE_ENTRY_CHUNKS)`, `gzip-9` cada chunk, soma bytes
+4. Compara com threshold AC3 (200 KB) e warning margin (5 KB livres)
+
+**Workaround TEST-001 (Turbopack chunk-name hashing drift):** medição per-build single-build (não cross-build), evita comparação entre filenames hasheados diferentes.
+
+**Workflow PR canônico:**
+
+1. Antes de commitar: `pnpm build && pnpm bundle-budget`
+2. Se warning (margem < 5 KB) ou fail (>= 200 KB): abrir story de mitigação dedicada (RSC isolation, code-split, dep replacement) — não bloqueia merge automaticamente
+3. Lighthouse CI permanece como gate de produção via score Performance ≥ 0.85 (`.github/workflows/lighthouse.yml`)
+
+**Estado atual** (2026-06-06 — script primeira execução pós-Stories 4.x/5.x):
+
+| Rota          | First Load JS | Margem AC3 | Status |
+| ------------- | ------------: | ---------: | ------ |
+| `/`           |  205.35 KB gz |   -5.35 KB | ✗ FAIL |
+| `/[username]` |  207.58 KB gz |   -7.58 KB | ✗ FAIL |
+
+Bundle cresceu ~6-9 KB vs baseline DEV-1 (2026-05-25). Atribuível a Stories 4.x (ViewBeacon Client) e 5.x Soft Studio (motion tokens, brand wordmark, primitives audit). Lighthouse CI continuou passando (score ≥ 0.85) — sem regressão de produção observada. Story de mitigação registrada em `[STORY-3.5-F5]` no backlog para acompanhamento dedicado.
+
 ### DEV-5 confirmação
 
 `First Load JS` (definição Next 16: shared + route-only entries, gzipped) é exatamente o que o PRD AC3 ("Bundle JS inicial da página pública < 200 KB gzipped") prescreve. Sem ajuste de threshold.
