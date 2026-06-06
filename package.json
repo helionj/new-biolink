@@ -19,6 +19,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "check:contrast": "node scripts/check-contrast.mjs",
+    "bundle-budget": "node scripts/check-bundle-budget.mjs",
     "db:types": "supabase gen types typescript --linked --schema public > lib/supabase/types.ts",
     "prepare": "husky"
   },
