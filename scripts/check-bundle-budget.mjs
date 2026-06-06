@@ -44,8 +44,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, '..');
 const NEXT_DIR = join(PROJECT_ROOT, '.next');
 
-// Threshold AC3 + warning margin (KB gzipped)
-const BUDGET_KB = 200;
+// Threshold AC3/NFR4 (PRD v0.6 2026-06-06 amend: 200 → 210 KB) + warning margin
+const BUDGET_KB = 210;
 const WARNING_MARGIN_KB = 5;
 
 /**

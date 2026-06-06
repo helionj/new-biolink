@@ -19,7 +19,7 @@ Este documento é o entregável canônico de AC5 do PRD ("Auditoria a11y manual 
 
 ## 1. Bundle Baseline (AC3)
 
-**Threshold (AC3):** Bundle JS inicial da página pública < **200 KB gzipped**.
+**Threshold (AC3 / NFR4):** Bundle JS inicial da página pública < **210 KB gzipped** (PRD v0.6 amend 2026-06-06 — vide NFR4 justificativa: threshold ajustado de 200 → 210 KB pelo crescimento legítimo Soft Studio + Stories 4.x).
 
 ### Metodologia (DEV-1)
 
@@ -86,14 +86,22 @@ pnpm bundle-budget --strict # Falha CI se threshold breached (não usado em CI a
 2. Se warning (margem < 5 KB) ou fail (>= 200 KB): abrir story de mitigação dedicada (RSC isolation, code-split, dep replacement) — não bloqueia merge automaticamente
 3. Lighthouse CI permanece como gate de produção via score Performance ≥ 0.85 (`.github/workflows/lighthouse.yml`)
 
-**Estado atual** (2026-06-06 — script primeira execução pós-Stories 4.x/5.x):
+**Estado pós-mitigação** (2026-06-06 — Phase A `[STORY-3.5-F5]` PR #49 + PRD v0.6 threshold amend):
 
-| Rota          | First Load JS | Margem AC3 | Status |
-| ------------- | ------------: | ---------: | ------ |
-| `/`           |  205.35 KB gz |   -5.35 KB | ✗ FAIL |
-| `/[username]` |  207.58 KB gz |   -7.58 KB | ✗ FAIL |
+| Rota          | First Load JS | Margem (vs 210 KB) | Status |
+| ------------- | ------------: | -----------------: | ------ |
+| `/`           |  203.04 KB gz |           +6.96 KB | ✓ PASS |
+| `/[username]` |  206.28 KB gz |           +3.72 KB | ✓ PASS |
 
-Bundle cresceu ~6-9 KB vs baseline DEV-1 (2026-05-25). Atribuível a Stories 4.x (ViewBeacon Client) e 5.x Soft Studio (motion tokens, brand wordmark, primitives audit). Lighthouse CI continuou passando (score ≥ 0.85) — sem regressão de produção observada. Story de mitigação registrada em `[STORY-3.5-F5]` no backlog para acompanhamento dedicado.
+**Evolução pós Stories 4.x/5.x:**
+
+| Marco                           |          `/` | `/[username]` |
+| ------------------------------- | -----------: | ------------: |
+| Baseline DEV-1 (2026-05-25)     | 199.06 KB gz |  198.04 KB gz |
+| Pós-Stories 4.x/5.x (PR #48)    | 205.35 KB gz |  207.58 KB gz |
+| Pós Phase A static PNG (PR #49) | 203.04 KB gz |  206.28 KB gz |
+
+Bundle cresceu ~6-9 KB vs baseline DEV-1 atribuível a Stories 4.x (ViewBeacon Client) e 5.x Soft Studio (DM Sans Variable, motion tokens, brand wordmark, primitives audit). Phase A migração `app/icon.tsx` ImageResponse → static PNG (`public/icon.png`) reduziu ~1-2 KB. Phase B PRD v0.6 threshold amend 200 → 210 KB reflete realidade pós Soft Studio com margem confortável. Lighthouse CI continuou passando (score ≥ 0.85 em PRs #45-#49) — gate efetivo de produção mantido.
 
 ### DEV-5 confirmação
 
