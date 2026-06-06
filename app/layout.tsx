@@ -26,12 +26,20 @@ export const metadata: Metadata = {
   // pattern Story 5.9.
   title: 'BioLink',
   description: 'Plataforma link-in-bio — sua presença digital em um único endereço.',
-  // Defense-in-depth: Next 16 auto-detects via `app/icon.tsx` + `app/apple-icon.tsx`
-  // mas explicit declaration garante intent + path resolution em edge cases
-  // (e.g., bot crawlers que não scan filesystem).
+  // Static PNG icons em `public/` (Story 3.5-F5 mitigação AC3 breach).
+  // Next 16 auto-detects `public/icon.png` + `public/apple-icon.png` + `public/favicon.ico`
+  // como rotas implícitas. Story 5.9 originalmente shipped via `app/icon.tsx` +
+  // `app/apple-icon.tsx` (Next 16 ImageResponse + Satori) — descoberto cost de ~14 KB gz
+  // em entryJSFiles de TODA rota com metadata. Substituído por static PNG capturado
+  // do próprio ImageResponse (`public/icon.png` 527B 32×32 + `public/apple-icon.png` 3.4KB
+  // 180×180). Visual idêntico ao Story 5.9 (mesmos hex literais ★ peach #FFB5A7 sobre
+  // lavender #F4EFFB §1.6 L354). Phase 2 logomark `[EPIC-5-PHASE2-LOGO]` pode voltar
+  // ImageResponse OU manter static com novo símbolo.
+  // Defense-in-depth: explicit declaration garante intent + path resolution em edge
+  // cases (e.g., bot crawlers que não scan filesystem).
   icons: {
-    icon: '/icon',
-    apple: '/apple-icon',
+    icon: '/icon.png',
+    apple: '/apple-icon.png',
   },
 };
 
