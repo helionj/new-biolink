@@ -4,35 +4,37 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 /**
- * Wordmark primitive — Soft Studio Phase 5 (Story 5.9).
+ * Wordmark primitive — Soft Studio Phase 5 + Phase 2 Logomark.
  *
- * Canonical brand mark "biolink ★" consumed across landing/auth/dashboard headers.
+ * Canonical brand mark "biolink ◯" consumed across landing/auth/dashboard headers.
  * Spec `docs/frontend-spec.md` §1.6 L347-354 verbatim:
  *   - "biolink" all-lowercase (Q5 §6 L1407-1417 ratified — wordmark visual lowercase)
  *   - DM Sans Bold (700), tracking -0.04em
  *   - Color: `var(--primary)` (deep plum light/brand, lavender dark)
  *   - Sizes: sm (16) / md (24) / lg (40) per spec L351
- *   - ★ asterisco placeholder em `var(--accent)` peach (Q4 §6 L1395-1405 ratified;
- *     logomark real diferido Phase 2)
+ *   - Symbol: spiral aberta peach (`var(--accent)`) — Phase 2 logomark adopted
+ *     2026-06-06 via `[EPIC-5-PHASE2-LOGO]` (substitui ★ asterisco placeholder
+ *     shipped Story 5.9). Concept A: espiral aberta clássica — forma geométrica
+ *     pura que se abre, suggests crescimento/fluxo/abertura. Source SVG:
+ *     `docs/brand-explore/concept-a-open-spiral.svg`.
  *
  * Created per Constitution Art. IV-A IDS justified (REUSE > ADAPT > CREATE):
  *   - REUSE: shadcn upstream sem brand component canonical.
- *   - ADAPT: 3 inline wordmark patterns existentes em `app/page.tsx` +
- *     `app/(auth)/layout.tsx` + `app/dashboard/layout.tsx` (text-h3 lowercase)
- *     são canonical-promotable + DRY principle.
- *   - CREATE: new_capability — 3 size variants + showStar opt-out + href passthrough
- *     via next/link + aria-label "biolink" pure (★ aria-hidden decoração visual).
+ *   - ADAPT: Story 5.9 Wordmark base (3 size variants + showSymbol opt-out +
+ *     href passthrough). Phase 2 swap is ★ text → inline SVG (decisão visual
+ *     ratificada user 2026-06-06).
+ *   - CREATE: new_capability — Phase 2 logomark identity.
  *
  * Usage:
  *   ```tsx
  *   <Wordmark href="/" size="md" />            // landing/dashboard header (24px)
  *   <Wordmark size="sm" />                     // future small header (16px)
  *   <Wordmark size="lg" />                     // future footer landing (40px)
- *   <Wordmark showStar={false} />              // sem ★ asterisco
+ *   <Wordmark showSymbol={false} />            // sem spiral
  *   ```
  *
  * Accessibility: aria-label="biolink" no Link wrapper carrega SR announcement;
- * ★ aria-hidden (decoração visual, não-semântica).
+ * SVG spiral aria-hidden (decoração visual, não-semântica).
  */
 const SIZE_CLASSES = {
   sm: 'text-base', // 16px per spec §1.6 L351 "16px header"
@@ -40,27 +42,44 @@ const SIZE_CLASSES = {
   lg: 'text-[2.5rem]', // 40px per spec §1.6 L351 "40px footer landing"
 };
 
+const SYMBOL_SIZE = {
+  sm: 'size-4', // 16px
+  md: 'size-6', // 24px
+  lg: 'size-10', // 40px
+};
+
 type WordmarkProps = {
   size?: 'sm' | 'md' | 'lg';
-  showStar?: boolean;
+  showSymbol?: boolean;
   className?: string;
   href?: string;
 };
 
-function Wordmark({ size = 'md', showStar = true, className, href }: WordmarkProps) {
+function Wordmark({ size = 'md', showSymbol = true, className, href }: WordmarkProps) {
   const content = (
     <span
       className={cn(
-        'inline-flex items-baseline gap-1 font-bold tracking-[-0.04em] text-primary',
+        'inline-flex items-center gap-1.5 font-bold tracking-[-0.04em] text-primary',
         SIZE_CLASSES[size],
         className,
       )}
     >
       <span>biolink</span>
-      {showStar && (
-        <span aria-hidden="true" className="text-accent">
-          ★
-        </span>
+      {showSymbol && (
+        <svg
+          viewBox="0 0 32 32"
+          aria-hidden="true"
+          data-testid="wordmark-symbol"
+          className={cn(SYMBOL_SIZE[size], 'text-accent')}
+        >
+          <path
+            d="M 16 16 m -6 0 a 6 6 0 1 1 12 0 a 4 4 0 1 1 -8 0 a 2 2 0 1 1 4 0"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          />
+        </svg>
       )}
     </span>
   );

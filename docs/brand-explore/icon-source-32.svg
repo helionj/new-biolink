@@ -1,0 +1,13 @@
+<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" width="32" height="32">
+  <!-- BioLink Phase 2 logomark — Concept A: Espiral aberta clássica.
+       Background lavender mist (#F4EFFB) + spiral peach (#FFB5A7).
+       Matches Story 5.9 PR #41 color palette (spec §1.6 L354). -->
+  <rect width="32" height="32" rx="6" fill="#F4EFFB" />
+  <path
+    d="M 16 16 m -6 0 a 6 6 0 1 1 12 0 a 4 4 0 1 1 -8 0 a 2 2 0 1 1 4 0"
+    fill="none"
+    stroke="#FFB5A7"
+    stroke-width="2.5"
+    stroke-linecap="round"
+  />
+</svg>

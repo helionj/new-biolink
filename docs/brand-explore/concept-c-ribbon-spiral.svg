@@ -1,0 +1,21 @@
+<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-label="Concept C: Ribbon Spiral Hybrid">
+  <!--
+    Concept C — Espiral em fita (híbrido)
+    Forma híbrida: fita que se enrola/flui formando espiral aberta.
+    Suggests: continuidade + curadoria, motion + estrutura, dynamic flow.
+    Mais distintivo mas requer iteração de design fine-tuning.
+    Brand: peach #FFB5A7 stroke + plum #5B3A8C accent dot.
+  -->
+  <path
+    d="M 8 8
+       Q 8 4, 16 6
+       Q 24 8, 22 16
+       Q 20 22, 14 22
+       Q 10 22, 10 18"
+    fill="none"
+    stroke="#FFB5A7"
+    stroke-width="3"
+    stroke-linecap="round"
+  />
+  <circle cx="10" cy="18" r="1.5" fill="#5B3A8C" />
+</svg>

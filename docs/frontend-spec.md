@@ -333,25 +333,29 @@ Dark theme: substituir RGB para preto puro `(0, 0, 0)` mantendo alphas (tone shi
 
 ### 1.6 Logo Seed
 
-**Status:** wordmark proposal, sem logomark (símbolo) no MVP. Refresh para Phase 2 se necessário.
+**Status (atualizado v0.3 2026-06-06):** wordmark + logomark Phase 2 adotado — `[EPIC-5-PHASE2-LOGO]` shipped. Concept A "espiral aberta clássica" ratificado user 2026-06-06 substituindo ★ asterisco placeholder shipped Story 5.9 PR #41.
 
 ```
-PROPOSTA:
-                                    ★
-   ▙▖▘▘▌▌▘▌▌▖     ←  wordmark      Símbolo (Phase 2):
-   ▙▖▌▌▌▌▘▌▌▌                       espiral aberta inspirada
-                                     em fita/marca-página
+ATUAL (Phase 2):
+                                    ╭─╮
+   ▙▖▘▘▌▌▘▌▌▖     ←  wordmark    ⤺  │ │   ←  logomark
+   ▙▖▌▌▌▌▘▌▌▌                       ╰─╯       espiral aberta peach
+                                              (Concept A ratificado)
    "biolink" all-lowercase, DM Sans Bold (700),
    tracking -0.04em, plum primary.
-   Asterisco ★ ou ponto • como pivô final (futuro logomark hook).
+   Spiral aberta `var(--accent)` peach (SVG inline em Wordmark.tsx).
 ```
 
 **Specs:**
 
 - Wordmark: "biolink" all-lowercase, DM Sans Bold (700), tracking `-0.04em`
-- Cor: `var(--primary)` (deep plum em light/brand, lavender em dark)
+- Cor wordmark: `var(--primary)` (deep plum em light/brand, lavender em dark)
+- Logomark: espiral aberta clássica (Concept A) — `var(--accent)` peach, stroke 2.5
 - Tamanhos: 16px header, 24px sidebar dashboard, 40px footer landing
 - Spacing reservado: 8px de padding ao redor em qualquer container
+- Source SVG: `docs/brand-explore/concept-a-open-spiral.svg`
+- Implementação: inline SVG em `components/brand/Wordmark.tsx` (showSymbol prop default true)
+- Favicon assets: `public/icon.png` (32×32) + `public/apple-icon.png` (180×180), gerados via `rsvg-convert` de SVG source (`docs/brand-explore/icon-source-{32,180}.svg`)
 
 **Favicon:** asterisco ★ em peach `#FFB5A7` sobre lavender `#F4EFFB`, 32×32 + 16×16 + maskable 512×512. Próximo arquivo: `public/favicon.ico` + `public/icon.png` (Phase migração).
 

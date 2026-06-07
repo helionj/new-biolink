@@ -1,9 +1,10 @@
 /**
- * Component tests — <Wordmark> (Story 5.9 AC1 + AC7).
+ * Component tests — <Wordmark> (Story 5.9 AC1 + AC7 + Phase 2 Logomark adoption).
  *
  * Cobre:
  *   (a) "biolink" lowercase wordmark text (Q5 §6 L1407-1417 ratified)
- *   (b) ★ asterisco rendered por default + omitido com showStar={false} (Q4 §6 placeholder)
+ *   (b) Spiral symbol rendered por default + omitido com showSymbol={false}
+ *       (Phase 2 logomark — substitui ★ asterisco shipped Story 5.9 PR #41)
  *   (c) href passthrough wraps em <Link> com aria-label "biolink"
  *   (d) sem href renderiza span standalone (composição livre em footers/headings)
  *   (e) size variant md (default) aplica text-2xl ≡ 24px §1.6 L351
@@ -34,14 +35,14 @@ describe('<Wordmark>', () => {
     expect(screen.getByText('biolink')).toBeInTheDocument();
   });
 
-  it('renderiza ★ asterisco por default (Q4 §6 placeholder)', () => {
+  it('renderiza spiral symbol por default (Phase 2 logomark)', () => {
     render(<Wordmark />);
-    expect(screen.getByText('★')).toBeInTheDocument();
+    expect(screen.getByTestId('wordmark-symbol')).toBeInTheDocument();
   });
 
-  it('omite ★ quando showStar=false', () => {
-    render(<Wordmark showStar={false} />);
-    expect(screen.queryByText('★')).toBeNull();
+  it('omite spiral symbol quando showSymbol=false', () => {
+    render(<Wordmark showSymbol={false} />);
+    expect(screen.queryByTestId('wordmark-symbol')).toBeNull();
     // "biolink" continua presente
     expect(screen.getByText('biolink')).toBeInTheDocument();
   });
