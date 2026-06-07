@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>BioLink — Logomark Phase 2 Exploration</title>
+    <style>
+      :root {
+        --primary: #5b3a8c;
+        --accent: #ffb5a7;
+        --bg: #faf8ff;
+        --surface: #f4effb;
+        --text: #1a1a1a;
+        --muted: #666;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          'DM Sans',
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        padding: 3rem 1.5rem;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        letter-spacing: -0.04em;
+        color: var(--primary);
+        margin-bottom: 0.5rem;
+      }
+      .subtitle {
+        color: var(--muted);
+        margin-bottom: 3rem;
+        font-size: 1rem;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+      }
+      .card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        border: 1px solid rgba(91, 58, 140, 0.1);
+      }
+      .card h2 {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+        color: var(--primary);
+      }
+      .card .meta {
+        color: var(--muted);
+        font-size: 0.875rem;
+        margin-bottom: 1.5rem;
+      }
+      .preview-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding: 1.5rem;
+        background: var(--bg);
+        border-radius: 12px;
+      }
+      .preview-grid > div {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .preview-grid svg {
+        display: block;
+      }
+      .preview-grid label {
+        font-size: 0.75rem;
+        color: var(--muted);
+      }
+      .wordmark-preview {
+        display: flex;
+        align-items: baseline;
+        gap: 0.25rem;
+        padding: 1rem;
+        background: var(--bg);
+        border-radius: 12px;
+        margin-bottom: 1rem;
+      }
+      .wordmark-preview .word {
+        font-weight: 700;
+        font-size: 2rem;
+        letter-spacing: -0.04em;
+        color: var(--primary);
+      }
+      .wordmark-preview svg {
+        align-self: center;
+      }
+      .description {
+        font-size: 0.875rem;
+        line-height: 1.5;
+        color: var(--text);
+        margin-bottom: 0.5rem;
+      }
+      .pros {
+        font-size: 0.8125rem;
+        color: var(--muted);
+      }
+      .swatch {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        vertical-align: middle;
+        margin: 0 4px;
+      }
+      .current {
+        background: linear-gradient(
+          135deg,
+          rgba(255, 181, 167, 0.1),
+          rgba(91, 58, 140, 0.1)
+        );
+        border: 2px dashed var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>biolink — Logomark Phase 2 Exploration</h1>
+    <p class="subtitle">
+      [EPIC-5-PHASE2-LOGO] — 3 conceitos inspirados em
+      <em>espiral aberta / fita / marca-página</em>
+      <span class="swatch" style="background: #ffb5a7"></span> peach
+      <span class="swatch" style="background: #5b3a8c"></span> plum
+    </p>
+
+    <div class="grid">
+      <!-- CURRENT (★) -->
+      <div class="card current">
+        <h2>★ — Atual (Story 5.9)</h2>
+        <p class="meta">Placeholder shipped MVP</p>
+        <div class="preview-grid">
+          <div>
+            <span
+              style="
+                color: #ffb5a7;
+                font-size: 16px;
+                font-weight: 700;
+                line-height: 1;
+              "
+              >★</span
+            >
+            <label>16px</label>
+          </div>
+          <div>
+            <span
+              style="
+                color: #ffb5a7;
+                font-size: 24px;
+                font-weight: 700;
+                line-height: 1;
+              "
+              >★</span
+            >
+            <label>24px</label>
+          </div>
+          <div>
+            <span
+              style="
+                color: #ffb5a7;
+                font-size: 40px;
+                font-weight: 700;
+                line-height: 1;
+              "
+              >★</span
+            >
+            <label>40px</label>
+          </div>
+          <div>
+            <span
+              style="
+                color: #ffb5a7;
+                font-size: 64px;
+                font-weight: 700;
+                line-height: 1;
+              "
+              >★</span
+            >
+            <label>64px</label>
+          </div>
+        </div>
+        <div class="wordmark-preview">
+          <span class="word">biolink</span>
+          <span style="color: #ffb5a7; font-size: 1.8rem; font-weight: 700"
+            >★</span
+          >
+        </div>
+        <p class="description">
+          Asterisco Unicode peach. Universal, simples, mas genérico.
+        </p>
+        <p class="pros">
+          ✓ Zero asset · ✓ Renderizado pela font · ✗ Sem distintividade brand
+        </p>
+      </div>
+
+      <!-- CONCEPT A -->
+      <div class="card">
+        <h2>A — Espiral aberta clássica</h2>
+        <p class="meta">Forma geométrica pura</p>
+        <div class="preview-grid">
+          <div>
+            <svg viewBox="0 0 32 32" width="16" height="16">
+              <path
+                d="M 16 16 m -6 0 a 6 6 0 1 1 12 0 a 4 4 0 1 1 -8 0 a 2 2 0 1 1 4 0"
+                fill="none"
+                stroke="#FFB5A7"
+                stroke-width="2.5"
+                stroke-linecap="round"
+              />
+            </svg>
+            <label>16px</label>
+          </div>
+          <div>
+            <svg viewBox="0 0 32 32" width="24" height="24">
+              <path
+                d="M 16 16 m -6 0 a 6 6 0 1 1 12 0 a 4 4 0 1 1 -8 0 a 2 2 0 1 1 4 0"
+                fill="none"
+                stroke="#FFB5A7"
+                stroke-width="2.5"
+                stroke-linecap="round"
+              />
+            </svg>
+            <label>24px</label>
+          </div>
+          <div>
+            <svg viewBox="0 0 32 32" width="40" height="40">
+              <path
+                d="M 16 16 m -6 0 a 6 6 0 1 1 12 0 a 4 4 0 1 1 -8 0 a 2 2 0 1 1 4 0"
+                fill="none"
+                stroke="#FFB5A7"
+                stroke-width="2.5"
+                stroke-linecap="round"
+              />
+            </svg>
+            <label>40px</label>
+          </div>
+          <div>
+            <svg viewBox="0 0 32 32" width="64" height="64">
+              <path
+                d="M 16 16 m -6 0 a 6 6 0 1 1 12 0 a 4 4 0 1 1 -8 0 a 2 2 0 1 1 4 0"
+                fill="none"
+                stroke="#FFB5A7"
+                stroke-width="2.5"
+                stroke-linecap="round"
+              />
+            </svg>
+            <label>64px</label>
+          </div>
+        </div>
+        <div class="wordmark-preview">
+          <span class="word">biolink</span>
+          <svg viewBox="0 0 32 32" width="32" height="32">
+            <path
+              d="M 16 16 m -6 0 a 6 6 0 1 1 12 0 a 4 4 0 1 1 -8 0 a 2 2 0 1 1 4 0"
+              fill="none"
+              stroke="#FFB5A7"
+              stroke-width="2.5"
+              stroke-linecap="round"
+            />
+          </svg>
+        </div>
+        <p class="description">
+          Espiral concêntrica que se abre. Geométrica, contemporary, escala bem.
+        </p>
+        <p class="pros">
+          ✓ Distintivo · ✓ Escala bem · ✓ Single-color · ⚠ Stroke pode parecer
+          "tech demais"
+        </p>
+      </div>
+
+      <!-- CONCEPT B -->
+      <div class="card">
+        <h2>B — Marca-página / Bookmark</h2>
+        <p class="meta">Forma figurativa</p>
+        <div class="preview-grid">
+          <div>
+            <svg viewBox="0 0 32 32" width="16" height="16">
+              <path
+                d="M 10 5 L 22 5 L 22 27 L 16 22 L 10 27 Z"
+                fill="#FFB5A7"
+              />
+              <circle cx="16" cy="13" r="2" fill="#5B3A8C" />
+            </svg>
+            <label>16px</label>
+          </div>
+          <div>
+            <svg viewBox="0 0 32 32" width="24" height="24">
+              <path
+                d="M 10 5 L 22 5 L 22 27 L 16 22 L 10 27 Z"
+                fill="#FFB5A7"
+              />
+              <circle cx="16" cy="13" r="2" fill="#5B3A8C" />
+            </svg>
+            <label>24px</label>
+          </div>
+          <div>
+            <svg viewBox="0 0 32 32" width="40" height="40">
+              <path
+                d="M 10 5 L 22 5 L 22 27 L 16 22 L 10 27 Z"
+                fill="#FFB5A7"
+              />
+              <circle cx="16" cy="13" r="2" fill="#5B3A8C" />
+            </svg>
+            <label>40px</label>
+          </div>
+          <div>
+            <svg viewBox="0 0 32 32" width="64" height="64">
+              <path
+                d="M 10 5 L 22 5 L 22 27 L 16 22 L 10 27 Z"
+                fill="#FFB5A7"
+              />
+              <circle cx="16" cy="13" r="2" fill="#5B3A8C" />
+            </svg>
+            <label>64px</label>
+          </div>
+        </div>
+        <div class="wordmark-preview">
+          <span class="word">biolink</span>
+          <svg viewBox="0 0 32 32" width="32" height="32">
+            <path d="M 10 5 L 22 5 L 22 27 L 16 22 L 10 27 Z" fill="#FFB5A7" />
+            <circle cx="16" cy="13" r="2" fill="#5B3A8C" />
+          </svg>
+        </div>
+        <p class="description">
+          Bookmark com link-dot. Conta "salve seu lugar / coleção de links".
+        </p>
+        <p class="pros">
+          ✓ Figurativo · ✓ Brand metáfora clara · ⚠ Bookmark é comum · ⚠
+          Plum-on-peach precisa contraste check
+        </p>
+      </div>
+
+      <!-- CONCEPT C -->
+      <div class="card">
+        <h2>C — Fita-espiral híbrido</h2>
+        <p class="meta">Forma flow + estrutura</p>
+        <div class="preview-grid">
+          <div>
+            <svg viewBox="0 0 32 32" width="16" height="16">
+              <path
+                d="M 8 8 Q 8 4, 16 6 Q 24 8, 22 16 Q 20 22, 14 22 Q 10 22, 10 18"
+                fill="none"
+                stroke="#FFB5A7"
+                stroke-width="3"
+                stroke-linecap="round"
+              />
+              <circle cx="10" cy="18" r="1.5" fill="#5B3A8C" />
+            </svg>
+            <label>16px</label>
+          </div>
+          <div>
+            <svg viewBox="0 0 32 32" width="24" height="24">
+              <path
+                d="M 8 8 Q 8 4, 16 6 Q 24 8, 22 16 Q 20 22, 14 22 Q 10 22, 10 18"
+                fill="none"
+                stroke="#FFB5A7"
+                stroke-width="3"
+                stroke-linecap="round"
+              />
+              <circle cx="10" cy="18" r="1.5" fill="#5B3A8C" />
+            </svg>
+            <label>24px</label>
+          </div>
+          <div>
+            <svg viewBox="0 0 32 32" width="40" height="40">
+              <path
+                d="M 8 8 Q 8 4, 16 6 Q 24 8, 22 16 Q 20 22, 14 22 Q 10 22, 10 18"
+                fill="none"
+                stroke="#FFB5A7"
+                stroke-width="3"
+                stroke-linecap="round"
+              />
+              <circle cx="10" cy="18" r="1.5" fill="#5B3A8C" />
+            </svg>
+            <label>40px</label>
+          </div>
+          <div>
+            <svg viewBox="0 0 32 32" width="64" height="64">
+              <path
+                d="M 8 8 Q 8 4, 16 6 Q 24 8, 22 16 Q 20 22, 14 22 Q 10 22, 10 18"
+                fill="none"
+                stroke="#FFB5A7"
+                stroke-width="3"
+                stroke-linecap="round"
+              />
+              <circle cx="10" cy="18" r="1.5" fill="#5B3A8C" />
+            </svg>
+            <label>64px</label>
+          </div>
+        </div>
+        <div class="wordmark-preview">
+          <span class="word">biolink</span>
+          <svg viewBox="0 0 32 32" width="32" height="32">
+            <path
+              d="M 8 8 Q 8 4, 16 6 Q 24 8, 22 16 Q 20 22, 14 22 Q 10 22, 10 18"
+              fill="none"
+              stroke="#FFB5A7"
+              stroke-width="3"
+              stroke-linecap="round"
+            />
+            <circle cx="10" cy="18" r="1.5" fill="#5B3A8C" />
+          </svg>
+        </div>
+        <p class="description">
+          Fita que se enrola formando espiral. Continuidade + curadoria + flow.
+        </p>
+        <p class="pros">
+          ✓ Mais distintivo · ✓ Conta storytelling · ⚠ Pode ficar pesado em
+          16px · ⚠ Stroke complexo requer fine-tuning
+        </p>
+      </div>
+    </div>
+
+    <p style="margin-top: 3rem; color: var(--muted); font-size: 0.875rem">
+      Render: abra <code>docs/brand-explore/showcase.html</code> direto no
+      browser (file://) para ver em tamanho real. Cada concept SVG individual
+      está em <code>docs/brand-explore/concept-{a,b,c}*.svg</code>.
+    </p>
+  </body>
+</html>

@@ -1,0 +1,19 @@
+<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-label="Concept A: Open Spiral">
+  <!--
+    Concept A — Espiral aberta clássica
+    Forma geométrica pura: espiral que se abre para fora.
+    Suggests: crescimento, fluxo, abertura, journey.
+    Brand: peach #FFB5A7 (substitui ★ asterisco no pivô do wordmark).
+  -->
+  <path
+    d="M 16 16
+       m -6 0
+       a 6 6 0 1 1 12 0
+       a 4 4 0 1 1 -8 0
+       a 2 2 0 1 1 4 0"
+    fill="none"
+    stroke="#FFB5A7"
+    stroke-width="2.5"
+    stroke-linecap="round"
+  />
+</svg>

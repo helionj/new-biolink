@@ -1,0 +1,13 @@
+<svg viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg" width="180" height="180">
+  <!-- BioLink Phase 2 logomark — Concept A apple-touch-icon 180×180.
+       Background lavender mist + spiral peach (scaled 5.625x from 32px).
+       borderRadius 32 (~18%) hint para iOS auto-mask rounded corners. -->
+  <rect width="180" height="180" rx="32" fill="#F4EFFB" />
+  <path
+    d="M 90 90 m -34 0 a 34 34 0 1 1 68 0 a 23 23 0 1 1 -46 0 a 11 11 0 1 1 22 0"
+    fill="none"
+    stroke="#FFB5A7"
+    stroke-width="14"
+    stroke-linecap="round"
+  />
+</svg>
