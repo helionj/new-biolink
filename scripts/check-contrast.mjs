@@ -54,7 +54,7 @@ const GLOBALS_CSS = join(PROJECT_ROOT, 'app', 'globals.css');
  */
 const THEME_BLOCK_REGEX = {
   light: /:root,\s*\[data-theme='light'\]\s*\{([^}]+)\}/,
-  dark: /\[data-theme='dark'\],\s*\.dark\s*\{([^}]+)\}/,
+  dark: /\[data-theme='dark'\]\s*\{([^}]+)\}/,
   brand: /\[data-theme='brand'\]\s*\{([^}]+)\}/,
 };
 

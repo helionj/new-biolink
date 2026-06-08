@@ -3,7 +3,6 @@ import Image from 'next/image';
 
 import { TrackedLinkCard } from '@/components/public/TrackedLinkCard';
 import { ViewBeacon } from '@/components/public/ViewBeacon';
-import { cn } from '@/lib/utils';
 import type { PublicPageData } from '@/server/page/queries';
 
 /**
@@ -16,9 +15,9 @@ import type { PublicPageData } from '@/server/page/queries';
  *   - Wrapper externo `<div data-theme={page.theme}>` para que os seletores
  *     [data-theme=...] em globals.css cubram todos os descendentes via
  *     cascade (vence o `data-theme="light"` herdado de <html>).
- *   - Classe `.dark` condicional alimenta o `@custom-variant dark
- *     (&:is(.dark *))` (DEV-1 da 3.1) — defesa em profundidade para
- *     primitives shadcn que ainda usem `dark:` variant.
+ *   - `@custom-variant dark (&:is([data-theme='dark'] *))` (globals.css L10)
+ *     alimenta o `dark:` Tailwind variant a partir do mesmo wrapper, sem
+ *     precisar de classe .dark separada ([STORY-3.1-F1] 2026-06-08 refactor).
  *   - `min-h-screen bg-background text-foreground` garante que o tema cubra
  *     toda a viewport (sem isso, área fora do <main max-w-md> herdaria o
  *     fundo do <body> resolvido com data-theme="light").
@@ -34,10 +33,7 @@ export function PublicPage({ data }: { data: PublicPageData }) {
   const displayName = profile.display_name ?? `@${profile.username}`;
 
   return (
-    <div
-      data-theme={page.theme}
-      className={cn('min-h-screen bg-background text-foreground', page.theme === 'dark' && 'dark')}
-    >
+    <div data-theme={page.theme} className="min-h-screen bg-background text-foreground">
       <main className="mx-auto flex w-full max-w-md flex-col items-center gap-6 px-4 py-8 sm:py-12">
         <ViewBeacon pageId={page.id} />
         {profile.avatar_url ? (

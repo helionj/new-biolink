@@ -1,11 +1,14 @@
 /**
- * Component-level tests — Theme tokens (Story 3.1 Task 5.2).
+ * Component-level tests — Theme tokens (Story 3.1 Task 5.2 + [STORY-3.1-F1] refactor 2026-06-08).
  *
- * Estratégia AC1: validamos a PRESENÇA dos seletores `[data-theme="..."]` e
- * `.dark` no source `app/globals.css` via leitura de arquivo. jsdom 29 não
- * computa CSS vars de stylesheets externas de forma confiável (especialmente
- * com `@theme inline` do Tailwind 4), então regex no source é mais barato e
+ * Estratégia AC1: validamos a PRESENÇA dos seletores `[data-theme="..."]` no
+ * source `app/globals.css` via leitura de arquivo. jsdom 29 não computa CSS
+ * vars de stylesheets externas de forma confiável (especialmente com
+ * `@theme inline` do Tailwind 4), então regex no source é mais barato e
  * direto para garantir que o vocabulário visual está estruturado.
+ *
+ * Post-[STORY-3.1-F1]: classe `.dark` eliminada da codebase; `[data-theme="dark"]`
+ * é single source of truth para dark mode activation.
  *
  * AC3 cobertura: smoke import do `lib/theme` confirmando superfície pública.
  */
@@ -24,8 +27,11 @@ describe('app/globals.css — theme selectors (AC1)', () => {
     expect(globalsCss).toMatch(/:root,\s*\[data-theme=['"]light['"]\]/);
   });
 
-  it('define [data-theme="dark"] (acoplado a .dark via seletor composto)', () => {
-    expect(globalsCss).toMatch(/\[data-theme=['"]dark['"]\],\s*\.dark/);
+  it('define [data-theme="dark"] (single source — classe .dark eliminada per [STORY-3.1-F1])', () => {
+    expect(globalsCss).toMatch(/\[data-theme=['"]dark['"]\]\s*\{/);
+    // Anti-regressão: classe .dark NÃO deve ser ativador (apenas referências
+    // históricas em comentários JSDoc são permitidas).
+    expect(globalsCss).not.toMatch(/^\s*\.dark\s*\{/m);
   });
 
   it('define [data-theme="brand"]', () => {
@@ -43,8 +49,8 @@ describe('app/globals.css — theme selectors (AC1)', () => {
     expect(globalsCss).toMatch(/@theme inline/);
   });
 
-  it('mantém fallback @media (prefers-color-scheme: dark) restrito a :not()', () => {
-    expect(globalsCss).toMatch(/:root:not\(\[data-theme\]\):not\(\.dark\)/);
+  it('mantém fallback @media (prefers-color-scheme: dark) restrito a :not([data-theme])', () => {
+    expect(globalsCss).toMatch(/:root:not\(\[data-theme\]\)/);
   });
 });
 

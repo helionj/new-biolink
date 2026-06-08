@@ -7,7 +7,7 @@
    var() quebra parse). Fix Story 5.8 build error. */
 @source not "../docs/**";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is([data-theme='dark'] *));
 
 /* -------------------------------------------------------------------------- */
 /* Design Tokens — Soft Studio palette (Story 5.2).                            */
@@ -86,13 +86,12 @@
 }
 
 /*
- * Soft Studio dark — frontend-spec.md §1.2.2. Seletor composto preserva
- * dualidade [data-theme="dark"] + .dark (DEV-6: refactor para eliminar .dark
- * é [STORY-3.1-F1] LOW, fora de escopo). @custom-variant dark (L4) alimenta
- * o `dark:` Tailwind variant a partir de .dark.
+ * Soft Studio dark — frontend-spec.md §1.2.2. Single source of truth via
+ * [data-theme="dark"] (post-[STORY-3.1-F1] refactor 2026-06-08 — classe .dark
+ * eliminada da codebase; @custom-variant dark (L10) agora alimenta o `dark:`
+ * Tailwind variant a partir de [data-theme="dark"] direto).
  */
-[data-theme='dark'],
-.dark {
+[data-theme='dark'] {
   --background: #14102a;
   --foreground: #f4effb;
   --primary: #b8a1e8;
@@ -219,8 +218,7 @@
   --shadow-lg: 0 16px 32px -4px rgba(91, 58, 140, 0.18);
 }
 
-[data-theme='dark'],
-.dark {
+[data-theme='dark'] {
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 16px 32px -4px rgba(0, 0, 0, 0.18);
@@ -405,13 +403,14 @@
 }
 
 /*
- * Fallback OS-level: só aplica quando NENHUM data-theme nem .dark explícito
- * está no <html>. O :not(...) duplo garante que a escolha SSR (Story 3.1
- * Task 3 — data-theme={DEFAULT_THEME}) vence o prefers-color-scheme.
+ * Fallback OS-level: só aplica quando NENHUM data-theme explícito está no
+ * <html>. O :not([data-theme]) garante que a escolha SSR (Story 3.1 Task 3
+ * — data-theme={DEFAULT_THEME}) vence o prefers-color-scheme.
  * Story 5.2 — mantido em sincronia com o bloco [data-theme="dark"] (Soft Studio).
+ * [STORY-3.1-F1] 2026-06-08 — removido :not(.dark) (classe eliminada da codebase).
  */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme]):not(.dark) {
+  :root:not([data-theme]) {
     --background: #14102a;
     --foreground: #f4effb;
     --primary: #b8a1e8;

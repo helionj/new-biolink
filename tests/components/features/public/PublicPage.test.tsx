@@ -1,12 +1,13 @@
 /**
- * Component tests — <PublicPage> theme wrapper (Story 3.2 AC5).
+ * Component tests — <PublicPage> theme wrapper (Story 3.2 AC5 + [STORY-3.1-F1] refactor).
  *
  * Cobre:
  *   (a) AC5 — 3 snapshots HTML-only (light/dark/brand) confirmando que o
  *       `page.theme` se propaga para o wrapper top-level via `data-theme`.
- *   (b) AC2 — assertion adicional: o wrapper recebe a classe `.dark`
- *       somente quando theme === 'dark' (alimenta o @custom-variant dark
- *       em globals.css L4 — DEV-1 da 3.1).
+ *   (b) Anti-regressão [STORY-3.1-F1] 2026-06-08: classe `.dark` foi eliminada
+ *       da codebase; o `@custom-variant dark (&:is([data-theme='dark'] *))`
+ *       (globals.css L10) agora alimenta o `dark:` Tailwind variant a partir
+ *       do mesmo wrapper `data-theme`, sem precisar de classe separada.
  *
  * Snapshots são HTML-only — jsdom 29 + Tailwind 4 não resolve CSS vars de
  * stylesheets externas de forma confiável (DEV-1 da 3.1; DEV-4 desta story).
@@ -51,11 +52,9 @@ describe('<PublicPage> theme wrapper', () => {
 
     expect(wrapper).toHaveAttribute('data-theme', theme);
 
-    if (theme === 'dark') {
-      expect(wrapper.className).toMatch(/\bdark\b/);
-    } else {
-      expect(wrapper.className).not.toMatch(/\bdark\b/);
-    }
+    // Anti-regressão [STORY-3.1-F1]: classe .dark nunca deve aparecer no wrapper
+    // (eliminada da codebase; @custom-variant agora consume data-theme direto).
+    expect(wrapper.className).not.toMatch(/\bdark\b/);
 
     expect(container).toMatchSnapshot();
   });
