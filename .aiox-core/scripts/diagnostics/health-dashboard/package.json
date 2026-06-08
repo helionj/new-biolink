@@ -10,6 +10,7 @@
     "lint": "eslint src --ext js,jsx"
   },
   "dependencies": {
+    "brace-expansion": "^1.1.15",
     "flatted": "^3.4.2",
     "lodash": "^4.18.1",
     "minimatch": "^3.1.5",
@@ -19,7 +20,8 @@
     "react-dom": "^18.2.0",
     "react-router": "^6.30.4",
     "react-router-dom": "^6.30.4",
-    "recharts": "^2.10.0"
+    "recharts": "^2.10.0",
+    "rollup": "^4.61.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.0",
