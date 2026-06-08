@@ -96,7 +96,7 @@ exports[`<PublicPage> theme wrapper > aplica data-theme="brand" no wrapper top-l
 exports[`<PublicPage> theme wrapper > aplica data-theme="dark" no wrapper top-level 1`] = `
 <div>
   <div
-    class="min-h-screen bg-background text-foreground dark"
+    class="min-h-screen bg-background text-foreground"
     data-theme="dark"
   >
     <main

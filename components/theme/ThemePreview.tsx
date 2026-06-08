@@ -2,7 +2,6 @@ import { User } from 'lucide-react';
 import Image from 'next/image';
 
 import type { Theme } from '@/lib/theme';
-import { cn } from '@/lib/utils';
 
 export type ThemePreviewData = {
   profile: {
@@ -19,9 +18,10 @@ export type ThemePreviewData = {
  * AC3 — "Server Component isolado, sem iframe").
  *
  * Estratégia de cascade: o wrapper `<div data-theme={theme}>` reproduz o
- * mesmo padrão de `PublicPage.tsx` (Story 3.2). A classe `.dark` condicional
- * alimenta o `@custom-variant dark (&:is(.dark *))` da globals.css (DEV-1 da
- * 3.1) — defense in depth para primitives shadcn.
+ * mesmo padrão de `PublicPage.tsx` (Story 3.2). O `@custom-variant dark
+ * (&:is([data-theme='dark'] *))` da globals.css L10 ([STORY-3.1-F1] 2026-06-08
+ * refactor) alimenta o `dark:` Tailwind variant a partir do mesmo wrapper,
+ * sem precisar de classe .dark separada.
  *
  * Componente puro (sem estado nem efeitos). Usado dentro do Client Component
  * `<ThemeSelector>` — Next 16 traz para o client bundle automaticamente, mas
@@ -37,10 +37,7 @@ export function ThemePreview({ theme, data }: { theme: Theme; data: ThemePreview
   return (
     <div
       data-theme={theme}
-      className={cn(
-        'flex h-full w-full flex-col items-center gap-2 rounded-md bg-background px-3 py-4 text-foreground',
-        theme === 'dark' && 'dark',
-      )}
+      className="flex h-full w-full flex-col items-center gap-2 rounded-md bg-background px-3 py-4 text-foreground"
       aria-hidden="true"
     >
       {profile.avatar_url ? (
