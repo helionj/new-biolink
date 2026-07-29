@@ -10,7 +10,7 @@
     "lint": "eslint src --ext js,jsx"
   },
   "dependencies": {
-    "brace-expansion": "^1.1.15",
+    "brace-expansion": "^5.0.8",
     "flatted": "^3.4.2",
     "lodash": "^4.18.1",
     "minimatch": "^3.1.5",
